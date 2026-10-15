@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+secrets.json
+*.pem
+*.key
+
+# Local databases and logs
+*.db
+*.sqlite
+*.log
+
+# Editor and OS files
+.DS_Store
+.vscode/
+.idea/
