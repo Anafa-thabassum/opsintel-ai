@@ -32,10 +32,15 @@ def test_root_cause_candidates_are_supported_observations():
     for candidate in result["candidates"]:
         assert candidate["status"] == "supported_observation"
 
+
 def test_timeout_evidence_produces_timeout_candidate():
     incident = {
         "evidence": [
-            {"observation": "Pipeline timeout: execution exceeded 30 minutes"}
+            {
+                "observation": (
+                    "Pipeline timeout: execution exceeded 30 minutes"
+                )
+            }
         ]
     }
 
@@ -74,4 +79,71 @@ def test_empty_evidence_does_not_invent_root_causes():
 
     assert result["candidates"] == []
     assert result["confirmed_root_cause"] is None
+
+
+def test_investigation_deduplicates_pipeline_logs(monkeypatch):
+    from app import investigator
+
+    monkeypatch.setattr(
+        investigator,
+        "get_failed_pipelines",
+        lambda: [(1, "daily_sales_import", 100, 80, 20, "FAILED")],
+    )
+
+    class FakeResult:
+        def fetchall(self):
+            # Simulate the distinct results returned by the database.
+            return [
+                (1, "INFO", "Pipeline started; expected 100 source rows"),
+                (2, "WARN", "Source returned only 80 rows"),
+            ]
+
+    class FakeConnection:
+        def execute(self, query):
+            assert "SELECT DISTINCT" in query
+            return FakeResult()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(
+        investigator,
+        "get_connection",
+        lambda: FakeConnection(),
+    )
+
+    result = investigator.investigate_pipeline(1)
+
+    log_evidence = [
+        item
+        for item in result["evidence"]
+        if item["type"] == "pipeline_log"
+    ]
+
+    assert [item["log_id"] for item in log_evidence] == [1, 2]
+
+def test_early_termination_takes_priority_over_missing_rows():
+    from app.investigator import classify_evidence
+
+    category, hypothesis, recommended_action = classify_evidence(
+        ["Import ended before all expected rows were processed"],
+        20,
+    )
+
+    assert category == "early_termination"
+    assert "not confirmed" in hypothesis
+    assert recommended_action
+
+
+def test_missing_rows_without_early_termination_are_incomplete_data():
+    from app.investigator import classify_evidence
+
+    category, hypothesis, recommended_action = classify_evidence(
+        ["Source returned only 80 rows"],
+        20,
+    )
+
+    assert category == "incomplete_data"
+    assert "not confirmed" in hypothesis
+    assert recommended_action
 

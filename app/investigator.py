@@ -1,3 +1,4 @@
+
 from app.db import get_failed_pipelines, get_connection
 
 
@@ -15,8 +16,11 @@ def classify_evidence(log_messages, missing_rows):
         )
 
     if any(word in text for word in (
-        "schema mismatch", "incompatible type", "data type",
-        "does not match expected", "column type",
+        "schema mismatch",
+        "incompatible type",
+        "data type",
+        "does not match expected",
+        "column type",
     )):
         return (
             "schema_mismatch",
@@ -27,8 +31,10 @@ def classify_evidence(log_messages, missing_rows):
         )
 
     if any(word in text for word in (
-        "dependency failure", "upstream task failed",
-        "upstream dependency", "dependency failed",
+        "dependency failure",
+        "upstream task failed",
+        "upstream dependency",
+        "dependency failed",
     )):
         return (
             "dependency_failure",
@@ -38,15 +44,7 @@ def classify_evidence(log_messages, missing_rows):
             "execution order.",
         )
 
-    if "source returned only" in text or missing_rows > 0:
-        return (
-            "incomplete_data",
-            "The available data indicates that fewer rows were received "
-            "than expected. The reason for the discrepancy is not confirmed.",
-            "Compare source and target row counts, inspect source extracts, "
-            "and check filtering or rejected-row logs.",
-        )
-
+    # Check the specific log message before the general missing-row check.
     if "ended before all expected rows were processed" in text:
         return (
             "early_termination",
@@ -54,6 +52,15 @@ def classify_evidence(log_messages, missing_rows):
             "were processed. The underlying reason is not confirmed.",
             "Inspect the execution logs around termination and identify "
             "the first reported error.",
+        )
+
+    if "source returned only" in text or missing_rows > 0:
+        return (
+            "incomplete_data",
+            "The available data indicates that fewer rows were received "
+            "than expected. The reason for the discrepancy is not confirmed.",
+            "Compare source and target row counts, inspect source extracts, "
+            "and check filtering or rejected-row logs.",
         )
 
     return (
@@ -80,7 +87,7 @@ def investigate_pipeline(run_id: int):
     try:
         result = connection.execute(
             """
-            SELECT LOG_ID, LOG_LEVEL, LOG_MESSAGE
+            SELECT DISTINCT LOG_ID, LOG_LEVEL, LOG_MESSAGE
             FROM OPSINTEL.PIPELINE_LOGS
             WHERE RUN_ID = %d
             ORDER BY LOG_ID
@@ -161,16 +168,21 @@ def assess_root_causes(incident):
         ),
         (
             (
-                "schema mismatch", "incompatible type", "data type",
-                "does not match expected", "column type",
+                "schema mismatch",
+                "incompatible type",
+                "data type",
+                "does not match expected",
+                "column type",
             ),
             "Incoming data may not match the expected schema",
             "Compare source field types with the target schema.",
         ),
         (
             (
-                "dependency failure", "upstream task failed",
-                "upstream dependency", "dependency failed",
+                "dependency failure",
+                "upstream task failed",
+                "upstream dependency",
+                "dependency failed",
             ),
             "An upstream dependency may have failed",
             "Inspect the upstream task and its execution logs.",
@@ -188,7 +200,11 @@ def assess_root_causes(incident):
     ]
 
     for keywords, cause, next_action in rules:
-        matched = any(keyword in evidence_text for keyword in keywords)
+        matched = any(
+            keyword in evidence_text
+            for keyword in keywords
+        )
+
         if matched:
             candidates.append({
                 "cause": cause,
@@ -200,9 +216,9 @@ def assess_root_causes(incident):
         "expected " in evidence_text
         and " but received " in evidence_text
     ):
-        # Row-count evidence supports a discrepancy, not its cause.
         if not any(
-            candidate["cause"] == "The source delivered fewer rows than expected"
+            candidate["cause"]
+            == "The source delivered fewer rows than expected"
             for candidate in candidates
         ):
             candidates.append({
