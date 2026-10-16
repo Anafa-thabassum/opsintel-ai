@@ -50,4 +50,13 @@ def test_health_returns_503_when_database_fails():
 
     assert response.status_code == 503
     assert response.json()["detail"] == "Database connection failed"
+def test_incidents_returns_503_when_database_fails():
+    with patch(
+        "app.main.get_failed_pipelines",
+        side_effect=Exception("Simulated database failure"),
+    ):
+        response = client.get("/incidents")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Unable to retrieve incidents"
 
