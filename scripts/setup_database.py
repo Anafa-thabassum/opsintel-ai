@@ -1,0 +1,60 @@
+"""Create or reset the synthetic OpsIntel demonstration database."""
+
+import argparse
+from pathlib import Path
+
+from app.db import get_connection
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SCHEMA_FILE = ROOT / "sql/schema.sql"
+SEED_FILE = ROOT / "sql/seed.sql"
+ANALYTICS_FILE = ROOT / "sql/analysis/pipeline_health_features.sql"
+
+
+def load_statements(path):
+    sql = "\n".join(
+        line for line in path.read_text().splitlines()
+        if not line.lstrip().startswith("--")
+    )
+    return [statement.strip() for statement in sql.split(";") if statement.strip()]
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="drop and recreate the synthetic OPSINTEL schema",
+    )
+    args = parser.parse_args()
+
+    connection = get_connection()
+
+    try:
+        schema_exists = int(connection.execute("""
+            SELECT COUNT(*)
+            FROM EXA_ALL_SCHEMAS
+            WHERE SCHEMA_NAME = 'OPSINTEL'
+        """).fetchone()[0]) > 0
+
+        if args.reset and schema_exists:
+            connection.execute("DROP SCHEMA OPSINTEL CASCADE")
+            schema_exists = False
+
+        if not schema_exists:
+            for path in (SCHEMA_FILE, SEED_FILE):
+                for statement in load_statements(path):
+                    connection.execute(statement)
+
+        for statement in load_statements(ANALYTICS_FILE):
+            connection.execute(statement)
+    finally:
+        connection.close()
+
+    action = "reset" if args.reset else "prepared"
+    print(f"OPSINTEL demo database {action} successfully.")
+
+
+if __name__ == "__main__":
+    main()

@@ -99,8 +99,9 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
             ]
 
     class FakeConnection:
-        def execute(self, query):
+        def execute(self, query, parameters=None):
             assert "SELECT DISTINCT" in query
+            assert parameters == {"run_id": 1}
             return FakeResult()
 
         def close(self):

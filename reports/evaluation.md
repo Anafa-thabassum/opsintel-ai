@@ -1,43 +1,77 @@
 # OpsIntel AI — Evaluation Report
 
-## 1. Objective
+## Objective
 
-Evaluate whether OpsIntel AI can classify common data-pipeline failure scenarios using log messages and row-count information.
+Evaluate whether OpsIntel AI classifies common data-pipeline failure evidence
+without converting unsupported possibilities into confirmed root causes.
 
-## 2. Test Environment
+## Automated verification
 
+- Automated tests: **45 passed**
+- Frontend lint: **passed with no warnings**
+- Frontend production build: **passed**
 - Database: Exasol Personal
-- Backend: Python, FastAPI
-- Test framework: pytest
-- Evaluation dataset: Four predefined synthetic pipeline scenarios
+- API: FastAPI
+- Dashboard: React and Vite
 
-## 3. Automated Test Results
+Run the checks with:
 
-- Total automated tests: 23
-- Passed: 23
-- Failed: 0
+```bash
+python -m pytest -q
+python -m tests.run_evaluation
+cd frontend && npm run lint && npm run build
+```
 
-## 4. Synthetic Benchmark Results
+## Synthetic challenge set
 
-| Pipeline scenario | Expected category | Predicted category | Result |
-|---|---|---|---|
-| Daily sales import | Early termination | Early termination | Correct |
-| Customer sync | Timeout | Timeout | Correct |
-| Product catalog | Schema mismatch | Schema mismatch | Correct |
-| Daily reporting | Dependency failure | Dependency failure | Correct |
+The challenge set contains 16 predefined cases across six expected outcomes.
+It includes exact signals, paraphrases, benign timeout configuration, and
+unknown evidence.
 
-Benchmark accuracy: 4/4 = 100% on this small, predefined synthetic dataset.
+| Expected outcome | Correct | Total |
+|---|---:|---:|
+| Dependency failure | 3 | 3 |
+| Early termination | 3 | 3 |
+| Incomplete data | 2 | 2 |
+| Schema mismatch | 3 | 3 |
+| Timeout | 3 | 3 |
+| Unclassified | 2 | 2 |
+| **Total** | **16** | **16** |
 
-## 5. Limitations
+The measured result is **16/16 on this predefined synthetic challenge set**.
+It is a reproducible regression benchmark, not a production accuracy claim.
 
-- The benchmark contains only four predefined synthetic scenarios.
-- Results do not establish accuracy on real-world production pipelines.
-- Evidence-supported root-cause candidates are not confirmed root causes.
-- The system does not automatically repair pipelines.
-- Synthetic logs may not represent every possible failure condition.
+## Exasol analytical validation
 
-## 6. Conclusion
+The demo dataset contains four days of healthy pipeline history followed by
+four representative incidents. Exasol calculates completeness, previous-run
+status, rolling actual-row baselines, and rolling failure rates through
+`OPSINTEL.PIPELINE_HEALTH_FEATURES`.
 
-OpsIntel AI demonstrates an initial pipeline-investigation workflow: identifying failed runs, examining logs and row-count differences, classifying failure evidence, and presenting candidate explanations with supporting evidence.
+## Reproducible scale benchmark
 
-Further evaluation using larger, independent datasets and real-world pipeline failures is required before making production-reliability claims.
+`python -m scripts.benchmark_exasol` creates an isolated temporary schema,
+imports deterministic history, executes the Exasol window-feature and daily
+aggregation query, and removes the schema. On the recorded local run:
+
+| Measure | Result |
+|---|---:|
+| Synthetic pipeline runs | 1,000,000 |
+| Pipelines | 20 |
+| Import time | 3.025 seconds |
+| Query repetitions | 7 |
+| Median analytical query | 473.209 ms |
+| p95 analytical query | 503.947 ms |
+
+The complete samples and environment are preserved in
+[`reports/exasol-benchmark.json`](exasol-benchmark.json). This is a local,
+single-user measurement, not a production throughput or concurrency claim.
+
+## Limitations
+
+- The scenarios and logs are synthetic.
+- The challenge set is small and is stored with the implementation.
+- Keyword rules do not establish semantic understanding.
+- Candidate explanations remain unconfirmed until an engineer verifies them.
+- Concurrency, production infrastructure, and real orchestrator integrations
+  have not been evaluated.

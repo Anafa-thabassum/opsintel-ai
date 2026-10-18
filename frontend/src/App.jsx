@@ -1,8 +1,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, Bot,
-  CheckCircle2, ChevronDown, ChevronRight, CircleDot, Clock3,
+  Activity, AlertTriangle, ArrowDownRight, Bot,
+  ChevronDown, ChevronRight, CircleDot,
   Database, FileSearch, GitBranch, LayoutDashboard, LoaderCircle,
   RefreshCw, Search, ShieldCheck, Sparkles, Terminal, Zap,
 } from "lucide-react";
@@ -12,17 +12,7 @@ import {
 } from "recharts";
 import "./App.css";
 
-const API = "http://127.0.0.1:8000";
-
-const chartData = [
-  { time: "00:00", incidents: 2 },
-  { time: "04:00", incidents: 1 },
-  { time: "08:00", incidents: 4 },
-  { time: "12:00", incidents: 3 },
-  { time: "16:00", incidents: 6 },
-  { time: "20:00", incidents: 4 },
-  { time: "Now", incidents: 5 },
-];
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const categoryLabels = {
   incomplete_data: "Incomplete data",
@@ -35,6 +25,7 @@ const categoryLabels = {
 
 function App() {
   const [incidents, setIncidents] = useState([]);
+  const [trend, setTrend] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [investigation, setInvestigation] = useState(null);
   const [rootCauses, setRootCauses] = useState(null);
@@ -52,9 +43,10 @@ function App() {
     setError("");
 
     try {
-      const [healthResponse, incidentsResponse] = await Promise.all([
+      const [healthResponse, incidentsResponse, trendResponse] = await Promise.all([
         fetch(`${API}/health`),
         fetch(`${API}/incidents`),
+        fetch(`${API}/analytics/trend`),
       ]);
 
       setHealth(healthResponse.ok ? "connected" : "error");
@@ -67,12 +59,19 @@ function App() {
       const rows = data.incidents || [];
       setIncidents(rows);
 
+      if (trendResponse.ok) {
+        const trendData = await trendResponse.json();
+        setTrend(trendData.trend || []);
+      } else {
+        setTrend([]);
+      }
+
       const nextId = rows.some((item) => item.run_id === selectedId)
         ? selectedId
         : rows[0]?.run_id ?? null;
 
       setSelectedId(nextId);
-    } catch (err) {
+    } catch {
       setHealth("error");
       setError(
         "Unable to connect to the OpsIntel API. Make sure your FastAPI server is running at 127.0.0.1:8000."
@@ -91,10 +90,7 @@ function App() {
     setRootCauses(null);
 
     try {
-      const [investigationResponse, causesResponse] = await Promise.all([
-        fetch(`${API}/investigate/${runId}`),
-        fetch(`${API}/investigate/${runId}/root-causes`),
-      ]);
+      const investigationResponse = await fetch(`${API}/investigate/${runId}`);
 
       if (!investigationResponse.ok) {
         throw new Error(`Investigation returned HTTP ${investigationResponse.status}`);
@@ -102,10 +98,7 @@ function App() {
 
       const data = await investigationResponse.json();
       setInvestigation(data);
-
-      if (causesResponse.ok) {
-        setRootCauses(await causesResponse.json());
-      }
+      setRootCauses(data.root_causes || null);
     } catch (err) {
       setError(err.message || "Unable to load this investigation.");
     } finally {
@@ -136,8 +129,12 @@ function App() {
     0
   );
 
-  const selectedIncident = incidents.find(
-    (item) => item.run_id === selectedId
+  const chartData = useMemo(
+    () => trend.map((item) => ({
+      time: item.run_day.slice(5),
+      incidents: item.incident_count,
+    })),
+    [trend]
   );
 
   const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
@@ -159,7 +156,6 @@ function App() {
             { label: "Overview", icon: LayoutDashboard },
             { label: "Incidents", icon: AlertTriangle },
             { label: "Investigations", icon: FileSearch },
-            { label: "Pipeline map", icon: GitBranch },
           ].map(({ label, icon: Icon }) => (
             <button
               key={label}
@@ -269,7 +265,7 @@ function App() {
                   <div className="panel-kicker">INCIDENT TELEMETRY</div>
                   <h2>Failure activity</h2>
                 </div>
-                <span className="subtle-pill"><span className="mini-dot" /> Illustrative trend</span>
+                <span className="subtle-pill"><span className="mini-dot" /> Exasol analytics</span>
               </div>
               <div className="chart-summary">
                 <strong>{incidents.length}</strong>
@@ -295,7 +291,7 @@ function App() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <div className="chart-footer"><span><i className="legend-dot" />Incident signal</span><span>Sample visualization · not historical telemetry</span></div>
+              <div className="chart-footer"><span><i className="legend-dot" />Daily incidents</span><span>Calculated from pipeline history in Exasol</span></div>
             </div>
 
             <div className="panel signal-panel">

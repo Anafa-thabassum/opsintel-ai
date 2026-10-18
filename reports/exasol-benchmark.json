@@ -1,0 +1,22 @@
+{
+  "benchmark": "Exasol window analytics and daily aggregation",
+  "dataset": "deterministic synthetic pipeline history",
+  "rows": 1000000,
+  "pipelines": 20,
+  "incident_rate_pct": 5,
+  "result_days": 695,
+  "repetitions": 7,
+  "import_seconds": 3.025,
+  "query_latency_ms": {
+    "minimum": 442.384,
+    "median": 473.209,
+    "p95_nearest_rank": 503.947,
+    "maximum": 503.947,
+    "samples": [503.947, 473.209, 474.484, 445.887, 442.384, 469.597, 476.749]
+  },
+  "environment": {
+    "python": "3.14.0",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+  },
+  "scope": "Local single-user benchmark; not a production throughput or concurrency claim."
+}

@@ -1,9 +1,10 @@
-from fastapi.middleware.cors import CORSMiddleware
-from app.investigator import assess_root_causes
-from app.investigator import investigate_pipeline
-from fastapi import FastAPI, HTTPException
+import os
 
-from app.db import get_failed_pipelines
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.db import check_connection, get_failed_pipelines, get_pipeline_trend
+from app.investigator import assess_root_causes, investigate_pipeline
 
 app = FastAPI(
     title="OpsIntel AI",
@@ -13,10 +14,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(","),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,7 +35,7 @@ def home():
 @app.get("/health")
 def health():
     try:
-        get_failed_pipelines()
+        check_connection()
         return {
             "status": "healthy",
             "database": "connected",
@@ -43,6 +44,30 @@ def health():
         raise HTTPException(
             status_code=503,
             detail="Database connection failed",
+        ) from exc
+
+
+@app.get("/analytics/trend")
+def analytics_trend():
+    try:
+        rows = get_pipeline_trend()
+
+        return {
+            "trend": [
+                {
+                    "run_day": row[0],
+                    "total_runs": int(row[1]),
+                    "incident_count": int(row[2]),
+                    "average_completeness_pct": float(row[3]),
+                    "average_rolling_failure_rate_pct": float(row[4]),
+                }
+                for row in rows
+            ]
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to retrieve pipeline analytics",
         ) from exc
 
 
@@ -83,6 +108,7 @@ def investigate(run_id: int):
                 detail="Incident not found",
             )
 
+        result["root_causes"] = assess_root_causes(result)
         return result
 
     except HTTPException:
@@ -92,6 +118,8 @@ def investigate(run_id: int):
             status_code=503,
             detail="Investigation failed",
         ) from exc
+
+
 @app.get("/investigate/{run_id}/root-causes")
 def root_cause_assessment(run_id: int):
     try:

@@ -4,9 +4,25 @@ from app.db import get_failed_pipelines, get_connection
 
 def classify_evidence(log_messages, missing_rows):
     """Classify evidence without claiming an unverified root cause."""
-    text = " ".join(log_messages).lower()
+    benign_phrases = (
+        "no timeout",
+        "without timeout",
+        "timeout setting",
+        "timeout threshold configured",
+    )
+    text = " ".join(
+        message.lower()
+        for message in log_messages
+        if not any(phrase in message.lower() for phrase in benign_phrases)
+    )
 
-    if any(word in text for word in ("timeout", "timed out", "time limit")):
+    if any(word in text for word in (
+        "timeout",
+        "timed out",
+        "time limit",
+        "deadline exceeded",
+        "execution exceeded",
+    )):
         return (
             "timeout",
             "Logs report a timeout or execution time limit. "
@@ -21,6 +37,8 @@ def classify_evidence(log_messages, missing_rows):
         "data type",
         "does not match expected",
         "column type",
+        "invalid cast",
+        "type conversion",
     )):
         return (
             "schema_mismatch",
@@ -35,6 +53,7 @@ def classify_evidence(log_messages, missing_rows):
         "upstream task failed",
         "upstream dependency",
         "dependency failed",
+        "prerequisite task failed",
     )):
         return (
             "dependency_failure",
@@ -45,7 +64,12 @@ def classify_evidence(log_messages, missing_rows):
         )
 
     # Prefer a specific early-termination signal over a generic row-count issue.
-    if "ended before all expected rows were processed" in text:
+    if any(phrase in text for phrase in (
+        "ended before all expected rows were processed",
+        "aborted before completion",
+        "processing stopped early",
+        "terminated before completion",
+    )):
         return (
             "early_termination",
             "Logs report that processing ended before all expected rows "
@@ -54,7 +78,12 @@ def classify_evidence(log_messages, missing_rows):
             "the first reported error.",
         )
 
-    if "source returned only" in text or missing_rows > 0:
+    if any(phrase in text for phrase in (
+        "source returned only",
+        "fewer rows than expected",
+        "row shortfall",
+        "missing rows",
+    )) or missing_rows > 0:
         return (
             "incomplete_data",
             "The available data indicates that fewer rows were received "
@@ -90,9 +119,10 @@ def investigate_pipeline(run_id: int):
             """
             SELECT DISTINCT LOG_ID, LOG_LEVEL, LOG_MESSAGE
             FROM OPSINTEL.PIPELINE_LOGS
-            WHERE RUN_ID = %d
+            WHERE RUN_ID = {run_id!d}
             ORDER BY LOG_ID
-            """ % int(run_id)
+            """,
+            {"run_id": int(run_id)},
         )
         log_rows = result.fetchall()
     finally:

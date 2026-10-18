@@ -1,5 +1,8 @@
 
+import pytest
+
 from app.investigator import classify_evidence, assess_root_causes
+from tests.run_evaluation import CASES
 
 
 def test_timeout_is_classified_correctly():
@@ -88,4 +91,14 @@ def test_unknown_evidence_is_not_forced_into_a_category():
     assert category == "unclassified"
     assert "does not support a specific failure category" in hypothesis
     assert recommendation
+
+
+@pytest.mark.parametrize("case", CASES, ids=lambda case: case["name"])
+def test_synthetic_challenge_case(case):
+    category, _, _ = classify_evidence(
+        case["logs"],
+        case["missing_rows"],
+    )
+
+    assert category == case["expected"]
 
