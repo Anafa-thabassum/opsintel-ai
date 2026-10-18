@@ -78,3 +78,14 @@ def test_schema_mismatch_suppresses_generic_row_count_candidate():
     assert "Incoming data may not match the expected schema" in causes
     assert "Expected and actual row counts differ" not in causes
     assert result["confirmed_root_cause"] is None
+
+def test_unknown_evidence_is_not_forced_into_a_category():
+    category, hypothesis, recommendation = classify_evidence(
+        ["Pipeline stopped; no additional diagnostic details available"],
+        0,
+    )
+
+    assert category == "unclassified"
+    assert "does not support a specific failure category" in hypothesis
+    assert recommendation
+
