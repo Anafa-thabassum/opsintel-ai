@@ -211,30 +211,40 @@ def assess_root_causes(incident):
     expected_rows = incident.get("expected_rows")
     actual_rows = incident.get("actual_rows")
 
-    # Only add the generic candidate when numeric counts are available,
-    # actually differ, and a more specific row-count explanation did not match.
+    specific_row_count_causes = {
+        "The source delivered fewer rows than expected",
+        "Processing ended before all expected rows were processed",
+    }
+
+    specific_failure_causes = {
+        "Pipeline execution exceeded a time limit",
+        "Incoming data may not match the expected schema",
+        "An upstream dependency may have failed",
+    }
+
+    has_specific_candidate = any(
+        candidate["cause"] in (
+            specific_row_count_causes | specific_failure_causes
+        )
+        for candidate in candidates
+    )
+
+    # Add a generic row-count candidate only when no specific explanation
+    # is already supported by the available evidence.
     if (
         expected_rows is not None
         and actual_rows is not None
         and int(expected_rows) != int(actual_rows)
+        and not has_specific_candidate
     ):
-        specific_row_count_causes = {
-            "The source delivered fewer rows than expected",
-            "Processing ended before all expected rows were processed",
-        }
-
-        if not any(
-            candidate["cause"] in specific_row_count_causes
-            for candidate in candidates
-        ):
-            candidates.append({
-                "cause": "Expected and actual row counts differ",
-                "status": "supported_observation",
-                "next_action": (
-                    "Compare source and target counts and inspect "
-                    "rejected or filtered rows."
-                ),
-            })
+        candidates.append({
+            "cause": "Expected and actual row counts differ",
+            "status": "supported_observation",
+            "next_action": (
+                "Compare source and target counts and inspect "
+                "rejected or filtered rows."
+            ),
+        })
 
     return {
         "candidates": candidates,
