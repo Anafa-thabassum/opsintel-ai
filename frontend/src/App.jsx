@@ -1,9 +1,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity, AlertTriangle, ArrowDownRight, Bot,
+  Activity, AlertTriangle, ArrowDownRight, ArrowRight, Bot,
   ChevronDown, ChevronRight, CircleDot,
-  Database, FileSearch, GitBranch, LayoutDashboard, LoaderCircle,
+  Database, FileSearch, GitBranch, LayoutDashboard, LoaderCircle, LockKeyhole,
   RefreshCw, Search, ShieldCheck, Sparkles, Terminal, Zap,
 } from "lucide-react";
 import {
@@ -23,7 +23,130 @@ const categoryLabels = {
   unclassified: "Unclassified",
 };
 
+function navigate(route) {
+  window.location.hash = `/${route}`;
+}
+
 function App() {
+  const currentRoute = window.location.hash.replace(/^#\/?/, "") || "home";
+  const [route, setRoute] = useState(currentRoute);
+  const [hasDemoSession, setHasDemoSession] = useState(
+    () => sessionStorage.getItem("opsintel-demo-session") === "true"
+  );
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setRoute(window.location.hash.replace(/^#\/?/, "") || "home");
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  if (route === "dashboard" && hasDemoSession) {
+    return <Dashboard onExit={() => {
+      sessionStorage.removeItem("opsintel-demo-session");
+      setHasDemoSession(false);
+      navigate("home");
+    }} />;
+  }
+
+  if (route === "login" || route === "dashboard") {
+    return <DemoAccess onEnter={() => {
+      sessionStorage.setItem("opsintel-demo-session", "true");
+      setHasDemoSession(true);
+      navigate("dashboard");
+    }} />;
+  }
+
+  return <LandingPage />;
+}
+
+function Brand() {
+  return (
+    <span className="public-brand">
+      <span className="brand-mark"><Activity size={23} /></span>
+      <span>
+        <span className="brand-name">opsintel<span>AI</span></span>
+        <span className="brand-caption">OPERATIONS INTELLIGENCE</span>
+      </span>
+    </span>
+  );
+}
+
+function LandingPage() {
+  return (
+    <div className="public-shell">
+      <header className="public-nav">
+        <a href="#/home" aria-label="OpsIntel AI home"><Brand /></a>
+        <div className="public-nav-actions">
+          <span className="track-chip">EXATHON INDIA 2026 · TRACK 04</span>
+          <button className="ghost-button" onClick={() => navigate("login")}>Demo access</button>
+        </div>
+      </header>
+
+      <main>
+        <section className="hero-section">
+          <div className="hero-copy">
+            <div className="eyebrow"><Sparkles size={14} /> EVIDENCE-BASED PIPELINE INVESTIGATION</div>
+            <h1>Investigate pipeline failures from <span>evidence—not guesswork.</span></h1>
+            <p>OpsIntel brings pipeline status, row-count discrepancies, and logs into one traceable investigation so data engineers know what to check next.</p>
+            <div className="hero-actions">
+              <button className="primary-button hero-button" onClick={() => navigate("login")}>Open the live demo <ArrowRight size={16} /></button>
+              <a className="secondary-link" href="https://github.com/Anafa-thabassum/opsintel-ai" target="_blank" rel="noreferrer"><GitBranch size={16} /> View repository</a>
+            </div>
+            <div className="hero-trust"><ShieldCheck size={16} /><span>No automated repair. Root causes remain unconfirmed until a human verifies them.</span></div>
+          </div>
+
+          <div className="evidence-preview" aria-label="Example investigation evidence">
+            <div className="preview-top"><span>RUN-0001 · DAILY_SALES_IMPORT</span><span className="status-badge failed"><span />FAILED</span></div>
+            <div className="preview-title"><FileSearch size={20} /><span>Investigation evidence</span></div>
+            <div className="preview-stat-grid">
+              <div><span>Expected</span><strong>100</strong></div>
+              <div><span>Received</span><strong>80</strong></div>
+              <div><span>Missing</span><strong className="danger-text">20</strong></div>
+            </div>
+            <div className="preview-step"><Database size={15} /><div><strong>Observation</strong><span>Row count is below the expected total.</span></div></div>
+            <div className="preview-step violet"><Sparkles size={15} /><div><strong>Candidate explanation</strong><span>Processing may have ended early.</span></div></div>
+            <div className="preview-confirm"><ShieldCheck size={15} /> Confirmed root cause: <strong>None</strong></div>
+          </div>
+        </section>
+
+        <section className="public-features" aria-label="How OpsIntel works">
+          <div><Database size={20} /><span>01</span><h2>Analyze in Exasol</h2><p>SQL analytical views calculate completeness, rolling baselines, and incident context close to the data.</p></div>
+          <div><FileSearch size={20} /><span>02</span><h2>Follow the evidence</h2><p>Every observation points back to a pipeline record or log instead of presenting an unsupported answer.</p></div>
+          <div><ShieldCheck size={20} /><span>03</span><h2>Confirm carefully</h2><p>Rules and an optional LLM suggest what to inspect; a human remains responsible for confirmation and action.</p></div>
+        </section>
+      </main>
+
+      <footer className="public-footer"><span>Follow the evidence. Investigate faster. Confirm carefully.</span><span>ExaThon India 2026</span></footer>
+    </div>
+  );
+}
+
+function DemoAccess({ onEnter }) {
+  const [email, setEmail] = useState("");
+
+  return (
+    <div className="access-shell">
+      <a className="access-brand" href="#/home"><Brand /></a>
+      <main className="access-card">
+        <div className="access-icon"><LockKeyhole size={22} /></div>
+        <div className="eyebrow">JUDGE DEMO ACCESS</div>
+        <h1>Enter the investigation workspace</h1>
+        <p>Use any valid email address to create a temporary session in this browser.</p>
+        <form onSubmit={(event) => { event.preventDefault(); onEnter(); }}>
+          <label htmlFor="demo-email">Email address</label>
+          <input id="demo-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="judge@example.com" required autoFocus />
+          <button className="primary-button access-button" type="submit">Continue to workspace <ArrowRight size={16} /></button>
+        </form>
+        <div className="demo-disclosure"><ShieldCheck size={15} /><span>Hackathon demo gate only—not production authentication. No password or personal data is stored.</span></div>
+        <button className="text-button" onClick={() => navigate("home")}>← Back to overview</button>
+      </main>
+    </div>
+  );
+}
+
+function Dashboard({ onExit }) {
   const [incidents, setIncidents] = useState([]);
   const [trend, setTrend] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -205,7 +328,7 @@ function App() {
           <div className="topbar-actions">
             <div className="live-indicator"><span /> SYSTEM {health === "connected" ? "OPERATIONAL" : health === "checking" ? "CHECKING" : "DEGRADED"}</div>
             <button className="icon-button" title="Refresh data" onClick={() => setRefreshKey((n) => n + 1)}><RefreshCw size={17} /></button>
-            <div className="top-avatar">A</div>
+            <button className="top-avatar" title="Exit demo workspace" aria-label="Exit demo workspace" onClick={onExit}>A</button>
           </div>
         </header>
 
