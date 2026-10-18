@@ -44,7 +44,7 @@ def classify_evidence(log_messages, missing_rows):
             "execution order.",
         )
 
-    # Check the specific log message before the general missing-row check.
+    # Prefer a specific early-termination signal over a generic row-count issue.
     if "ended before all expected rows were processed" in text:
         return (
             "early_termination",
@@ -72,6 +72,7 @@ def classify_evidence(log_messages, missing_rows):
 
 
 def investigate_pipeline(run_id: int):
+    """Gather pipeline metadata and logs to build an evidence-based investigation."""
     rows = get_failed_pipelines()
 
     incident = next(
@@ -200,25 +201,30 @@ def assess_root_causes(incident):
     ]
 
     for keywords, cause, next_action in rules:
-        matched = any(
-            keyword in evidence_text
-            for keyword in keywords
-        )
-
-        if matched:
+        if any(keyword in evidence_text for keyword in keywords):
             candidates.append({
                 "cause": cause,
                 "status": "supported_observation",
                 "next_action": next_action,
             })
 
+    expected_rows = incident.get("expected_rows")
+    actual_rows = incident.get("actual_rows")
+
+    # Only add the generic candidate when numeric counts are available,
+    # actually differ, and a more specific row-count explanation did not match.
     if (
-        "expected " in evidence_text
-        and " but received " in evidence_text
+        expected_rows is not None
+        and actual_rows is not None
+        and int(expected_rows) != int(actual_rows)
     ):
+        specific_row_count_causes = {
+            "The source delivered fewer rows than expected",
+            "Processing ended before all expected rows were processed",
+        }
+
         if not any(
-            candidate["cause"]
-            == "The source delivered fewer rows than expected"
+            candidate["cause"] in specific_row_count_causes
             for candidate in candidates
         ):
             candidates.append({

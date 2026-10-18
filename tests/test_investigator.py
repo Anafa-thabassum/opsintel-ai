@@ -147,3 +147,31 @@ def test_missing_rows_without_early_termination_are_incomplete_data():
     assert "not confirmed" in hypothesis
     assert recommended_action
 
+def test_equal_row_counts_do_not_add_row_count_candidate():
+    from app.investigator import assess_root_causes
+
+    incident = {
+        "expected_rows": 500,
+        "actual_rows": 500,
+        "evidence": [
+            {"observation": "Pipeline status is FAILED"},
+            {
+                "observation": "Expected 500 rows, but received 500"
+            },
+            {
+                "observation": (
+                    "[ERROR] Pipeline execution exceeded "
+                    "the 30 minute time limit"
+                )
+            },
+        ],
+    }
+
+    result = assess_root_causes(incident)
+
+    causes = [item["cause"] for item in result["candidates"]]
+
+    assert "Pipeline execution exceeded a time limit" in causes
+    assert "Expected and actual row counts differ" not in causes
+    assert result["confirmed_root_cause"] is None
+
