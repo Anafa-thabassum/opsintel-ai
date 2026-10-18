@@ -10,17 +10,19 @@ queryable and reproducible.
 
 ## Is this really AI?
 
-The current prototype uses a transparent rule-based classifier. “AI-assisted”
-describes the investigation workflow, not a claim that an LLM is integrated.
-This was deliberate: a hackathon prototype should expose why it suggested a
-candidate and should abstain when evidence is insufficient.
+The core classifier and candidate generation are transparent, deterministic
+rules. An optional LLM then summarizes only the retrieved evidence and lists
+evidence gaps. The model does not create the source observations, confirm a
+root cause, or execute a repair.
 
 ## How do you prevent hallucinations?
 
-The system separates observations, candidates, and confirmation. Evidence is
-quoted from Exasol records, candidate causes are labelled as unconfirmed, and
-the confirmed root cause remains null. Unknown evidence is allowed to remain
-unclassified.
+The system separates observations, candidates, the optional narrative, and
+human confirmation. The model receives a bounded JSON payload, treats record
+content as untrusted data, and returns a strict summary schema. The confirmed
+root cause remains null even when the summary is generated. Unknown evidence
+can remain unclassified, and model failure leaves the deterministic result
+available.
 
 ## What happens when the rules are wrong?
 
@@ -42,9 +44,9 @@ contracts, audited retention, monitored classification quality, an external
 holdout evaluation, a human impact study, and deployment-specific TLS and
 secret management.
 
-## Why not add an LLM now?
+## What does the LLM add?
 
-An LLM would add novelty but not evidence. The current version proves the core
-workflow and safety boundary first. A future model could summarize long logs or
-rank candidates, but it should remain grounded in retrieved records and should
-not bypass confirmation.
+It makes a multi-record investigation easier to read by producing a concise
+narrative and identifying missing evidence. It does not add evidence, change
+the deterministic category, rank candidates, or bypass human confirmation.
+The integration is optional and disabled by default.

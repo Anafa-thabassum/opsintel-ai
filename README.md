@@ -20,8 +20,9 @@ Working hackathon prototype:
 - Exasol-backed incident retrieval and historical analytics.
 - FastAPI investigation API.
 - Rule-based, evidence-first failure classification.
+- Optional LLM narrative summary grounded in the retrieved evidence.
 - React dashboard with real Exasol telemetry.
-- 45 automated tests and a 16-case synthetic challenge set.
+- 49 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -51,7 +52,8 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 4. Classifies timeout, schema, dependency, early-termination, incomplete-data,
    and unknown evidence.
 5. Produces candidate causes and safe investigation steps.
-6. Presents every observation and its database source in the dashboard.
+6. Optionally summarizes the same evidence and lists what is still missing.
+7. Presents every observation and its database source in the dashboard.
 
 ## Why Exasol
 
@@ -77,21 +79,25 @@ flowchart LR
     C --> D[FastAPI]
     D --> E[Evidence classifier]
     E --> F[Candidate causes]
-    F --> G[React dashboard]
-    G --> H[Engineer verifies evidence]
+    F --> G[Optional LLM summary]
+    F --> H[React dashboard]
+    G --> H
+    H --> I[Engineer verifies evidence]
 ```
 
 ## AI scope and safety
 
-The current classifier is deterministic and rule-based. “AI-assisted” describes
-the investigation workflow and planned evolution; it is not a claim that a
-trained model or external LLM is currently integrated.
+The classifier and candidate generation remain deterministic and rule-based.
+An optional OpenAI Responses API step can turn the retrieved evidence and
+candidates into a concise narrative and a list of evidence gaps. It is disabled
+by default and does not replace or modify the deterministic assessment.
 
 The deliberate safety boundary is:
 
 - database observations are facts;
 - explanations are candidates;
 - confirmed root cause remains `null` until independently verified;
+- the LLM output is labelled as a narrative summary only;
 - no automated repair is executed.
 
 ## Technology
@@ -101,6 +107,7 @@ The deliberate safety boundary is:
 | Analytical database | Exasol Personal |
 | Backend | Python and FastAPI |
 | Database client | PyExasol |
+| Optional summarizer | OpenAI Responses API through HTTPX |
 | Frontend | React, Vite and Recharts |
 | Verification | pytest, Oxlint and GitHub Actions |
 
@@ -168,6 +175,18 @@ export EXASOL_TLS_VERIFY="false"
 Do not commit passwords or secret files. Certificate verification should be
 enabled for non-local deployments.
 
+To enable the optional LLM summary, set these backend-only variables:
+
+```bash
+export OPSINTEL_LLM_ENABLED="true"
+export OPENAI_API_KEY="your-openai-api-key"
+export OPSINTEL_LLM_MODEL="gpt-6-luna"
+```
+
+If the feature is disabled or the model request fails, the endpoint still
+returns the complete deterministic investigation. Never expose the API key to
+the React frontend.
+
 ### 3. Initialize the synthetic demo database
 
 ```bash
@@ -221,7 +240,7 @@ For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
 | GET | `/health` | Lightweight database connectivity check |
 | GET | `/incidents` | Failed or incomplete runs |
 | GET | `/analytics/trend` | Exasol-calculated daily telemetry |
-| GET | `/investigate/{run_id}` | Evidence, classification and candidates |
+| GET | `/investigate/{run_id}` | Evidence, candidates and optional LLM summary |
 | GET | `/investigate/{run_id}/root-causes` | Candidate causes only |
 
 ## Verification
@@ -244,7 +263,7 @@ npm run build
 
 Latest verified results:
 
-- **45/45 automated tests passed**.
+- **49/49 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **1,000,000 synthetic Exasol runs queried in 473.209 ms median and
   503.947 ms p95** across seven local repetitions.

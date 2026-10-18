@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **45 passed**
+- Automated tests: **49 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -72,6 +72,7 @@ single-user measurement, not a production throughput or concurrency claim.
 - The scenarios and logs are synthetic.
 - The challenge set is small and is stored with the implementation.
 - Keyword rules do not establish semantic understanding.
+- The optional LLM summary has not received an independent quality evaluation.
 - Candidate explanations remain unconfirmed until an engineer verifies them.
 - Concurrency, production infrastructure, and real orchestrator integrations
   have not been evaluated.

@@ -87,14 +87,21 @@ def test_incidents_returns_503_when_database_fails():
 
 
 def test_investigation_includes_root_cause_candidates():
-    with patch(
-        "app.main.investigate_pipeline",
-        return_value=SAMPLE_INCIDENT.copy(),
+    with (
+        patch(
+            "app.main.investigate_pipeline",
+            return_value=SAMPLE_INCIDENT.copy(),
+        ),
+        patch(
+            "app.main.summarize_investigation",
+            return_value={"status": "disabled"},
+        ),
     ):
         response = client.get("/investigate/1")
 
     assert response.status_code == 200
     assert "root_causes" in response.json()
+    assert response.json()["llm_summary"]["status"] == "disabled"
 
 
 def test_analytics_trend_endpoint():

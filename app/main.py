@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import check_connection, get_failed_pipelines, get_pipeline_trend
 from app.investigator import assess_root_causes, investigate_pipeline
+from app.llm import summarize_investigation
 
 app = FastAPI(
     title="OpsIntel AI",
@@ -108,7 +109,9 @@ def investigate(run_id: int):
                 detail="Incident not found",
             )
 
-        result["root_causes"] = assess_root_causes(result)
+        root_causes = assess_root_causes(result)
+        result["root_causes"] = root_causes
+        result["llm_summary"] = summarize_investigation(result, root_causes)
         return result
 
     except HTTPException:

@@ -1,10 +1,10 @@
 Overnight data pipelines fail, and the engineer on call has to assemble run metadata, row counts, and scattered logs before they can form a useful hypothesis. OpsIntel AI turns that evidence into a traceable investigation.
 
-The target user is a data engineer responsible for pipelines that the business depends on. Today, that engineer finds the failed run, compares counts, searches logs, and decides what to inspect next while dashboards remain stale.
+The target user is a data engineer responsible for pipelines that the business depends on. In a manual investigation, that engineer finds the failed run, compares counts, searches logs, and decides what to inspect next. OpsIntel is designed to reduce those context switches, but the planned human study will measure whether it actually improves investigation time and evidence selection.
 
 OpsIntel creates one evidence path. Pipeline runs and logs enter Exasol. Analytical features add historical context. The API classifies only the available evidence, proposes a candidate cause and a next action, and leaves confirmation to the engineer.
 
-This is the working dashboard. The connection indicator confirms that Exasol and the API are reachable. The incident trend is calculated from pipeline history in Exasol, not hardcoded. Four failed runs and one thousand two hundred and twenty missing rows are visible.
+This is the working dashboard. The connection indicator confirms that Exasol and the API are reachable. The incident trend is calculated from pipeline history in Exasol, not hardcoded. The current local query returns five runs, four incidents, fifty-six percent average completeness, and sixteen percent average rolling failure rate for the latest day. Four failed runs and one thousand two hundred and twenty missing rows are visible.
 
 Selecting daily sales import starts the investigation. The run expected one hundred rows but received eighty. Five observations show the pipeline status, the row-count discrepancy, and each supporting log record. Every observation names its Exasol source.
 
@@ -16,4 +16,4 @@ The included benchmark imported one million deterministic synthetic runs in thre
 
 The repository has forty-five passing automated tests, a sixteen-case regression challenge set, continuous integration, an independent holdout runner, an MIT licence, and a documented human-impact study protocol. These results are reproducible, but they are not presented as production accuracy or concurrency claims.
 
-OpsIntel AI shortens the path from the pipeline failed to here is the evidence and the next safe check. Follow the evidence. Investigate faster. Confirm carefully.
+OpsIntel AI puts the failed run, its source-backed evidence, candidate explanations, and the next safe check in one investigation view. Follow the evidence. Investigate faster. Confirm carefully.

@@ -16,13 +16,20 @@ export EXASOL_USER="sys"
 export EXASOL_PASSWORD="your-password"
 export EXASOL_TLS_VERIFY="true"
 export CORS_ORIGINS="https://your-dashboard.example"
+# Optional evidence-grounded narrative summary:
+export OPSINTEL_LLM_ENABLED="true"
+export OPENAI_API_KEY="your-openai-api-key"
+export OPSINTEL_LLM_MODEL="gpt-6-luna"
 python -m scripts.setup_database
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 Place the API behind an HTTPS reverse proxy and restrict network access to the
 Exasol endpoint. The development default disables certificate verification for
-local Exasol Personal only.
+local Exasol Personal only. Keep `OPENAI_API_KEY` in the backend secret store,
+allow outbound HTTPS access to `api.openai.com`, and review operational log
+content before sending it to an external model. Leave `OPSINTEL_LLM_ENABLED`
+unset or `false` for deterministic-only deployments.
 
 ### Frontend
 
@@ -41,5 +48,6 @@ deployment.
 ## Production gap
 
 The prototype does not include authentication, authorization, orchestrator
-connectors, multi-user concurrency validation, or audited data retention. Add
-those controls before using real operational data.
+connectors, multi-user concurrency validation, audited data retention, or an
+independent evaluation of LLM summary quality. Add those controls before using
+real operational data.

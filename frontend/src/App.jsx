@@ -431,6 +431,30 @@ function App() {
                     </div>
                   )}
 
+                  {investigation.llm_summary?.status === "generated" && (
+                    <div className="llm-summary-card">
+                      <div className="llm-summary-heading">
+                        <span><Sparkles size={14} /> Optional LLM summary</span>
+                        <span>NARRATIVE ONLY</span>
+                      </div>
+                      <p>{investigation.llm_summary.summary}</p>
+                      {investigation.llm_summary.evidence_gaps?.length > 0 && (
+                        <div className="llm-evidence-gaps">
+                          <strong>Evidence still needed</strong>
+                          <ul>
+                            {investigation.llm_summary.evidence_gaps.map((gap, index) => (
+                              <li key={`${gap}-${index}`}>{gap}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="llm-safety-note">
+                        <ShieldCheck size={14} />
+                        <span>{investigation.llm_summary.safety_note}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="limitations-note"><ShieldCheck size={15} /><span>{investigation.limitations?.[0] || "Recommendations are diagnostic suggestions, not executed repairs."}</span></div>
                 </>
               ) : (
