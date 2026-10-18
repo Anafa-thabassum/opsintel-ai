@@ -14,8 +14,9 @@
 - [ ] Public repository updated with the final local changes.
 - [x] Clean README with setup, usage, deployment, and run guide.
 - [x] Reproducible tests and evaluation report.
-- [ ] Final pitch deck PDF or PPT uploaded and linked.
-- [ ] Demo video uploaded, accessible without permission, and under three minutes.
+- [x] Final pitch deck PDF and PPTX generated in `submission/`.
+- [x] Demo video generated at 2:34 in `submission/`.
+- [ ] Upload the deck and video and add publicly accessible links.
 
 ## Before the deadline
 

@@ -1,0 +1,19 @@
+Overnight data pipelines fail, and the engineer on call has to assemble run metadata, row counts, and scattered logs before they can form a useful hypothesis. OpsIntel AI turns that evidence into a traceable investigation.
+
+The target user is a data engineer responsible for pipelines that the business depends on. Today, that engineer finds the failed run, compares counts, searches logs, and decides what to inspect next while dashboards remain stale.
+
+OpsIntel creates one evidence path. Pipeline runs and logs enter Exasol. Analytical features add historical context. The API classifies only the available evidence, proposes a candidate cause and a next action, and leaves confirmation to the engineer.
+
+This is the working dashboard. The connection indicator confirms that Exasol and the API are reachable. The incident trend is calculated from pipeline history in Exasol, not hardcoded. Four failed runs and one thousand two hundred and twenty missing rows are visible.
+
+Selecting daily sales import starts the investigation. The run expected one hundred rows but received eighty. Five observations show the pipeline status, the row-count discrepancy, and each supporting log record. Every observation names its Exasol source.
+
+The system reports early termination with low confidence. It recommends inspecting the logs around termination and offers evidence-supported candidates. The confirmed root cause remains empty, and no automated repair runs. This boundary prevents a suggestion from becoming an unsupported fact.
+
+Exasol is the analytical core. Window functions calculate previous run status, rolling row-count baselines, rolling failure rate, completeness, and daily incident telemetry before the API responds.
+
+The included benchmark imported one million deterministic synthetic runs in three point zero two five seconds. Across seven analytical queries, median latency was four hundred and seventy-three milliseconds and p ninety-five was five hundred and four milliseconds on this local single-user environment.
+
+The repository has forty-five passing automated tests, a sixteen-case regression challenge set, continuous integration, an independent holdout runner, an MIT licence, and a documented human-impact study protocol. These results are reproducible, but they are not presented as production accuracy or concurrency claims.
+
+OpsIntel AI shortens the path from the pipeline failed to here is the evidence and the next safe check. Follow the evidence. Investigate faster. Confirm carefully.

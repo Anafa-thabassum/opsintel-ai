@@ -39,9 +39,9 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 | Public source repository | Available |
 | MIT licence | Available |
 | Reproducible run guide | Available below |
-| Pitch deck | Available in `submission/` |
+| Pitch deck PDF and PPTX | Available in `submission/` |
 | Three-minute demo script | Available in `docs/demo-script.md` |
-| Recorded demo video | Record and upload before submission |
+| Recorded demo video | Available in `submission/` (2:34) |
 
 ## What the prototype does
 
@@ -116,6 +116,7 @@ opsintel-ai/
 │   ├── evaluation.md            # Reproducible evaluation summary
 │   └── exasol-benchmark.json    # Raw local scale measurement
 ├── scripts/setup_database.py    # Demo database setup command
+├── submission/                  # Pitch deck, PDF and demo video
 ├── sql/
 │   ├── schema.sql
 │   ├── seed.sql
@@ -210,6 +211,8 @@ npm run dev
 
 Open `http://127.0.0.1:5173`.
 
+For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
+
 ## API
 
 | Method | Endpoint | Purpose |
@@ -253,6 +256,9 @@ and a local, single-user analytical benchmark; they are not production
 accuracy, throughput, or concurrency claims. See
 [`reports/evaluation.md`](reports/evaluation.md) and the raw
 [`benchmark result`](reports/exasol-benchmark.json).
+
+The [`judging evidence map`](reports/judging-scorecard.md) links each published
+criterion to a concrete file or demo moment.
 
 An external evaluator can create unseen cases from
 [`evaluation/holdout_template.csv`](evaluation/holdout_template.csv) and run
