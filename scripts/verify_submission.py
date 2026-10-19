@@ -142,10 +142,10 @@ def verify(allow_dirty=False):
         ("evaluation report", evaluation),
         ("deck", deck_text),
     ):
-        if "75" not in content:
-            failures.append(f"Current 75-test result is missing from the {artifact_name}")
-    if "seventy-five" not in narration:
-        failures.append("Narration does not state the current seventy-five-test result")
+        if "80" not in content:
+            failures.append(f"Current 80-test result is missing from the {artifact_name}")
+    if "eighty" not in narration:
+        failures.append("Narration does not state the current eighty-test result")
 
     return {
         "commit": _git("rev-parse", "HEAD").strip(),

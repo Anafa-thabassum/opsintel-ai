@@ -274,6 +274,16 @@ function Dashboard({ onExit }) {
   );
 
   const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
+  const formatComparisonValue = (difference, value) => (
+    difference.unit === "percentage points"
+      ? `${Number(value).toFixed(1)}%`
+      : formatNumber(value)
+  );
+  const formatDelta = (difference) => {
+    const value = Number(difference.delta || 0);
+    const suffix = difference.unit === "percentage points" ? " pp" : "";
+    return `${value > 0 ? "+" : ""}${value.toLocaleString("en-IN")}${suffix}`;
+  };
 
   return (
     <div className="app-shell">
@@ -563,6 +573,47 @@ function Dashboard({ onExit }) {
                     <div className="assessment-tags"><span><ShieldCheck size={13} /> Cause unconfirmed</span><span><FileSearch size={13} /> {investigation.evidence?.length || 0} evidence items</span></div>
                   </div>
 
+                  {investigation.comparison?.status === "available" && (
+                    <section className="run-diff-panel" aria-label="Failed run compared with last successful run">
+                      <div className="run-diff-heading">
+                        <div>
+                          <span>WHAT CHANGED</span>
+                          <h3>Failed run vs last successful run</h3>
+                        </div>
+                        <span>RUN-{String(investigation.run_id).padStart(4, "0")} vs RUN-{String(investigation.comparison.last_successful_run.run_id).padStart(4, "0")}</span>
+                      </div>
+                      <div className="run-diff-table">
+                        <div className="run-diff-row run-diff-labels"><span>Metric</span><span>Failed</span><span>Last success</span><span>Change</span></div>
+                        {investigation.comparison.differences.map((difference) => (
+                          <div className="run-diff-row" key={difference.metric}>
+                            <strong>{difference.metric}</strong>
+                            <span>{formatComparisonValue(difference, difference.current)}</span>
+                            <span>{formatComparisonValue(difference, difference.baseline)}</span>
+                            <em className={Number(difference.delta) < 0 ? "negative" : Number(difference.delta) > 0 ? "positive" : ""}>{formatDelta(difference)}</em>
+                            {difference.supports?.length > 0 && (
+                              <small>Supports: {difference.supports.join("; ")}</small>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="baseline-summary">
+                        Historical successful baseline: {formatNumber(investigation.comparison.historical_baseline.average_actual_rows)} average rows, {Number(investigation.comparison.historical_baseline.average_completeness_pct || 0).toFixed(1)}% completeness across {investigation.comparison.historical_baseline.successful_runs} runs.
+                      </div>
+                      {investigation.comparison.new_or_changed_logs.length > 0 && (
+                        <div className="log-diff-list">
+                          <strong>New or changed in the failed run</strong>
+                          {investigation.comparison.new_or_changed_logs.map((log) => (
+                            <div key={log.log_id}><span>{log.level}</span><p>{log.message}</p><em>{log.reference}</em></div>
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  )}
+
+                  {investigation.comparison?.status === "unavailable" && (
+                    <div className="comparison-unavailable"><GitBranch size={14} />{investigation.comparison.message}</div>
+                  )}
+
                   <div className="decision-grid" aria-label="Evidence, candidates, and verification state">
                     <section className="decision-column observation-column">
                       <div className="decision-column-heading"><Database size={14} /><span>01 · Observed facts</span><em>{investigation.evidence?.length || 0}</em></div>
@@ -587,9 +638,19 @@ function Dashboard({ onExit }) {
                       {(rootCauses?.candidates || []).map((candidate, index) => (
                         <div className="candidate-card" key={`${candidate.cause}-${index}`}>
                           <div className="candidate-number">{String(index + 1).padStart(2, "0")}</div>
-                          <div className="candidate-copy"><strong>{candidate.cause}</strong><p>{candidate.next_action}</p><span>CANDIDATE · {candidate.status.replaceAll("_", " ")}</span></div>
+                          <div className="candidate-copy">
+                            <strong>{candidate.cause}</strong>
+                            <p>{candidate.next_action}</p>
+                            <span>CANDIDATE · {candidate.status.replaceAll("_", " ")}</span>
+                            <div className="candidate-evidence">
+                              {(candidate.supporting_evidence || []).map((item) => <em key={item.reference}>{item.reference}</em>)}
+                            </div>
+                          </div>
                         </div>
                       ))}
+                      {rootCauses?.resolution_status === "unresolved" && (
+                        <div className="unresolved-state"><AlertTriangle size={15} /><strong>Unresolved</strong><p>{rootCauses.unresolved_reason}</p><span>No candidate was created from insufficient evidence.</span></div>
+                      )}
                       {!rootCauses && <div className="column-placeholder">Candidate retrieval pending.</div>}
                     </section>
 

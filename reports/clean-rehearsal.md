@@ -9,7 +9,7 @@ initialized as a fresh Git snapshot, and exercised using the documented commands
 
 | Check | Result |
 |---|---:|
-| Backend tests | 75/75 passed |
+| Backend tests | 80/80 passed |
 | Synthetic regression cases | 16/16 passed |
 | Frontend lint | Passed |
 | Frontend production build | Passed |
@@ -25,7 +25,7 @@ the repository's already-installed Python and Node dependencies while executing
 the copied source. This is a clean-source rehearsal, **not** a full independent
 clean-machine installation result.
 
-The existing MP4 also predates the final dependency-cascade, 75-test, and
+The existing MP4 also predates the final dependency-cascade, 80-test, and
 claim-level LLM changes. Its duration is valid, but it must be re-recorded from
 `submission/video-narration.txt` before submission.
 

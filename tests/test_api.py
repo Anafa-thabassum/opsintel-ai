@@ -104,6 +104,27 @@ def test_investigation_includes_root_cause_candidates():
     assert response.json()["llm_summary"]["status"] == "disabled"
 
 
+def test_investigation_remains_complete_when_llm_is_unavailable():
+    with (
+        patch(
+            "app.main.investigate_pipeline",
+            return_value=SAMPLE_INCIDENT.copy(),
+        ),
+        patch(
+            "app.main.summarize_investigation",
+            return_value={"status": "unavailable", "summary": None},
+        ),
+    ):
+        response = client.get("/investigate/1")
+
+    data = response.json()
+    assert response.status_code == 200
+    assert data["category"] == "incomplete_data"
+    assert data["recommended_action"]
+    assert data["root_causes"]["confirmed_root_cause"] is None
+    assert data["llm_summary"]["status"] == "unavailable"
+
+
 def test_analytics_trend_endpoint():
     rows = [("2026-10-18", 4, 2, 82.5, 25.0)]
 

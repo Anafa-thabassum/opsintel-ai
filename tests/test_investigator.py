@@ -97,9 +97,14 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
         def fetchall(self):
             return self.rows
 
+        def fetchone(self):
+            return self.rows[0] if self.rows else None
+
     class FakeConnection:
         def execute(self, query, parameters=None):
             if "SELECT DISTINCT" in query:
+                if parameters == {"run_id": 101}:
+                    return FakeResult([])
                 assert parameters == {"run_id": 1}
                 return FakeResult([
                     (
@@ -114,6 +119,14 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
                         "Source returned only 80 rows",
                         "2026-10-18 01:01:00",
                     ),
+                ])
+
+            if "ROUND(AVG(ACTUAL_ROWS)" in query:
+                return FakeResult([(100, 100, 4)])
+
+            if "RUN_STATUS = 'SUCCESS'" in query:
+                return FakeResult([
+                    (101, 100, 100, "2026-10-17 01:00:00"),
                 ])
 
             assert "PIPELINE_NAME =" in query
@@ -143,6 +156,14 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
     assert [item["log_id"] for item in log_evidence] == [1, 2]
     assert log_evidence[0]["timestamp"] == "2026-10-18 01:00:00"
     assert result["history"][1]["status"] == "SUCCESS"
+    assert result["comparison"]["last_successful_run"]["run_id"] == 101
+    assert result["comparison"]["current_run"]["completeness_pct"] == 80
+    assert result["comparison"]["historical_baseline"] == {
+        "average_actual_rows": 100.0,
+        "average_completeness_pct": 100.0,
+        "successful_runs": 4,
+    }
+    assert len(result["comparison"]["new_or_changed_logs"]) == 2
 
 def test_early_termination_takes_priority_over_missing_rows():
     from app.investigator import classify_evidence
@@ -238,4 +259,89 @@ def test_conflicting_completion_logs_are_not_forced_to_a_cause():
 
     assert category == "conflicting_evidence"
     assert "cannot be resolved" in hypothesis
+
+
+def test_candidates_include_traceable_supporting_evidence():
+    incident = {
+        "expected_rows": 100,
+        "actual_rows": 80,
+        "category": "early_termination",
+        "evidence": [
+            {
+                "type": "row_count",
+                "observation": "Expected 100 rows, but received 80",
+                "source": "OPSINTEL.PIPELINE_RUNS",
+                "run_id": 1,
+            },
+            {
+                "observation": (
+                    "Import ended before all expected rows were processed"
+                ),
+                "source": "OPSINTEL.PIPELINE_LOGS",
+                "log_id": 3,
+            },
+        ],
+    }
+
+    result = assess_root_causes(incident)
+
+    assert result["resolution_status"] == "candidates_only"
+    assert result["candidates"]
+    assert all(item["supporting_evidence"] for item in result["candidates"])
+    references = {
+        support["reference"]
+        for candidate in result["candidates"]
+        for support in candidate["supporting_evidence"]
+    }
+    assert "OPSINTEL.PIPELINE_RUNS · RUN-1" in references
+    assert "OPSINTEL.PIPELINE_LOGS · LOG-3" in references
+
+
+def test_insufficient_evidence_is_explicitly_unresolved():
+    result = assess_root_causes({
+        "category": "unclassified",
+        "expected_rows": 300,
+        "actual_rows": 300,
+        "evidence": [
+            {
+                "observation": "Remote endpoint emitted opaque code ZX-41",
+                "source": "OPSINTEL.PIPELINE_LOGS",
+                "log_id": 13,
+            }
+        ],
+    })
+
+    assert result["candidates"] == []
+    assert result["resolution_status"] == "unresolved"
+    assert "does not support" in result["unresolved_reason"]
+
+
+def test_run_differences_link_to_supported_candidates():
+    from app.investigator import attach_comparison_support
+
+    incident = {
+        "comparison": {
+            "status": "available",
+            "differences": [{
+                "metric": "New or changed log messages",
+                "delta": 1,
+                "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-3"],
+            }],
+        }
+    }
+    assessment = {
+        "candidates": [{
+            "cause": "Processing ended early",
+            "supporting_evidence": [{
+                "reference": "OPSINTEL.PIPELINE_LOGS · LOG-3",
+                "observation": "Import ended before completion",
+            }],
+        }]
+    }
+
+    attach_comparison_support(incident, assessment)
+
+    assert incident["comparison"]["differences"][0]["supports"] == [
+        "Processing ended early"
+    ]
 

@@ -9,7 +9,11 @@ from app.db import (
     get_failure_cascades,
     get_pipeline_trend,
 )
-from app.investigator import assess_root_causes, investigate_pipeline
+from app.investigator import (
+    assess_root_causes,
+    attach_comparison_support,
+    investigate_pipeline,
+)
 from app.llm import summarize_investigation
 
 app = FastAPI(
@@ -145,6 +149,7 @@ def investigate(run_id: int):
             )
 
         root_causes = assess_root_causes(result)
+        attach_comparison_support(result, root_causes)
         result["root_causes"] = root_causes
         result["llm_summary"] = summarize_investigation(result, root_causes)
         return result

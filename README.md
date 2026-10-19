@@ -22,7 +22,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 75 automated tests and a 16-case synthetic challenge set.
+- 80 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -49,11 +49,14 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 1. Retrieves failed or incomplete pipeline runs from Exasol.
 2. Calculates historical completeness and rolling failure features in Exasol.
 3. Collects the selected run's log evidence.
-4. Classifies timeout, schema, dependency, early-termination, incomplete-data,
+4. Compares the failed run with its last successful run and historical
+   completeness baseline, including new or changed log messages.
+5. Classifies timeout, schema, dependency, early-termination, incomplete-data,
    delayed, duplicate, conflicting, and unknown evidence.
-5. Produces candidate causes and safe investigation steps.
-6. Optionally summarizes the same evidence and lists what is still missing.
-7. Presents timestamps, source references, recent run history, and a safe
+6. Produces candidate causes with exact supporting evidence references and safe
+   investigation steps; insufficient evidence returns an explicit unresolved result.
+7. Optionally summarizes the same evidence and lists what is still missing.
+8. Presents timestamps, source references, recent run history, and a safe
    engineer-review state in the dashboard.
 
 ## Why Exasol
@@ -203,7 +206,9 @@ export OPSINTEL_LLM_MODEL="gpt-6-luna"
 
 If the feature is disabled or the model request fails, the endpoint still
 returns the complete deterministic investigation. Never expose the API key to
-the React frontend.
+the React frontend. The documented model identifier is present in the official
+OpenAI model catalog, but you must test that your own API account can access it
+before enabling the feature in a public demo.
 
 ### 3. Initialize the synthetic demo database
 
@@ -234,6 +239,16 @@ curl http://127.0.0.1:8000/analytics/trend
 ```
 
 Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
+
+To reset the synthetic schema and exercise the complete database/API path in
+one command:
+
+```bash
+make smoke
+```
+
+The smoke test checks database health, seeded incidents, one evidence-grounded
+investigation, the failed-run comparison, and the Exasol dependency cascade.
 
 ### 5. Start the dashboard
 
@@ -293,7 +308,7 @@ npm run build
 
 Latest verified results:
 
-- **75/75 automated tests passed**.
+- **80/80 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -306,6 +321,8 @@ Latest verified results:
 With Exasol Personal running, `make exasol-proof` prints the actual historical
 completeness rows and timestamped log evidence used by the demo investigation.
 Keep that output with the benchmark record when preparing the judging demo.
+`make smoke` additionally verifies the fresh synthetic database, FastAPI
+endpoints, failed-run comparison, safe unconfirmed state, and cascade response.
 
 These results demonstrate reproducibility on the included synthetic scenarios
 and a local, single-user analytical benchmark; they are not production

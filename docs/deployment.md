@@ -45,6 +45,17 @@ Serve `frontend/dist/` from any static host. Verify `/health`, `/incidents`,
 `/analytics/trend`, `/analytics/cascades`, and one `/investigate/{run_id}`
 request before sharing the deployment.
 
+For a local end-to-end database/API rehearsal, reset the synthetic schema and
+run the smoke check from the repository root:
+
+```bash
+make database
+make smoke
+```
+
+The smoke check verifies database health, seeded incidents, a failed-run versus
+last-success comparison, the safe unconfirmed state, and the dependency cascade.
+
 The frontend demo-access screen is a presentation boundary only. It stores a
 temporary flag in browser session storage and must not be treated as an
 authentication or authorization control.
@@ -62,5 +73,5 @@ data.
 
 From the repository root, `make setup` installs Python and frontend
 dependencies, and `make verify` runs the complete automated verification. The
-Exasol service must already be reachable before `make database` or
-`make benchmark` is used.
+Exasol service must already be reachable before `make database`, `make smoke`,
+or `make benchmark` is used.

@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **75 passed**
+- Automated tests: **80 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -23,7 +23,48 @@ make verify
 The automated suite also covers delayed runs, excess or duplicate rows,
 conflicting completion signals, timestamped history retrieval, malformed LLM
 output, unavailable model calls, claim-level evidence references, dependency
-cascade responses, and Airflow/dbt JSON normalization.
+cascade responses, and Airflow/dbt JSON normalization. It also verifies an
+explicit unresolved result when evidence is insufficient and a complete
+deterministic response when the optional model is disabled, times out, or is
+unavailable.
+
+## Failed-run comparison and evidence tracing
+
+The investigation endpoint now compares the selected failure with the most
+recent successful run for the same pipeline. It reports expected rows, actual
+rows, completeness change, a historical successful-run baseline, and log
+messages that appear only in the failed run. Each non-zero difference lists the
+candidate explanations that share its cited evidence references.
+
+A live Exasol smoke run on 19 October 2026 reset and reseeded the synthetic
+schema, then investigated run `1` against successful run `113`. The API returned
+an actual-row change of `-20`, a completeness change of `-20` percentage points,
+three new or changed log messages, and a four-run successful baseline. The
+confirmed root cause remained unset.
+
+Run the same database/API check with:
+
+```bash
+make smoke
+```
+
+The deterministic classifier covers missing evidence, conflicting completion
+signals, duplicate-row patterns, and unknown logs. Candidate explanations carry
+exact run or log references. An unfamiliar log without sufficient support
+returns `resolution_status: unresolved` and a diagnostic next step instead of
+an invented cause.
+
+## Optional LLM validation
+
+The configured `gpt-6-luna` identifier is documented in the official OpenAI
+model catalog. The automated tests cover disabled configuration, missing
+credentials, connection errors, timeouts, malformed structured output, unknown
+evidence references, and ungrounded individual claims. In every failure mode,
+the complete deterministic investigation remains available.
+
+No live account-entitlement test was performed in the recorded environment
+because `OPENAI_API_KEY` was not set. Model access must therefore be checked
+with the API account used for the final demonstration.
 
 ## Synthetic challenge set
 

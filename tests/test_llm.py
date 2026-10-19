@@ -123,6 +123,19 @@ def test_llm_failure_falls_back_without_breaking_investigation(monkeypatch):
     assert "cannot confirm" in result["safety_note"]
 
 
+def test_llm_timeout_falls_back_without_breaking_investigation(monkeypatch):
+    monkeypatch.setenv("OPSINTEL_LLM_ENABLED", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    client = Mock()
+    client.post.side_effect = httpx.TimeoutException("timed out")
+
+    result = summarize_investigation(INCIDENT, ROOT_CAUSES, client)
+
+    assert result["status"] == "unavailable"
+    assert result["summary"] is None
+    assert result["claims"] == []
+
+
 def test_llm_rejects_unknown_evidence_references(monkeypatch):
     monkeypatch.setenv("OPSINTEL_LLM_ENABLED", "true")
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")

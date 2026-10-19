@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup database impact-study-database api frontend verify evaluate holdout independent-holdout impact exasol-proof benchmark benchmark-compare submission-check
+.PHONY: setup database smoke impact-study-database api frontend verify evaluate holdout independent-holdout impact exasol-proof benchmark benchmark-compare submission-check
 
 setup:
 	python3 -m venv .venv
@@ -9,6 +9,9 @@ setup:
 
 database:
 	$(PYTHON) -m scripts.setup_database --reset
+
+smoke: database
+	$(PYTHON) -m scripts.smoke_exasol
 
 impact-study-database: database
 	$(PYTHON) -m scripts.setup_impact_study

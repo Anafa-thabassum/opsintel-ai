@@ -2,6 +2,116 @@
 from app.db import get_failed_pipelines, get_connection
 
 
+def _evidence_reference(item, index=0):
+    if item.get("log_id") is not None:
+        return f"{item.get('source', 'UNKNOWN')} · LOG-{item['log_id']}"
+    if item.get("run_id") is not None:
+        return f"{item.get('source', 'UNKNOWN')} · RUN-{item['run_id']}"
+    return f"EVIDENCE-{index + 1}"
+
+
+def _completeness(expected_rows, actual_rows):
+    return 100.0 if int(expected_rows) == 0 else round(
+        int(actual_rows) * 100.0 / int(expected_rows), 2
+    )
+
+
+def _build_run_comparison(run_id, expected_rows, actual_rows, log_rows,
+                          last_success, baseline, baseline_logs):
+    """Compare the failed run with its latest successful baseline."""
+    if last_success is None:
+        return {
+            "status": "unavailable",
+            "message": "No earlier successful run is available for comparison.",
+            "differences": [],
+            "new_or_changed_logs": [],
+        }
+
+    baseline_run_id = int(last_success[0])
+    baseline_expected = int(last_success[1])
+    baseline_actual = int(last_success[2])
+    current_reference = f"OPSINTEL.PIPELINE_RUNS · RUN-{int(run_id)}"
+    baseline_reference = f"OPSINTEL.PIPELINE_RUNS · RUN-{baseline_run_id}"
+    baseline_messages = {str(row[2]).strip().lower() for row in baseline_logs}
+    new_logs = [
+        {
+            "log_id": int(row[0]),
+            "level": str(row[1]),
+            "message": str(row[2]),
+            "timestamp": str(row[3]),
+            "reference": f"OPSINTEL.PIPELINE_LOGS · LOG-{int(row[0])}",
+        }
+        for row in log_rows
+        if str(row[2]).strip().lower() not in baseline_messages
+    ]
+    current_completeness = _completeness(expected_rows, actual_rows)
+    baseline_completeness = _completeness(baseline_expected, baseline_actual)
+
+    differences = [
+        {
+            "metric": "Expected rows",
+            "current": int(expected_rows),
+            "baseline": baseline_expected,
+            "delta": int(expected_rows) - baseline_expected,
+            "unit": "rows",
+            "evidence_refs": [current_reference, baseline_reference],
+        },
+        {
+            "metric": "Actual rows",
+            "current": int(actual_rows),
+            "baseline": baseline_actual,
+            "delta": int(actual_rows) - baseline_actual,
+            "unit": "rows",
+            "evidence_refs": [current_reference, baseline_reference],
+        },
+        {
+            "metric": "Completeness",
+            "current": current_completeness,
+            "baseline": baseline_completeness,
+            "delta": round(current_completeness - baseline_completeness, 2),
+            "unit": "percentage points",
+            "evidence_refs": [current_reference, baseline_reference],
+        },
+    ]
+    if new_logs:
+        differences.append({
+            "metric": "New or changed log messages",
+            "current": len(new_logs),
+            "baseline": len(baseline_logs),
+            "delta": len(new_logs),
+            "unit": "messages",
+            "evidence_refs": [item["reference"] for item in new_logs],
+        })
+
+    return {
+        "status": "available",
+        "current_run": {
+            "run_id": int(run_id),
+            "expected_rows": int(expected_rows),
+            "actual_rows": int(actual_rows),
+            "completeness_pct": current_completeness,
+        },
+        "last_successful_run": {
+            "run_id": baseline_run_id,
+            "expected_rows": baseline_expected,
+            "actual_rows": baseline_actual,
+            "completeness_pct": baseline_completeness,
+            "run_time": str(last_success[3]),
+        },
+        "historical_baseline": {
+            "average_actual_rows": (
+                float(baseline[0]) if baseline and baseline[0] is not None else None
+            ),
+            "average_completeness_pct": (
+                float(baseline[1]) if baseline and baseline[1] is not None else None
+            ),
+            "successful_runs": int(baseline[2]) if baseline else 0,
+        },
+        "differences": differences,
+        "new_or_changed_logs": new_logs,
+    }
+
+
 def classify_evidence(
     log_messages,
     missing_rows,
@@ -200,6 +310,62 @@ def investigate_pipeline(run_id: int):
             """,
             {"pipeline_name": incident[1]},
         ).fetchall()
+
+        last_success = connection.execute(
+            """
+            SELECT
+                RUN_ID,
+                EXPECTED_ROWS,
+                ACTUAL_ROWS,
+                TO_CHAR(RUN_TIME, 'YYYY-MM-DD HH24:MI:SS')
+            FROM OPSINTEL.PIPELINE_RUNS
+            WHERE PIPELINE_NAME = {pipeline_name}
+              AND RUN_STATUS = 'SUCCESS'
+              AND RUN_TIME < (
+                  SELECT RUN_TIME
+                  FROM OPSINTEL.PIPELINE_RUNS
+                  WHERE RUN_ID = {run_id!d}
+              )
+            ORDER BY RUN_TIME DESC, RUN_ID DESC
+            LIMIT 1
+            """,
+            {"pipeline_name": incident[1], "run_id": int(run_id)},
+        ).fetchone()
+
+        baseline = connection.execute(
+            """
+            SELECT
+                ROUND(AVG(ACTUAL_ROWS), 2),
+                ROUND(AVG(
+                    CASE
+                        WHEN EXPECTED_ROWS = 0 THEN 100
+                        ELSE ACTUAL_ROWS * 100.0 / EXPECTED_ROWS
+                    END
+                ), 2),
+                COUNT(*)
+            FROM OPSINTEL.PIPELINE_RUNS
+            WHERE PIPELINE_NAME = {pipeline_name}
+              AND RUN_STATUS = 'SUCCESS'
+              AND RUN_TIME < (
+                  SELECT RUN_TIME
+                  FROM OPSINTEL.PIPELINE_RUNS
+                  WHERE RUN_ID = {run_id!d}
+              )
+            """,
+            {"pipeline_name": incident[1], "run_id": int(run_id)},
+        ).fetchone()
+
+        baseline_logs = []
+        if last_success is not None:
+            baseline_logs = connection.execute(
+                """
+                SELECT DISTINCT LOG_ID, LOG_LEVEL, LOG_MESSAGE, LOG_TIME
+                FROM OPSINTEL.PIPELINE_LOGS
+                WHERE RUN_ID = {run_id!d}
+                ORDER BY LOG_ID
+                """,
+                {"run_id": int(last_success[0])},
+            ).fetchall()
     finally:
         connection.close()
 
@@ -246,6 +412,15 @@ def investigate_pipeline(run_id: int):
         expected_rows,
         actual_rows,
     )
+    comparison = _build_run_comparison(
+        run_id,
+        expected_rows,
+        actual_rows,
+        log_rows,
+        last_success,
+        baseline,
+        baseline_logs,
+    )
 
     return {
         "run_id": int(run_id),
@@ -270,6 +445,7 @@ def investigate_pipeline(run_id: int):
             }
             for row in history_rows
         ],
+        "comparison": comparison,
         "limitations": [
             "The sample logs are synthetic test data.",
             "The underlying cause has not been confirmed.",
@@ -286,29 +462,64 @@ def assess_root_causes(incident):
         for item in evidence
     )
 
+    def matching_evidence(keywords):
+        return [
+            {
+                "reference": _evidence_reference(item, index),
+                "observation": item.get("observation", ""),
+            }
+            for index, item in enumerate(evidence)
+            if any(
+                keyword in item.get("observation", "").lower()
+                for keyword in keywords
+            )
+        ]
+
+    def add_candidate(cause, next_action, support):
+        if support:
+            candidates.append({
+                "cause": cause,
+                "status": "supported_observation",
+                "next_action": next_action,
+                "supporting_evidence": support,
+            })
+
     candidates = []
+    row_count_support = [
+        {
+            "reference": _evidence_reference(item, index),
+            "observation": item.get("observation", ""),
+        }
+        for index, item in enumerate(evidence)
+        if item.get("type") == "row_count"
+    ]
 
     category_candidate = {
         "conflicting_evidence": (
             "The log trail contains conflicting completion signals",
             "Verify the final orchestrator state and inspect the latest log.",
+            (
+                "completed successfully", "finished successfully",
+                "all expected rows processed", "error", "failed", "aborted",
+            ),
         ),
         "delayed_run": (
             "The pipeline may have started later than scheduled",
             "Compare scheduled and actual start times and upstream timing.",
+            ("started late", "schedule delay", "delayed by", "missed sla"),
         ),
         "duplicate_data": (
             "The run may contain duplicate or excess rows",
             "Compare source and target keys and inspect retry behavior.",
+            ("duplicate rows", "duplicate records", "more rows than expected"),
         ),
     }.get(incident.get("category"))
 
     if category_candidate:
-        candidates.append({
-            "cause": category_candidate[0],
-            "status": "supported_observation",
-            "next_action": category_candidate[1],
-        })
+        support = matching_evidence(category_candidate[2])
+        if incident.get("category") == "duplicate_data" and not support:
+            support = row_count_support
+        add_candidate(category_candidate[0], category_candidate[1], support)
 
     rules = [
         (
@@ -351,11 +562,7 @@ def assess_root_causes(incident):
 
     for keywords, cause, next_action in rules:
         if any(keyword in evidence_text for keyword in keywords):
-            candidates.append({
-                "cause": cause,
-                "status": "supported_observation",
-                "next_action": next_action,
-            })
+            add_candidate(cause, next_action, matching_evidence(keywords))
 
     expected_rows = incident.get("expected_rows")
     actual_rows = incident.get("actual_rows")
@@ -381,6 +588,22 @@ def assess_root_causes(incident):
         for candidate in candidates
     )
 
+    if (
+        expected_rows is not None
+        and actual_rows is not None
+        and int(expected_rows) != int(actual_rows)
+    ):
+        for candidate in candidates:
+            if candidate["cause"] in specific_row_count_causes:
+                existing = {
+                    item["reference"]
+                    for item in candidate["supporting_evidence"]
+                }
+                candidate["supporting_evidence"].extend(
+                    item for item in row_count_support
+                    if item["reference"] not in existing
+                )
+
     # Add a generic row-count candidate only when no specific explanation
     # is already supported by the available evidence.
     if (
@@ -389,20 +612,40 @@ def assess_root_causes(incident):
         and int(expected_rows) != int(actual_rows)
         and not has_specific_candidate
     ):
-        candidates.append({
-            "cause": "Expected and actual row counts differ",
-            "status": "supported_observation",
-            "next_action": (
-                "Compare source and target counts and inspect "
-                "rejected or filtered rows."
-            ),
-        })
+        add_candidate(
+            "Expected and actual row counts differ",
+            "Compare source and target counts and inspect rejected or filtered rows.",
+            row_count_support,
+        )
 
     return {
         "candidates": candidates,
         "confirmed_root_cause": None,
+        "resolution_status": "candidates_only" if candidates else "unresolved",
+        "unresolved_reason": (
+            None if candidates else
+            "The available evidence does not support a candidate explanation."
+        ),
         "note": (
             "Candidates describe evidence-supported possibilities, "
             "not confirmed explanations of the underlying failure."
         ),
     }
+
+
+def attach_comparison_support(incident, assessment):
+    """Link run differences to candidates through shared evidence references."""
+    comparison = incident.get("comparison")
+    if not comparison or comparison.get("status") != "available":
+        return
+
+    for difference in comparison.get("differences", []):
+        difference_refs = set(difference.get("evidence_refs", []))
+        difference["supports"] = [] if not difference.get("delta") else [
+            candidate["cause"]
+            for candidate in assessment.get("candidates", [])
+            if difference_refs & {
+                item["reference"]
+                for item in candidate.get("supporting_evidence", [])
+            }
+        ]

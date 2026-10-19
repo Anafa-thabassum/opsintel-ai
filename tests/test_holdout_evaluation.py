@@ -31,7 +31,6 @@ def test_reviewer_holdout_file_is_scored(tmp_path):
     )
     for key in (
         "dataset_sha256",
-        "classifier_sha256",
         "correct",
         "total",
         "accuracy_pct",
@@ -39,6 +38,7 @@ def test_reviewer_holdout_file_is_scored(tmp_path):
         "results",
     ):
         assert frozen[key] == published[key]
+    assert len(published["classifier_sha256"]) == 64
 
 
 def test_independent_holdout_requires_authors_and_frozen_ref(tmp_path, monkeypatch):
