@@ -79,7 +79,7 @@ Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
 
 ## 2:25-2:50 - Evidence and close
 
-> The project has 115 automated tests, a 16-case regression challenge set, and
+> The project has 126 automated tests, a 16-case regression challenge set, and
 > a separate versioned project-authored holdout with 27 of 27 correct
 > classifications
 > across all nine outcomes. The project team authored that holdout. The external

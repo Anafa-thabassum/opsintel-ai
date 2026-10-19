@@ -84,15 +84,20 @@ evaluator supplies and runs those unseen cases.
 ## Human impact study
 
 The impact study is separate from both classifier evaluations. Its ten cases,
-hidden key, counterbalanced P1–P4 assignment, and prefilled results worksheet are
-versioned here. Follow `reports/impact-study-protocol.md`; load the cases with
-`make impact-study-database` and summarize all 40 completed trials with:
+hidden key, counterbalanced P1–P4 assignment, and blank 40-trial measurement
+worksheet are versioned here. Each trial has a stable ID and records duration,
+diagnosis, evidence references, confidence, unsafe confirmation, LLM state, and
+any protocol deviation. Follow `reports/impact-study-protocol.md`; if a separate
+database setup is approved, load the cases with `make impact-study-database`.
+Summarize a copied results worksheet with:
 
 ```bash
 make impact FILE=/absolute/path/to/completed-impact-results.csv \
   RECRUITMENT=/absolute/path/to/recruitment.md
 ```
 
-No time-saving result is claimed until real participants complete the frozen
-assignment. Keep the key hidden during administration and run with the optional
-LLM disabled so this study measures the deterministic OpsIntel workflow.
+The command also accepts the blank template and produces a pending result with
+explicit missing trials and no comparison. No time-saving result is claimed
+until real participants complete every frozen assignment and the comparison
+checks pass. Keep the key hidden and keep `OPSINTEL_LLM_ENABLED=false` so this
+study measures only the deterministic OpsIntel workflow.

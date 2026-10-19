@@ -22,7 +22,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 115 automated tests and a 16-case synthetic challenge set.
+- 126 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -308,7 +308,7 @@ npm run build
 
 Latest verified results:
 
-- **115/115 automated tests passed**.
+- **126/126 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -371,10 +371,12 @@ make impact \
   RECRUITMENT=/path/to/recruitment.md
 ```
 
-The summarizer verifies the frozen assignment, derives outcomes from the hidden
-case key, records hashes and the tested commit, and reports time, agreement,
-traceability, confidence, and unsafe-certainty events. The current result count
-is **0/40 trials from 0/4 participants**.
+The summarizer verifies stable trial IDs and the frozen assignment, derives
+outcomes from the hidden case key, enforces that the LLM stayed disabled, and
+records hashes, missing data, protocol deviations, and the tested commit. It
+does not calculate a condition comparison until every assigned trial and a
+balanced manual baseline are present. The current result count is **0/40 trials
+from 0/4 participants**, so no time-saving or causal-impact claim is made.
 
 ## Comparative database benchmark
 

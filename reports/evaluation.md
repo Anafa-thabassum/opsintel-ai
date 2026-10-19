@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **115 passed**
+- Automated tests: **126 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -199,7 +199,9 @@ layer: window analytics, live evidence retrieval, and a hierarchical
 - The optional LLM summary has not received an independent quality evaluation.
 - Human-impact study status: **0/40 assigned trials recorded across 0/4
   participants**. The repository includes ten frozen cases, a counterbalanced
-  assignment, a recording template, and a deterministic result summarizer.
+  assignment, a blank measurement template, and a deterministic result
+  summarizer that withholds comparison metrics until the full balanced baseline
+  is present. No time-saving or causal-impact result is claimed.
 - Candidate explanations remain unconfirmed until an engineer verifies them.
 - Concurrency and production infrastructure have not been evaluated. Airflow
   and dbt exported-JSON adapter samples are included, but they are not live

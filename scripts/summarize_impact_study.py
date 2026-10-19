@@ -24,16 +24,25 @@ DIAGNOSES = {
 }
 BOOLEAN_VALUES = {"true": True, "false": False}
 FIELDS = {
+    "trial_id",
     "participant_id",
     "trial_order",
     "case_id",
     "condition",
     "seconds",
     "diagnosis",
-    "source_reference",
+    "evidence_references",
     "confidence",
     "unsafe_confirmation",
+    "llm_enabled",
+    "protocol_deviation",
 }
+MEASUREMENT_FIELDS = (
+    "seconds",
+    "diagnosis",
+    "confidence",
+    "unsafe_confirmation",
+)
 
 
 def _sha256(path):
@@ -45,6 +54,16 @@ def _boolean(value, field, row_number):
     if normalized not in BOOLEAN_VALUES:
         raise ValueError(f"Row {row_number}: {field} must be true or false")
     return BOOLEAN_VALUES[normalized]
+
+
+def _positive_integer(value, field, row_number):
+    try:
+        number = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Row {row_number}: {field} must be a positive integer") from exc
+    if number <= 0:
+        raise ValueError(f"Row {row_number}: {field} must be a positive integer")
+    return number
 
 
 def _read_csv(path, required_fields):
@@ -73,20 +92,37 @@ def _load_key(path):
 def _load_assignment(path):
     rows = _read_csv(
         path,
-        {"participant_id", "trial_order", "case_id", "condition"},
+        {"trial_id", "participant_id", "trial_order", "case_id", "condition"},
     )
     assignments = {}
+    participant_cases = set()
+    participant_orders = set()
     for row_number, row in enumerate(rows, start=2):
+        trial_id = row["trial_id"].strip()
         participant_id = row["participant_id"].strip()
         case_id = row["case_id"].strip()
         condition = row["condition"].strip().lower()
-        trial_order = int(row["trial_order"])
-        key = (participant_id, case_id)
-        if not participant_id or not case_id or key in assignments:
-            raise ValueError(f"Row {row_number}: blank or duplicate assignment")
-        if condition not in CONDITIONS or trial_order <= 0:
-            raise ValueError(f"Row {row_number}: invalid assignment")
-        assignments[key] = (trial_order, condition)
+        trial_order = _positive_integer(row["trial_order"], "trial_order", row_number)
+        participant_case = (participant_id, case_id)
+        participant_order = (participant_id, trial_order)
+        if not trial_id or not participant_id or not case_id:
+            raise ValueError(f"Row {row_number}: blank assignment identifier")
+        if (
+            trial_id in assignments
+            or participant_case in participant_cases
+            or participant_order in participant_orders
+        ):
+            raise ValueError(f"Row {row_number}: duplicate assignment")
+        if condition not in CONDITIONS:
+            raise ValueError(f"Row {row_number}: invalid assignment condition")
+        assignments[trial_id] = {
+            "participant_id": participant_id,
+            "trial_order": trial_order,
+            "case_id": case_id,
+            "condition": condition,
+        }
+        participant_cases.add(participant_case)
+        participant_orders.add(participant_order)
     return assignments
 
 
@@ -108,6 +144,41 @@ def _git_state():
     return commit, not bool(dirty)
 
 
+def _condition_summary(rows, publish_metrics):
+    outcomes = {
+        outcome: sum(row["outcome"] == outcome for row in rows)
+        for outcome in ("correct", "incorrect", "unresolved")
+    }
+    summary = {
+        "observations": len(rows),
+        "outcomes": outcomes,
+        "median_seconds": None,
+        "correct_pct": None,
+        "evidence_traceability_pct": None,
+        "median_confidence": None,
+        "unsafe_confirmation_events": None,
+    }
+    if not publish_metrics:
+        return summary
+    summary.update({
+        "median_seconds": round(
+            statistics.median(row["seconds"] for row in rows), 2
+        ),
+        "correct_pct": round(outcomes["correct"] * 100 / len(rows), 1),
+        "evidence_traceability_pct": round(
+            sum(row["cited_source"] for row in rows) * 100 / len(rows),
+            1,
+        ),
+        "median_confidence": statistics.median(
+            row["confidence"] for row in rows
+        ),
+        "unsafe_confirmation_events": sum(
+            row["unsafe_confirmation"] for row in rows
+        ),
+    })
+    return summary
+
+
 def summarize(
     path,
     key_path=DEFAULT_KEY,
@@ -115,54 +186,73 @@ def summarize(
     recruitment_path=None,
 ):
     rows = _read_csv(path, FIELDS)
-    if not rows:
-        raise ValueError("Impact study file contains no observations")
-
     expected_by_case = _load_key(key_path)
     assignments = _load_assignment(assignment_path)
-    parsed = []
-    observed = set()
+    completed = []
+    pending = []
+    incomplete = []
+    deviations = []
+    observed_trial_ids = set()
 
     for row_number, row in enumerate(rows, start=2):
-        participant_id = row["participant_id"].strip()
-        case_id = row["case_id"].strip()
-        condition = row["condition"].strip().lower()
-        diagnosis = row["diagnosis"].strip().lower()
-        key = (participant_id, case_id)
+        trial_id = row["trial_id"].strip()
+        if not trial_id or trial_id in observed_trial_ids:
+            raise ValueError(f"Row {row_number}: blank or duplicate trial_id")
+        if trial_id not in assignments:
+            raise ValueError(f"Row {row_number}: unexpected trial_id")
+        observed_trial_ids.add(trial_id)
 
-        required_values = ("seconds", "diagnosis", "confidence", "unsafe_confirmation")
-        if any(not row[field].strip() for field in required_values):
-            raise ValueError(f"Row {row_number}: incomplete measurement")
-        if not participant_id or case_id not in expected_by_case:
-            raise ValueError(f"Row {row_number}: unknown participant or case")
-        if key not in assignments or key in observed:
-            raise ValueError(f"Row {row_number}: unexpected or duplicate trial")
-        if condition not in CONDITIONS or diagnosis not in DIAGNOSES:
-            raise ValueError(f"Row {row_number}: invalid condition or diagnosis")
-
-        trial_order = int(row["trial_order"])
-        if (trial_order, condition) != assignments[key]:
+        assignment = assignments[trial_id]
+        trial_order = _positive_integer(row["trial_order"], "trial_order", row_number)
+        actual_assignment = {
+            "participant_id": row["participant_id"].strip(),
+            "trial_order": trial_order,
+            "case_id": row["case_id"].strip(),
+            "condition": row["condition"].strip().lower(),
+        }
+        if actual_assignment != assignment:
             raise ValueError(f"Row {row_number}: trial does not match assignment")
+        if assignment["case_id"] not in expected_by_case:
+            raise ValueError(f"Row {row_number}: case is absent from the ground-truth key")
+        if _boolean(row["llm_enabled"], "llm_enabled", row_number):
+            raise ValueError(f"Row {row_number}: LLM must remain disabled")
 
-        seconds = float(row["seconds"])
-        confidence = int(row["confidence"])
-        if seconds <= 0 or not 1 <= confidence <= 5:
-            raise ValueError(f"Row {row_number}: invalid seconds or confidence")
+        measurement_values = [row[field].strip() for field in MEASUREMENT_FIELDS]
+        deviation = row["protocol_deviation"].strip()
+        if deviation:
+            deviations.append({"trial_id": trial_id, "description": deviation})
+        if not any(measurement_values):
+            pending.append(trial_id)
+            continue
+        if not all(measurement_values):
+            incomplete.append(trial_id)
+            continue
 
-        expected = expected_by_case[case_id]
+        diagnosis = row["diagnosis"].strip().lower()
+        if diagnosis not in DIAGNOSES:
+            raise ValueError(f"Row {row_number}: invalid diagnosis")
+        try:
+            seconds = float(row["seconds"])
+        except ValueError as exc:
+            raise ValueError(f"Row {row_number}: seconds must be a positive number") from exc
+        if not 0 < seconds < float("inf"):
+            raise ValueError(f"Row {row_number}: seconds must be a positive number")
+        confidence = _positive_integer(row["confidence"], "confidence", row_number)
+        if confidence > 5:
+            raise ValueError(f"Row {row_number}: confidence must be between 1 and 5")
+
+        expected = expected_by_case[assignment["case_id"]]
         outcome = (
             "unresolved"
             if diagnosis == "unresolved"
             else "correct" if diagnosis == expected else "incorrect"
         )
-        observed.add(key)
-        parsed.append({
-            "participant_id": participant_id,
-            "case_id": case_id,
-            "condition": condition,
+        completed.append({
+            "trial_id": trial_id,
+            **assignment,
             "seconds": seconds,
             "outcome": outcome,
-            "cited_source": bool(row["source_reference"].strip()),
+            "cited_source": bool(row["evidence_references"].strip()),
             "confidence": confidence,
             "unsafe_confirmation": _boolean(
                 row["unsafe_confirmation"],
@@ -171,68 +261,21 @@ def summarize(
             ),
         })
 
-    missing_trials = set(assignments) - observed
-    if missing_trials:
-        raise ValueError(f"Impact study is incomplete: {len(missing_trials)} trials missing")
-
-    condition_results = {}
-    for condition in sorted(CONDITIONS):
-        observations = [row for row in parsed if row["condition"] == condition]
-        outcome_counts = {
-            outcome: sum(row["outcome"] == outcome for row in observations)
-            for outcome in ("correct", "incorrect", "unresolved")
-        }
-        condition_results[condition] = {
-            "observations": len(observations),
-            "median_seconds": round(statistics.median(
-                row["seconds"] for row in observations
-            ), 2),
-            "outcomes": outcome_counts,
-            "correct_pct": round(
-                outcome_counts["correct"] * 100 / len(observations), 1
-            ),
-            "evidence_traceability_pct": round(
-                sum(row["cited_source"] for row in observations)
-                * 100 / len(observations),
-                1,
-            ),
-            "median_confidence": statistics.median(
-                row["confidence"] for row in observations
-            ),
-            "unsafe_confirmation_events": sum(
-                row["unsafe_confirmation"] for row in observations
-            ),
-        }
-
-    manual = condition_results["manual"]
-    opsintel = condition_results["opsintel"]
-    time_saved_pct = round(
-        (manual["median_seconds"] - opsintel["median_seconds"])
-        * 100 / manual["median_seconds"],
-        1,
-    )
-    thresholds = {
-        "median_time_saved_at_least_30_pct": time_saved_pct >= 30,
-        "diagnosis_agreement_not_lower": (
-            opsintel["correct_pct"] >= manual["correct_pct"]
-        ),
-        "assisted_traceability_at_least_90_pct": (
-            opsintel["evidence_traceability_pct"] >= 90
-        ),
-        "zero_assisted_unsafe_confirmations": (
-            opsintel["unsafe_confirmation_events"] == 0
-        ),
-    }
-
+    pending.extend(sorted(set(assignments) - observed_trial_ids))
     participant_counts = Counter(
-        (row["participant_id"], row["condition"]) for row in parsed
+        (item["participant_id"], item["condition"])
+        for item in assignments.values()
     )
-    case_counts = Counter((row["case_id"], row["condition"]) for row in parsed)
-    participants = {row["participant_id"] for row in parsed}
-    cases = {row["case_id"] for row in parsed}
+    case_counts = Counter(
+        (item["case_id"], item["condition"])
+        for item in assignments.values()
+    )
+    participants = {item["participant_id"] for item in assignments.values()}
+    cases = {item["case_id"] for item in assignments.values()}
     design_checks = {
-        "at_least_four_participants": len(participants) >= 4,
-        "ten_cases": len(cases) == 10,
+        "exactly_four_participants": len(participants) == 4,
+        "exactly_ten_cases": len(cases) == 10,
+        "exactly_forty_trials": len(assignments) == 40,
         "balanced_conditions_per_participant": all(
             participant_counts[(participant, "manual")]
             == participant_counts[(participant, "opsintel")]
@@ -244,86 +287,200 @@ def summarize(
             for case_id in cases
         ),
     }
-    commit, clean = _git_state()
+    complete_dataset = (
+        len(completed) == len(assignments) and not pending and not incomplete
+    )
+    completed_conditions = Counter(row["condition"] for row in completed)
+    comparison_ready = (
+        complete_dataset
+        and completed_conditions["manual"] > 0
+        and completed_conditions["opsintel"] > 0
+        and design_checks["balanced_conditions_per_participant"]
+        and design_checks["balanced_conditions_per_case"]
+    )
+    condition_results = {
+        condition: _condition_summary(
+            [row for row in completed if row["condition"] == condition],
+            comparison_ready,
+        )
+        for condition in sorted(CONDITIONS)
+    }
 
+    time_difference_pct = None
+    agreement_delta = None
+    thresholds = None
+    if comparison_ready:
+        manual = condition_results["manual"]
+        opsintel = condition_results["opsintel"]
+        time_difference_pct = round(
+            (manual["median_seconds"] - opsintel["median_seconds"])
+            * 100 / manual["median_seconds"],
+            1,
+        )
+        agreement_delta = round(
+            opsintel["correct_pct"] - manual["correct_pct"], 1
+        )
+        thresholds = {
+            "median_time_difference_at_least_30_pct": time_difference_pct >= 30,
+            "diagnosis_agreement_not_lower": agreement_delta >= 0,
+            "assisted_traceability_at_least_90_pct": (
+                opsintel["evidence_traceability_pct"] >= 90
+            ),
+            "zero_assisted_unsafe_confirmations": (
+                opsintel["unsafe_confirmation_events"] == 0
+            ),
+        }
+
+    study_target_met = (
+        comparison_ready
+        and all(design_checks.values())
+        and all(thresholds.values())
+    )
+    commit, clean = _git_state()
     recruitment = (
         Path(recruitment_path).read_text().strip()
         if recruitment_path
-        else "Not recorded in this test run."
+        else "Not recorded."
     )
     return {
         "evaluation": "counterbalanced-human-impact-study-v1",
+        "analysis_version": "2.0",
+        "study_status": "complete" if complete_dataset else "pending",
+        "llm_enabled": False,
         "results_file": Path(path).name,
         "results_sha256": _sha256(path),
         "case_key_sha256": _sha256(key_path),
         "assignment_sha256": _sha256(assignment_path),
         "tested_commit": commit,
         "working_tree_clean": clean,
-        "participants": len(participants),
-        "cases": len(cases),
-        "observations": len(parsed),
+        "planned_participants": len(participants),
+        "planned_cases": len(cases),
+        "assigned_trials": len(assignments),
+        "completed_trials": len(completed),
+        "pending_trials": len(pending),
+        "pending_trial_ids": sorted(pending),
+        "incomplete_trials": len(incomplete),
+        "incomplete_trial_ids": sorted(incomplete),
+        "protocol_deviations": deviations,
         "conditions": condition_results,
-        "median_time_saved_pct": time_saved_pct,
-        "diagnosis_agreement_delta_points": round(
-            opsintel["correct_pct"] - manual["correct_pct"], 1
-        ),
+        "comparison_ready": comparison_ready,
+        "median_time_difference_pct": time_difference_pct,
+        "diagnosis_agreement_delta_points": agreement_delta,
         "design_checks": design_checks,
         "success_thresholds": thresholds,
-        "study_target_met": all(design_checks.values()) and all(thresholds.values()),
+        "study_target_met": study_target_met,
+        "time_saving_claim_supported": study_target_met,
+        "causal_impact_claim_supported": False,
         "recruitment_description": recruitment,
-        "scope": (
-            "Small counterbalanced study on synthetic incidents; results do "
-            "not establish production impact or independent LLM quality."
-        ),
+        "limitations": [
+            "Synthetic incidents and a four-person convenience sample cannot establish production or causal impact.",
+            "No comparison or time-saving claim is generated until all assigned trials are complete.",
+            "The optional LLM is disabled; this study evaluates the deterministic workflow only.",
+        ],
     }
+
+
+def _display(value, suffix=""):
+    return "Pending" if value is None else f"{value}{suffix}"
 
 
 def render_markdown(report):
     manual = report["conditions"]["manual"]
     opsintel = report["conditions"]["opsintel"]
-    verdict = (
-        "The predefined study target was met."
-        if report["study_target_met"]
-        else "The predefined study target was not met; report the mixed or negative result without a time-saving claim."
-    )
-    return "\n".join([
+    if report["study_status"] == "pending":
+        interpretation = (
+            "The study has not been completed. No measured improvement or "
+            "time-saving claim is available."
+        )
+    elif report["study_target_met"]:
+        interpretation = (
+            "The predefined target was met in this small synthetic study. "
+            "This is an observed association, not a causal or production claim."
+        )
+    else:
+        interpretation = (
+            "The predefined target was not met. Report the mixed or negative "
+            "result without a time-saving claim."
+        )
+    lines = [
         "# OpsIntel AI impact study v1",
         "",
-        f"- Participants: **{report['participants']}**",
-        f"- Cases: **{report['cases']}**",
-        f"- Completed observations: **{report['observations']}**",
+        f"- Status: **{report['study_status']}**",
+        f"- Planned participants: **{report['planned_participants']}**",
+        f"- Assigned trials: **{report['assigned_trials']}**",
+        f"- Completed trials: **{report['completed_trials']}**",
+        f"- Pending trials: **{report['pending_trials']}**",
+        f"- Incomplete trials: **{report['incomplete_trials']}**",
+        "- Optional LLM: **disabled**",
         f"- Tested commit: `{report['tested_commit']}`",
         "",
         "## Results",
         "",
         "| Metric | Manual | OpsIntel AI |",
         "|---|---:|---:|",
-        f"| Median diagnosis time | {manual['median_seconds']} s | {opsintel['median_seconds']} s |",
-        f"| Correct diagnoses | {manual['correct_pct']}% | {opsintel['correct_pct']}% |",
-        f"| Evidence traceability | {manual['evidence_traceability_pct']}% | {opsintel['evidence_traceability_pct']}% |",
-        f"| Unsafe confirmation events | {manual['unsafe_confirmation_events']} | {opsintel['unsafe_confirmation_events']} |",
+        f"| Completed observations | {manual['observations']} | {opsintel['observations']} |",
+        f"| Median diagnosis time | {_display(manual['median_seconds'], ' s')} | {_display(opsintel['median_seconds'], ' s')} |",
+        f"| Correct diagnoses | {_display(manual['correct_pct'], '%')} | {_display(opsintel['correct_pct'], '%')} |",
+        f"| Evidence traceability | {_display(manual['evidence_traceability_pct'], '%')} | {_display(opsintel['evidence_traceability_pct'], '%')} |",
+        f"| Unsafe confirmation events | {_display(manual['unsafe_confirmation_events'])} | {_display(opsintel['unsafe_confirmation_events'])} |",
         "",
-        f"Median time difference: **{report['median_time_saved_pct']}%** (positive means OpsIntel was faster).",
-        f"Diagnosis agreement difference: **{report['diagnosis_agreement_delta_points']} percentage points**.",
-        "",
-        "## Interpretation",
-        "",
-        verdict,
+    ]
+    if report["comparison_ready"]:
+        lines.extend([
+            "Median time difference: "
+            f"**{report['median_time_difference_pct']}%** "
+            "(descriptive; positive means the assisted median was lower).",
+            "Diagnosis agreement difference: "
+            f"**{report['diagnosis_agreement_delta_points']} percentage points**.",
+            "",
+        ])
+    else:
+        lines.extend([
+            "No condition comparison was generated because the complete "
+            "assigned baseline is not available.",
+            "",
+        ])
+    lines.extend(["## Interpretation", "", interpretation, ""])
+    if report["pending_trial_ids"] or report["incomplete_trial_ids"]:
+        lines.extend([
+            "## Missing data",
+            "",
+            "Pending: " + (
+                ", ".join(f"`{item}`" for item in report["pending_trial_ids"])
+                or "None"
+            ),
+            "",
+            "Incomplete: " + (
+                ", ".join(f"`{item}`" for item in report["incomplete_trial_ids"])
+                or "None"
+            ),
+            "",
+        ])
+    lines.extend(["## Protocol deviations", ""])
+    if report["protocol_deviations"]:
+        lines.extend(
+            f"- `{item['trial_id']}`: {item['description']}"
+            for item in report["protocol_deviations"]
+        )
+    else:
+        lines.append("None recorded.")
+    lines.extend([
         "",
         "## Recruitment",
         "",
         report["recruitment_description"],
         "",
-        "## Scope",
+        "## Limitations",
         "",
-        report["scope"],
+        *[f"- {item}" for item in report["limitations"]],
         "",
     ])
+    return "\n".join(lines)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("path", help="Completed impact-study CSV")
+    parser.add_argument("path", help="Impact-study CSV; incomplete files report pending")
     parser.add_argument("--key", default=DEFAULT_KEY)
     parser.add_argument("--assignment", default=DEFAULT_ASSIGNMENT)
     parser.add_argument("--output", type=Path)
