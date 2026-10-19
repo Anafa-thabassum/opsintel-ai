@@ -28,9 +28,10 @@ Select `daily_sales_import`.
 > its source table, and the next action tells the engineer what to inspect.
 
 Point to expected versus actual rows, each evidence item, the candidate cause,
-and the “not confirmed” boundary. Scroll to `Confirmed root cause: None` and
-the safe-recommendations notice. State explicitly that OpsIntel did not run a
-repair or modify the pipeline.
+the recent-run timeline, and the “not confirmed” boundary. Point out that each
+log observation includes its source ID and timestamp. Scroll to `Confirmed root
+cause: None`, set the engineer review to “Evidence reviewed”, and explain that
+this demo-session state does not confirm a cause or run a repair.
 
 If the optional summarizer is enabled, point to its narrative and evidence-gap
 list. Explain that it summarizes the displayed records but cannot change the
@@ -55,7 +56,7 @@ Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
 
 ## 2:20-2:45 - Evidence and close
 
-> The project has 49 automated tests, a 16-case regression challenge set,
+> The project has 57 automated tests, a 16-case regression challenge set,
 > continuous integration, a public MIT licence, and a separate protocol for a
 > reviewer-controlled holdout test. OpsIntel puts the failed run, its evidence,
 > candidate explanations, and the next safe check in one investigation view.

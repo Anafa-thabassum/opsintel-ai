@@ -21,8 +21,8 @@ Working hackathon prototype:
 - FastAPI investigation API.
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
-- React dashboard with real Exasol telemetry.
-- 49 automated tests and a 16-case synthetic challenge set.
+- React landing page and dashboard with real Exasol telemetry.
+- 57 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -50,10 +50,11 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 2. Calculates historical completeness and rolling failure features in Exasol.
 3. Collects the selected run's log evidence.
 4. Classifies timeout, schema, dependency, early-termination, incomplete-data,
-   and unknown evidence.
+   delayed, duplicate, conflicting, and unknown evidence.
 5. Produces candidate causes and safe investigation steps.
 6. Optionally summarizes the same evidence and lists what is still missing.
-7. Presents every observation and its database source in the dashboard.
+7. Presents timestamps, source references, recent run history, and a safe
+   engineer-review state in the dashboard.
 
 ## Why Exasol
 
@@ -131,6 +132,7 @@ opsintel-ai/
 │       └── pipeline_health_features.sql
 ├── tests/
 ├── .env.example
+├── Makefile                     # One-command setup and verification
 ├── LICENSE
 ├── requirements.txt
 └── README.md
@@ -143,6 +145,12 @@ opsintel-ai/
 - Python 3.12 or newer. The current development environment uses Python 3.14.
 - Node.js 20 or newer.
 - Exasol Personal running locally or at an accessible endpoint.
+
+For a one-command dependency setup after cloning:
+
+```bash
+make setup
+```
 
 ### 1. Clone and install the backend
 
@@ -205,7 +213,7 @@ python -m scripts.setup_database --reset
 ### 4. Start the backend
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 Verify:
@@ -230,6 +238,10 @@ npm run dev
 
 Open `http://127.0.0.1:5173`.
 
+The landing page links to a judge-facing demo-access screen before the
+dashboard. This creates only a temporary browser session; it is intentionally
+labelled as a demo gate and is not production authentication.
+
 For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
 
 ## API
@@ -245,11 +257,18 @@ For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
 
 ## Verification
 
+Run the complete backend, regression, lint, and build verification:
+
+```bash
+make verify
+```
+
 Backend:
 
 ```bash
 python -m pytest -q
 python -m tests.run_evaluation
+python -m scripts.exasol_proof
 python -m scripts.benchmark_exasol
 ```
 
@@ -263,12 +282,16 @@ npm run build
 
 Latest verified results:
 
-- **49/49 automated tests passed**.
+- **57/57 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **1,000,000 synthetic Exasol runs queried in 473.209 ms median and
   503.947 ms p95** across seven local repetitions.
 - **Frontend lint passed with no warnings**.
 - **Frontend production build passed**.
+
+With Exasol Personal running, `make exasol-proof` prints the actual historical
+completeness rows and timestamped log evidence used by the demo investigation.
+Keep that output with the benchmark record when preparing the judging demo.
 
 These results demonstrate reproducibility on the included synthetic scenarios
 and a local, single-user analytical benchmark; they are not production
@@ -283,6 +306,18 @@ An external evaluator can create unseen cases from
 [`evaluation/holdout_template.csv`](evaluation/holdout_template.csv) and run
 them against a frozen commit with `python -m scripts.evaluate_holdout`. No
 independent score is claimed until that process is completed.
+
+For the human-impact study, copy
+[`evaluation/impact_template.csv`](evaluation/impact_template.csv), record
+manual and OpsIntel-assisted trials, then run:
+
+```bash
+make impact FILE=/path/to/impact-results.csv
+```
+
+The summarizer reports median time, correct/incorrect/unresolved outcomes,
+evidence traceability, and unsafe-certainty events. No productivity result is
+claimed until real participant data is recorded.
 
 ## Demonstration scenarios
 
@@ -300,8 +335,9 @@ independent score is claimed until that process is completed.
 - Classification uses transparent rules rather than semantic language models.
 - Production concurrency and real orchestrator integration have not been
   established.
-- Human productivity impact remains unmeasured; the preregistered protocol is
-  in [`reports/impact-study-protocol.md`](reports/impact-study-protocol.md).
+- Human productivity impact remains unmeasured; the preregistered protocol,
+  empty recording template, and result summarizer are included for a real
+  participant study.
 - Recommendations are diagnostic suggestions, not executed repairs.
 
 ## Licence

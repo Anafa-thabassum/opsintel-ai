@@ -2,7 +2,12 @@
 from app.db import get_failed_pipelines, get_connection
 
 
-def classify_evidence(log_messages, missing_rows):
+def classify_evidence(
+    log_messages,
+    missing_rows,
+    expected_rows=None,
+    actual_rows=None,
+):
     """Classify evidence without claiming an unverified root cause."""
     benign_phrases = (
         "no timeout",
@@ -15,6 +20,60 @@ def classify_evidence(log_messages, missing_rows):
         for message in log_messages
         if not any(phrase in message.lower() for phrase in benign_phrases)
     )
+
+    has_success_signal = any(phrase in text for phrase in (
+        "completed successfully",
+        "finished successfully",
+        "all expected rows processed",
+    ))
+    has_failure_signal = any(phrase in text for phrase in (
+        "error",
+        "failed",
+        "timeout",
+        "aborted",
+        "terminated",
+    ))
+
+    if has_success_signal and has_failure_signal:
+        return (
+            "conflicting_evidence",
+            "The retrieved logs contain both success and failure signals. "
+            "The run state cannot be resolved from this evidence alone.",
+            "Verify the final orchestrator state and inspect the latest log "
+            "record before assigning a cause.",
+        )
+
+    if any(phrase in text for phrase in (
+        "started late",
+        "schedule delay",
+        "delayed by",
+        "missed sla",
+        "missed its sla",
+    )):
+        return (
+            "delayed_run",
+            "Logs report a delayed start or missed schedule. The source of "
+            "the delay is not confirmed.",
+            "Compare scheduled and actual start times, then inspect upstream "
+            "queue and dependency timing.",
+        )
+
+    if any(phrase in text for phrase in (
+        "duplicate rows",
+        "duplicate records",
+        "more rows than expected",
+    )) or (
+        expected_rows is not None
+        and actual_rows is not None
+        and int(actual_rows) > int(expected_rows)
+    ):
+        return (
+            "duplicate_data",
+            "The available evidence indicates more rows than expected or "
+            "possible duplicate records. The duplication point is unknown.",
+            "Compare source keys with target keys and inspect retry or "
+            "deduplication logs.",
+        )
 
     if any(word in text for word in (
         "timeout",
@@ -117,7 +176,7 @@ def investigate_pipeline(run_id: int):
     try:
         result = connection.execute(
             """
-            SELECT DISTINCT LOG_ID, LOG_LEVEL, LOG_MESSAGE
+            SELECT DISTINCT LOG_ID, LOG_LEVEL, LOG_MESSAGE, LOG_TIME
             FROM OPSINTEL.PIPELINE_LOGS
             WHERE RUN_ID = {run_id!d}
             ORDER BY LOG_ID
@@ -125,12 +184,33 @@ def investigate_pipeline(run_id: int):
             {"run_id": int(run_id)},
         )
         log_rows = result.fetchall()
+
+        history_rows = connection.execute(
+            """
+            SELECT
+                RUN_ID,
+                RUN_STATUS,
+                EXPECTED_ROWS,
+                ACTUAL_ROWS,
+                TO_CHAR(RUN_TIME, 'YYYY-MM-DD HH24:MI:SS')
+            FROM OPSINTEL.PIPELINE_RUNS
+            WHERE PIPELINE_NAME = {pipeline_name}
+            ORDER BY RUN_TIME DESC, RUN_ID DESC
+            LIMIT 5
+            """,
+            {"pipeline_name": incident[1]},
+        ).fetchall()
     finally:
         connection.close()
 
     expected_rows = int(incident[2])
     actual_rows = int(incident[3])
     missing_rows = int(incident[4])
+    excess_rows = (
+        int(incident[6])
+        if len(incident) > 6
+        else max(actual_rows - expected_rows, 0)
+    )
     log_messages = [str(log[2]) for log in log_rows]
 
     evidence = [
@@ -138,6 +218,7 @@ def investigate_pipeline(run_id: int):
             "type": "pipeline_status",
             "observation": f"Pipeline status is {incident[5]}",
             "source": "OPSINTEL.PIPELINE_RUNS",
+            "run_id": int(run_id),
         },
         {
             "type": "row_count",
@@ -146,6 +227,7 @@ def investigate_pipeline(run_id: int):
                 f"but received {actual_rows}"
             ),
             "source": "OPSINTEL.PIPELINE_RUNS",
+            "run_id": int(run_id),
         },
     ]
 
@@ -155,10 +237,14 @@ def investigate_pipeline(run_id: int):
             "observation": f"[{log[1]}] {log[2]}",
             "source": "OPSINTEL.PIPELINE_LOGS",
             "log_id": int(log[0]),
+            "timestamp": str(log[3]),
         })
 
     category, hypothesis, recommended_action = classify_evidence(
-        log_messages, missing_rows
+        log_messages,
+        missing_rows,
+        expected_rows,
+        actual_rows,
     )
 
     return {
@@ -168,11 +254,22 @@ def investigate_pipeline(run_id: int):
         "expected_rows": expected_rows,
         "actual_rows": actual_rows,
         "missing_rows": missing_rows,
+        "excess_rows": excess_rows,
         "category": category,
         "hypothesis": hypothesis,
         "confidence": "low",
         "recommended_action": recommended_action,
         "evidence": evidence,
+        "history": [
+            {
+                "run_id": int(row[0]),
+                "status": row[1],
+                "expected_rows": int(row[2]),
+                "actual_rows": int(row[3]),
+                "run_time": str(row[4]),
+            }
+            for row in history_rows
+        ],
         "limitations": [
             "The sample logs are synthetic test data.",
             "The underlying cause has not been confirmed.",
@@ -190,6 +287,28 @@ def assess_root_causes(incident):
     )
 
     candidates = []
+
+    category_candidate = {
+        "conflicting_evidence": (
+            "The log trail contains conflicting completion signals",
+            "Verify the final orchestrator state and inspect the latest log.",
+        ),
+        "delayed_run": (
+            "The pipeline may have started later than scheduled",
+            "Compare scheduled and actual start times and upstream timing.",
+        ),
+        "duplicate_data": (
+            "The run may contain duplicate or excess rows",
+            "Compare source and target keys and inspect retry behavior.",
+        ),
+    }.get(incident.get("category"))
+
+    if category_candidate:
+        candidates.append({
+            "cause": category_candidate[0],
+            "status": "supported_observation",
+            "next_action": category_candidate[1],
+        })
 
     rules = [
         (
@@ -247,6 +366,9 @@ def assess_root_causes(incident):
     }
 
     specific_failure_causes = {
+        "The log trail contains conflicting completion signals",
+        "The pipeline may have started later than scheduled",
+        "The run may contain duplicate or excess rows",
         "Pipeline execution exceeded a time limit",
         "Incoming data may not match the expected schema",
         "An upstream dependency may have failed",

@@ -20,6 +20,9 @@ const categoryLabels = {
   timeout: "Timeout",
   schema_mismatch: "Schema mismatch",
   dependency_failure: "Dependency failure",
+  delayed_run: "Delayed run",
+  duplicate_data: "Duplicate or excess data",
+  conflicting_evidence: "Conflicting evidence",
   unclassified: "Unclassified",
 };
 
@@ -160,6 +163,7 @@ function Dashboard({ onExit }) {
   const [filter, setFilter] = useState("all");
   const [activeNav, setActiveNav] = useState("Overview");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [reviewByRun, setReviewByRun] = useState({});
 
   async function loadIncidents() {
     setLoading(true);
@@ -530,7 +534,11 @@ function Dashboard({ onExit }) {
                           <div className={`evidence-marker ${item.type === "pipeline_log" ? "log-marker" : ""}`}>
                             {item.type === "pipeline_log" ? <Terminal size={14} /> : <Database size={14} />}
                           </div>
-                          <div className="evidence-copy"><p>{item.observation}</p><span>{item.source}{item.log_id != null ? ` · LOG-${item.log_id}` : ""}</span></div>
+                          <div className="evidence-copy">
+                            <em>OBSERVED FACT</em>
+                            <p>{item.observation}</p>
+                            <span>{item.source}{item.log_id != null ? ` · LOG-${item.log_id}` : item.run_id != null ? ` · RUN-${item.run_id}` : ""}{item.timestamp ? ` · ${item.timestamp}` : ""}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -547,7 +555,7 @@ function Dashboard({ onExit }) {
                       {(rootCauses.candidates || []).map((candidate, index) => (
                         <div className="candidate-card" key={`${candidate.cause}-${index}`}>
                           <div className="candidate-number">{String(index + 1).padStart(2, "0")}</div>
-                          <div className="candidate-copy"><strong>{candidate.cause}</strong><p>{candidate.next_action}</p><span>{candidate.status.replaceAll("_", " ")}</span></div>
+                          <div className="candidate-copy"><strong>{candidate.cause}</strong><p>{candidate.next_action}</p><span>CANDIDATE · {candidate.status.replaceAll("_", " ")}</span></div>
                         </div>
                       ))}
                       <div className="not-confirmed"><ShieldCheck size={15} /><span>Confirmed root cause: <strong>{rootCauses.confirmed_root_cause ?? "None"}</strong></span></div>
@@ -571,10 +579,23 @@ function Dashboard({ onExit }) {
                           </ul>
                         </div>
                       )}
+                      {investigation.llm_summary.evidence_refs?.length > 0 && (
+                        <div className="llm-evidence-refs">
+                          <strong>Evidence referenced</strong>
+                          <div>{investigation.llm_summary.evidence_refs.map((reference) => <span key={reference}>{reference}</span>)}</div>
+                        </div>
+                      )}
                       <div className="llm-safety-note">
                         <ShieldCheck size={14} />
                         <span>{investigation.llm_summary.safety_note}</span>
                       </div>
+                    </div>
+                  )}
+
+                  {investigation.llm_summary && investigation.llm_summary.status !== "generated" && (
+                    <div className="llm-fallback">
+                      <Sparkles size={14} />
+                      <span>Optional LLM {investigation.llm_summary.status}. The deterministic investigation remains available.</span>
                     </div>
                   )}
 
@@ -601,8 +622,41 @@ function Dashboard({ onExit }) {
                     <div className="comparison-legend"><span>Received</span><span>Expected</span></div>
                   </div>
 
+                  {investigation.history?.length > 0 && (
+                    <div className="history-block">
+                      <div className="section-title"><span>Recent run timeline</span><span>EXASOL HISTORY</span></div>
+                      <div className="history-list">
+                        {investigation.history.map((run) => (
+                          <div className="history-item" key={run.run_id}>
+                            <span className={`history-dot ${run.status === "SUCCESS" ? "success" : "failed"}`} />
+                            <div><strong>RUN-{String(run.run_id).padStart(4, "0")}</strong><span>{run.run_time}</span></div>
+                            <small>{run.status} · {run.actual_rows}/{run.expected_rows}</small>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="context-card"><div className="context-icon"><Activity size={17} /></div><div><strong>Investigation limitations</strong><p>{investigation.limitations?.[1] || "Root cause remains unconfirmed."}</p></div></div>
                   <div className="context-card"><div className="context-icon violet"><ShieldCheck size={17} /></div><div><strong>Safe recommendations</strong><p>No automated repair was executed. Review the evidence before taking action.</p></div></div>
+
+                  <div className="verification-card">
+                    <div><ShieldCheck size={16} /><strong>Engineer review</strong></div>
+                    <select
+                      aria-label="Engineer review status"
+                      value={reviewByRun[investigation.run_id] || "unreviewed"}
+                      onChange={(event) => setReviewByRun((current) => ({
+                        ...current,
+                        [investigation.run_id]: event.target.value,
+                      }))}
+                    >
+                      <option value="unreviewed">Not reviewed</option>
+                      <option value="evidence-reviewed">Evidence reviewed</option>
+                      <option value="needs-more-evidence">Needs more evidence</option>
+                      <option value="candidate-rejected">Candidate rejected</option>
+                    </select>
+                    <p>Demo-session record only. This does not confirm a root cause.</p>
+                  </div>
                 </>
               ) : (
                 <div className="empty-state">Investigation details will appear here.</div>

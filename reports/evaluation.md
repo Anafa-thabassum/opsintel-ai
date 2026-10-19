@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **49 passed**
+- Automated tests: **57 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -17,10 +17,12 @@ without converting unsupported possibilities into confirmed root causes.
 Run the checks with:
 
 ```bash
-python -m pytest -q
-python -m tests.run_evaluation
-cd frontend && npm run lint && npm run build
+make verify
 ```
+
+The automated suite also covers delayed runs, excess or duplicate rows,
+conflicting completion signals, timestamped history retrieval, malformed LLM
+output, unavailable model calls, and rejection of unknown evidence references.
 
 ## Synthetic challenge set
 
@@ -48,6 +50,11 @@ four representative incidents. Exasol calculates completeness, previous-run
 status, rolling actual-row baselines, and rolling failure rates through
 `OPSINTEL.PIPELINE_HEALTH_FEATURES`.
 
+Run `make exasol-proof` with Exasol Personal active to print the exact history
+and log-evidence rows for the selected demonstration incident. This command is
+the reproducible live-query proof; no result is recorded when Exasol is not
+running.
+
 ## Reproducible scale benchmark
 
 `python -m scripts.benchmark_exasol` creates an isolated temporary schema,
@@ -73,6 +80,8 @@ single-user measurement, not a production throughput or concurrency claim.
 - The challenge set is small and is stored with the implementation.
 - Keyword rules do not establish semantic understanding.
 - The optional LLM summary has not received an independent quality evaluation.
+- Human investigation-time impact remains unmeasured; the repository includes
+  a protocol, recording template, and deterministic result summarizer.
 - Candidate explanations remain unconfirmed until an engineer verifies them.
 - Concurrency, production infrastructure, and real orchestrator integrations
   have not been evaluated.

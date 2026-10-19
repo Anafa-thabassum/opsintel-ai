@@ -1,0 +1,36 @@
+PYTHON := .venv/bin/python
+
+.PHONY: setup database api frontend verify evaluate impact exasol-proof benchmark
+
+setup:
+	python3 -m venv .venv
+	$(PYTHON) -m pip install -r requirements.txt
+	cd frontend && npm ci
+
+database:
+	$(PYTHON) -m scripts.setup_database --reset
+
+api:
+	$(PYTHON) -m uvicorn app.main:app --reload
+
+frontend:
+	cd frontend && npm run dev
+
+verify:
+	$(PYTHON) -m pytest -q
+	$(PYTHON) -m tests.run_evaluation
+	cd frontend && npm run lint
+	cd frontend && npm run build
+
+evaluate:
+	$(PYTHON) -m tests.run_evaluation
+
+impact:
+	@test -n "$(FILE)" || (echo "Usage: make impact FILE=/path/to/results.csv" && exit 2)
+	$(PYTHON) -m scripts.summarize_impact_study "$(FILE)"
+
+exasol-proof:
+	$(PYTHON) -m scripts.exasol_proof
+
+benchmark:
+	$(PYTHON) -m scripts.benchmark_exasol

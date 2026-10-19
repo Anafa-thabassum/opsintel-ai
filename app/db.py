@@ -59,10 +59,11 @@ def get_failed_pipelines():
                 PIPELINE_NAME,
                 EXPECTED_ROWS,
                 ACTUAL_ROWS,
-                EXPECTED_ROWS - ACTUAL_ROWS AS MISSING_ROWS,
-                RUN_STATUS
+                GREATEST(EXPECTED_ROWS - ACTUAL_ROWS, 0) AS MISSING_ROWS,
+                RUN_STATUS,
+                GREATEST(ACTUAL_ROWS - EXPECTED_ROWS, 0) AS EXCESS_ROWS
             FROM OPSINTEL.PIPELINE_RUNS
-            WHERE EXPECTED_ROWS > ACTUAL_ROWS
+            WHERE EXPECTED_ROWS <> ACTUAL_ROWS
                OR RUN_STATUS = 'FAILED'
             ORDER BY RUN_ID
         """)

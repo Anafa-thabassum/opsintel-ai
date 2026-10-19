@@ -1,15 +1,22 @@
--- 1. Inspect all pipeline runs
+-- 1. Historical completeness and recent-run comparison
 SELECT
     RUN_ID,
     PIPELINE_NAME,
     RUN_STATUS,
     EXPECTED_ROWS,
-    ACTUAL_ROWS
-FROM OPSINTEL.PIPELINE_RUNS
-ORDER BY RUN_ID;
+    ACTUAL_ROWS,
+    MISSING_ROWS,
+    COMPLETENESS_PCT,
+    PREVIOUS_STATUS,
+    ROLLING_AVG_ACTUAL_ROWS,
+    ROLLING_FAILURE_RATE_PCT,
+    RUN_TIME
+FROM OPSINTEL.PIPELINE_HEALTH_FEATURES
+WHERE PIPELINE_NAME = 'daily_sales_import'
+ORDER BY RUN_TIME DESC, RUN_ID DESC;
 
 
--- 2. Find pipelines with missing rows
+-- 2. Current incidents and row-count discrepancies
 SELECT
     RUN_ID,
     PIPELINE_NAME,
@@ -21,16 +28,20 @@ WHERE EXPECTED_ROWS > ACTUAL_ROWS
 ORDER BY RUN_ID;
 
 
--- 3. Join failed pipelines with their logs
+-- 3. Evidence retrieval for the selected failed run
 SELECT DISTINCT
     r.RUN_ID,
     r.PIPELINE_NAME,
     r.RUN_STATUS,
+    r.EXPECTED_ROWS,
+    r.ACTUAL_ROWS,
+    r.EXPECTED_ROWS - r.ACTUAL_ROWS AS MISSING_ROWS,
     l.LOG_ID,
     l.LOG_LEVEL,
-    l.LOG_MESSAGE
+    l.LOG_MESSAGE,
+    l.LOG_TIME
 FROM OPSINTEL.PIPELINE_RUNS r
 JOIN OPSINTEL.PIPELINE_LOGS l
     ON r.RUN_ID = l.RUN_ID
-WHERE r.RUN_STATUS = 'FAILED'
+WHERE r.RUN_ID = 1
 ORDER BY r.RUN_ID, l.LOG_ID;

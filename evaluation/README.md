@@ -7,8 +7,8 @@ with the project team in advance.
 2. Add at least 20 cases. Put each case's log messages in `logs_json` as a JSON
    array, for example `["Execution deadline exceeded"]`.
 3. Choose one expected category: `timeout`, `schema_mismatch`,
-   `dependency_failure`, `early_termination`, `incomplete_data`, or
-   `unclassified`.
+   `dependency_failure`, `early_termination`, `incomplete_data`,
+   `delayed_run`, `duplicate_data`, `conflicting_evidence`, or `unclassified`.
 4. Freeze the current commit before revealing the file.
 5. Run `python -m scripts.evaluate_holdout /path/to/holdout.csv`.
 6. Preserve the raw file, commit SHA, output, and evaluator name.

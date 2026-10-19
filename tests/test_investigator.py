@@ -91,18 +91,37 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
     )
 
     class FakeResult:
+        def __init__(self, rows):
+            self.rows = rows
+
         def fetchall(self):
-            # Simulate the distinct results returned by the database.
-            return [
-                (1, "INFO", "Pipeline started; expected 100 source rows"),
-                (2, "WARN", "Source returned only 80 rows"),
-            ]
+            return self.rows
 
     class FakeConnection:
         def execute(self, query, parameters=None):
-            assert "SELECT DISTINCT" in query
-            assert parameters == {"run_id": 1}
-            return FakeResult()
+            if "SELECT DISTINCT" in query:
+                assert parameters == {"run_id": 1}
+                return FakeResult([
+                    (
+                        1,
+                        "INFO",
+                        "Pipeline started; expected 100 source rows",
+                        "2026-10-18 01:00:00",
+                    ),
+                    (
+                        2,
+                        "WARN",
+                        "Source returned only 80 rows",
+                        "2026-10-18 01:01:00",
+                    ),
+                ])
+
+            assert "PIPELINE_NAME =" in query
+            assert parameters == {"pipeline_name": "daily_sales_import"}
+            return FakeResult([
+                (1, "FAILED", 100, 80, "2026-10-18 01:02:00"),
+                (101, "SUCCESS", 100, 100, "2026-10-17 01:00:00"),
+            ])
 
         def close(self):
             pass
@@ -122,6 +141,8 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
     ]
 
     assert [item["log_id"] for item in log_evidence] == [1, 2]
+    assert log_evidence[0]["timestamp"] == "2026-10-18 01:00:00"
+    assert result["history"][1]["status"] == "SUCCESS"
 
 def test_early_termination_takes_priority_over_missing_rows():
     from app.investigator import classify_evidence
@@ -175,4 +196,46 @@ def test_equal_row_counts_do_not_add_row_count_candidate():
     assert "Pipeline execution exceeded a time limit" in causes
     assert "Expected and actual row counts differ" not in causes
     assert result["confirmed_root_cause"] is None
+
+
+def test_delayed_run_evidence_remains_unconfirmed():
+    from app.investigator import classify_evidence
+
+    category, hypothesis, next_action = classify_evidence(
+        ["Pipeline started late and missed its SLA"],
+        0,
+    )
+
+    assert category == "delayed_run"
+    assert "not confirmed" in hypothesis
+    assert "scheduled" in next_action
+
+
+def test_excess_rows_are_classified_as_possible_duplicates():
+    from app.investigator import classify_evidence
+
+    category, hypothesis, _ = classify_evidence(
+        [],
+        -20,
+        expected_rows=100,
+        actual_rows=120,
+    )
+
+    assert category == "duplicate_data"
+    assert "duplication point is unknown" in hypothesis
+
+
+def test_conflicting_completion_logs_are_not_forced_to_a_cause():
+    from app.investigator import classify_evidence
+
+    category, hypothesis, _ = classify_evidence(
+        [
+            "Pipeline completed successfully",
+            "ERROR: worker failed after final write",
+        ],
+        0,
+    )
+
+    assert category == "conflicting_evidence"
+    assert "cannot be resolved" in hypothesis
 

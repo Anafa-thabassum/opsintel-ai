@@ -87,6 +87,11 @@ def list_incidents():
                     "actual_rows": row[3],
                     "missing_rows": int(row[4]),
                     "status": row[5],
+                    "excess_rows": (
+                        int(row[6])
+                        if len(row) > 6
+                        else max(int(row[3]) - int(row[2]), 0)
+                    ),
                 }
                 for row in rows
             ],

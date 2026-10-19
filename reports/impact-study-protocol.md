@@ -26,6 +26,20 @@ Record these values for every participant, incident, and condition:
 | Confidence | Participant rating from 1 to 5 |
 | Unsafe certainty | Whether an unverified candidate is presented as confirmed |
 
+Copy `evaluation/impact_template.csv` outside the repository and record one row
+for each participant, case, and condition. Allowed outcomes are `correct`,
+`incorrect`, and `unresolved`; boolean fields must be `true` or `false`.
+
+Summarize the completed file without manually calculating results:
+
+```bash
+make impact FILE=/path/to/impact-results.csv
+```
+
+Preserve the raw CSV, generated JSON, exact commit, participant count, and any
+excluded trials together. The script reports measurements; it does not decide
+whether the study design is externally valid.
+
 ## Success thresholds
 
 The prototype meets the study target only if all conditions hold:

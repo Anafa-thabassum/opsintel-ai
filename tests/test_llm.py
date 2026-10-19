@@ -73,6 +73,9 @@ def test_llm_summary_uses_structured_evidence_only(monkeypatch):
                         "text": json.dumps({
                             "summary": "The run ended with 20 rows missing.",
                             "evidence_gaps": ["The first termination error"],
+                            "evidence_refs": [
+                                "OPSINTEL.PIPELINE_LOGS · LOG-3"
+                            ],
                         }),
                     }
                 ]
@@ -87,6 +90,9 @@ def test_llm_summary_uses_structured_evidence_only(monkeypatch):
     assert result["status"] == "generated"
     assert result["model"] == "test-model"
     assert result["evidence_gaps"] == ["The first termination error"]
+    assert result["evidence_refs"] == [
+        "OPSINTEL.PIPELINE_LOGS · LOG-3"
+    ]
     request = client.post.call_args.kwargs
     assert request["json"]["store"] is False
     assert request["json"]["text"]["format"]["strict"] is True
@@ -106,3 +112,37 @@ def test_llm_failure_falls_back_without_breaking_investigation(monkeypatch):
     assert result["status"] == "unavailable"
     assert result["summary"] is None
     assert "cannot confirm" in result["safety_note"]
+
+
+def test_llm_rejects_unknown_evidence_references(monkeypatch):
+    monkeypatch.setenv("OPSINTEL_LLM_ENABLED", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    response = Mock()
+    response.json.return_value = {
+        "output_text": json.dumps({
+            "summary": "A database observation was invented.",
+            "evidence_gaps": [],
+            "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-999"],
+        })
+    }
+    client = Mock()
+    client.post.return_value = response
+
+    result = summarize_investigation(INCIDENT, ROOT_CAUSES, client)
+
+    assert result["status"] == "unavailable"
+    assert result["summary"] is None
+
+
+def test_llm_rejects_malformed_structured_output(monkeypatch):
+    monkeypatch.setenv("OPSINTEL_LLM_ENABLED", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    response = Mock()
+    response.json.return_value = {"output_text": "not-json"}
+    client = Mock()
+    client.post.return_value = response
+
+    result = summarize_investigation(INCIDENT, ROOT_CAUSES, client)
+
+    assert result["status"] == "unavailable"
+    assert result["evidence_refs"] == []

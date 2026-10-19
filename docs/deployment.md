@@ -45,9 +45,20 @@ Serve `frontend/dist/` from any static host. Verify `/health`, `/incidents`,
 `/analytics/trend`, and one `/investigate/{run_id}` request before sharing the
 deployment.
 
+The frontend demo-access screen is a presentation boundary only. It stores a
+temporary flag in browser session storage and must not be treated as an
+authentication or authorization control.
+
 ## Production gap
 
 The prototype does not include authentication, authorization, orchestrator
 connectors, multi-user concurrency validation, audited data retention, or an
 independent evaluation of LLM summary quality. Add those controls before using
 real operational data.
+
+## Local verification shortcut
+
+From the repository root, `make setup` installs Python and frontend
+dependencies, and `make verify` runs the complete automated verification. The
+Exasol service must already be reachable before `make database` or
+`make benchmark` is used.

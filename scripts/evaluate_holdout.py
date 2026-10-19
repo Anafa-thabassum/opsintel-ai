@@ -9,7 +9,10 @@ from app.investigator import classify_evidence
 
 
 VALID_CATEGORIES = {
+    "conflicting_evidence",
+    "delayed_run",
     "dependency_failure",
+    "duplicate_data",
     "early_termination",
     "incomplete_data",
     "schema_mismatch",
