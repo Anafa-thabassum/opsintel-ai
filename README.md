@@ -22,7 +22,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 80 automated tests and a 16-case synthetic challenge set.
+- 115 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -308,7 +308,7 @@ npm run build
 
 Latest verified results:
 
-- **80/80 automated tests passed**.
+- **115/115 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -350,11 +350,14 @@ make independent-holdout \
   REF=independent-holdout-v1
 ```
 
-The evaluator verifies the tagged dataset and classifier hashes, requires two
-or three pseudonymous case-author IDs, and publishes JSON plus Markdown error
-analysis. Current external-reviewer status: **0 cases recorded by 0 external
-authors**. The template must be completed, committed, and tagged before an
-independent result can be reported.
+The evaluator verifies the tagged dataset, classifier, and evaluator hashes;
+requires two or three pseudonymous case-author IDs and referenced evidence; and
+publishes JSON plus Markdown scoring and error analysis. It records the dataset,
+classifier configuration, evaluator, scoring rules, and evaluation timestamp,
+including missing labels and unresolved predictions. Current external-reviewer
+status: **0 cases recorded by 0 external authors**. The template is intentionally
+header-only and must be completed, committed, and tagged before an independent
+result can be reported.
 
 The [human-impact study protocol](reports/impact-study-protocol.md) now includes
 ten frozen cases and a counterbalanced 40-trial assignment for four

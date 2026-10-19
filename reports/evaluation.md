@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **80 passed**
+- Automated tests: **115 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -111,6 +111,28 @@ The project team authored this synthetic holdout. It is stronger evidence than
 rerunning the implementation's regression cases, but it is not an independent
 or production accuracy estimate. The empty reviewer template remains available
 for a genuinely external evaluation.
+
+## Independent reviewer workflow
+
+The external-reviewer template remains intentionally header-only: **0 cases
+from 0 external reviewers have been recorded**, so independent validation is
+still pending and no accuracy result is claimed.
+
+The Batch 4 evaluator now requires 15–20 cases from two or three pseudonymous
+external reviewers. Each case carries a dataset version, referenced evidence,
+expected findings, expected uncertainty, and explicit reviewer provenance.
+Before scoring, one Git ref must freeze the dataset, deterministic classifier,
+and evaluator/scoring implementation. The generated JSON and Markdown reports
+record the UTC evaluation time, hashes and versions, completed cases, exact
+category matches, incorrect findings, unresolved predictions, missing labels,
+input-evidence traceability, and whether the output remained unconfirmed.
+
+Scoring is declared before evaluation: only an exact category match receives
+credit; there is no partial category credit. Missing labels are reported and
+excluded from accuracy. An `unclassified` prediction remains unresolved and is
+never rewarded as a confirmed cause. See
+[`evaluation/README.md`](../evaluation/README.md) for the schema and freeze
+procedure.
 
 ## Exasol analytical validation
 

@@ -26,24 +26,57 @@ accuracy estimate.
 
 ## External reviewer holdout
 
-`holdout_template.csv` remains empty so external reviewers can test evidence
-classification without sharing cases with the project team in advance.
+`holdout_template.csv` is intentionally header-only. No external cases or
+reviewers have been recorded. It is separate from both
+`frozen_holdout_v1.csv` and the 16-case regression suite.
+
+Each independent case uses this schema:
+
+| Field | Requirement |
+|---|---|
+| `dataset_version` | One version shared by every case, such as `independent-v1` |
+| `id` | Unique pseudonymous case identifier |
+| `evidence_json` | Non-empty JSON array of `{reference, observation}` objects |
+| `missing_rows` | Integer when known; otherwise blank |
+| `expected_rows`, `actual_rows` | Provide both together or leave both blank |
+| `expected` | Ground-truth classifier category; blank labels are reported, not scored |
+| `expected_findings_json` | Non-empty JSON string array when `expected` is present |
+| `expected_uncertainty` | `candidate_only` or `unresolved` when labelled |
+| `author_id` | Pseudonymous reviewer identifier |
+| `reviewer_provenance` | Must be exactly `external-reviewer` |
+
+Illustrative syntax only—this is not a recorded reviewer case:
+
+```text
+evidence_json=[{"reference":"LOG-EXAMPLE","observation":"Example evidence"}]
+expected_findings_json=["Example expected finding"]
+```
+
+Scoring is fixed before evaluation: an exact category match receives credit;
+partial category matches receive no credit. Expected findings and uncertainty
+are reported separately. Missing labels are excluded from accuracy, and an
+`unclassified` prediction remains unresolved rather than being promoted to a
+cause.
 
 1. Give the blank template to two or three external reviewers without showing
    them the classifier rules.
-2. Add 15 to 20 cases. Put each case's pseudonymous reviewer ID in `author_id`.
-   Put each case's log messages in `logs_json` as a JSON
-   array, for example `["Execution deadline exceeded"]`. Set `expected_rows`
-   and `actual_rows` together, or leave both empty when row totals are not part
-   of the case.
+2. Add 15 to 20 cases. Use two or three pseudonymous `author_id` values and
+   preserve each evidence reference in `evidence_json`. Set `expected_rows`
+   and `actual_rows` together, or leave both empty.
 3. Choose one expected category: `timeout`, `schema_mismatch`,
    `dependency_failure`, `early_termination`, `incomplete_data`,
    `delayed_run`, `duplicate_data`, `conflicting_evidence`, or `unclassified`.
-4. Commit the completed CSV and classifier without running the evaluator, then
-   tag that commit, for example `independent-holdout-v1`.
+4. Commit the completed CSV, `app/investigator.py`, and
+   `scripts/evaluate_holdout.py` without running the evaluator. Tag that exact
+   commit, for example `independent-holdout-v1`. The evaluator rejects changes
+   to the dataset, classifier, or scoring implementation after this freeze.
 5. Run `make independent-holdout FILE=evaluation/independent_holdout_v1.csv REF=independent-holdout-v1`.
-6. Publish the pseudonymized cases, JSON result, Markdown error analysis, tag,
-   and a short description of the independent authorship process.
+6. Publish the pseudonymized cases, JSON result, Markdown report, tag, and a
+   short description of the independent authorship process. The report records
+   dataset, evaluator, scoring-rule, and classifier-configuration versions; UTC
+   evaluation time; hashes; completed and missing labels; exact matches;
+   incorrect findings; unresolved predictions; input-evidence traceability; and
+   the no-causation-claim contract.
 
 OpsIntel AI does not claim an independent accuracy result until an external
 evaluator supplies and runs those unseen cases.

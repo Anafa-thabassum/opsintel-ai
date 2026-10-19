@@ -46,7 +46,7 @@ An external evaluator must use the reviewer template, which currently contains
 
 ## What has been measured?
 
-Seventy-five automated tests, a predefined 16-case synthetic regression set, a separate
+One hundred fifteen automated tests, a predefined 16-case synthetic regression set, a separate
 27-case versioned project-authored holdout, frontend quality checks, and a
 reproducible local Exasol scale benchmark. The holdout is project-authored. The
 external holdout has 0 cases from 0 authors, while the frozen four-participant
