@@ -43,6 +43,31 @@ unknown evidence.
 The measured result is **16/16 on this predefined synthetic challenge set**.
 It is a reproducible regression benchmark, not a production accuracy claim.
 
+## Frozen synthetic holdout
+
+A separate versioned dataset contains 27 cases that do not appear in the
+regression suite. It covers all nine classifier outcomes with three cases per
+expected category. The expected labels were frozen before the evaluator ran,
+and the classifier was not changed between the freeze and the recorded result.
+
+| Measure | Result |
+|---|---:|
+| Cases | 27 |
+| Categories | 9 |
+| Correct classifications | 27/27 |
+| Accuracy on this dataset | 100.0% |
+
+The dataset SHA-256, classifier SHA-256, classifier commit, category totals,
+and per-case predictions are published in
+[`reports/frozen-holdout-v1.md`](frozen-holdout-v1.md) and
+[`reports/frozen-holdout-v1.json`](frozen-holdout-v1.json). Run `make holdout`
+to reproduce the evaluation.
+
+The project team authored this synthetic holdout. It is stronger evidence than
+rerunning the implementation's regression cases, but it is not an independent
+or production accuracy estimate. The empty reviewer template remains available
+for a genuinely external evaluation.
+
 ## Exasol analytical validation
 
 The demo dataset contains four days of healthy pipeline history followed by
@@ -77,7 +102,10 @@ single-user measurement, not a production throughput or concurrency claim.
 ## Limitations
 
 - The scenarios and logs are synthetic.
-- The challenge set is small and is stored with the implementation.
+- The regression and frozen holdout sets are small and are stored with the
+  implementation.
+- The project team authored the frozen holdout; an independent reviewer result
+  remains pending.
 - Keyword rules do not establish semantic understanding.
 - The optional LLM summary has not received an independent quality evaluation.
 - Human investigation-time impact remains unmeasured; the repository includes

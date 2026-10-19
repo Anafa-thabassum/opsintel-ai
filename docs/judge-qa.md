@@ -28,14 +28,18 @@ available.
 
 The recommendation is a diagnostic starting point, not an automated repair.
 The engineer can inspect every source observation. Regression cases include
-paraphrases and benign timeout configuration, while the independent holdout
-runner lets an external evaluator measure unseen cases against a frozen commit.
+paraphrases and benign timeout configuration. A separate 27-case synthetic
+holdout was frozen before execution and scored 27/27 across all nine outcomes.
+Because the project team authored it, an external evaluator must still use the
+reviewer template for a genuinely independent result.
 
 ## What has been measured?
 
-Automated tests, a predefined 16-case synthetic regression set, frontend
-quality checks, and a reproducible local Exasol scale benchmark. These are not
-presented as production accuracy or a human productivity study.
+Automated tests, a predefined 16-case synthetic regression set, a separate
+27-case frozen synthetic holdout, frontend quality checks, and a reproducible
+local Exasol scale benchmark. The holdout is project-authored, so these results
+are not presented as independent production accuracy or a human productivity
+study.
 
 ## What would productionization require?
 

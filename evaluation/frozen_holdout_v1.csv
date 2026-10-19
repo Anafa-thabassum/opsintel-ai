@@ -1,0 +1,28 @@
+id,logs_json,missing_rows,expected_rows,actual_rows,expected
+holdout-timeout-01,"[""Final merge timed out after 1,200 seconds""]",0,500,500,timeout
+holdout-timeout-02,"[""Nightly export hit the configured time limit during publish""]",0,750,750,timeout
+holdout-timeout-03,"[""Execution exceeded the allowed duration while waiting for lock release""]",0,1200,1200,timeout
+holdout-schema-01,"[""Column type for invoice_total is incompatible with DECIMAL""]",14,800,786,schema_mismatch
+holdout-schema-02,"[""Load rejected payload after invalid cast on event_timestamp""]",7,900,893,schema_mismatch
+holdout-schema-03,"[""Incoming customer_id data type does not match expected BIGINT""]",22,1000,978,schema_mismatch
+holdout-dependency-01,"[""Upstream task failed before finance_rollup could start""]",600,600,0,dependency_failure
+holdout-dependency-02,"[""Pipeline stopped because an upstream dependency reported failure""]",450,450,0,dependency_failure
+holdout-dependency-03,"[""Prerequisite task failed: stage_inventory""]",300,300,0,dependency_failure
+holdout-termination-01,"[""Worker terminated before completion after checkpoint 9""]",31,500,469,early_termination
+holdout-termination-02,"[""Batch processing stopped early while closing partition 4""]",48,700,652,early_termination
+holdout-termination-03,"[""The load aborted before completion when the writer closed""]",19,250,231,early_termination
+holdout-incomplete-01,"[""Extract validation found a row shortfall of 32 records""]",32,900,868,incomplete_data
+holdout-incomplete-02,"[""Source file contains missing rows for the final partition""]",18,600,582,incomplete_data
+holdout-incomplete-03,"[""Input delivered fewer rows than expected after filtering""]",25,1000,975,incomplete_data
+holdout-delayed-01,"[""Run started late after the scheduler queue backed up""]",0,400,400,delayed_run
+holdout-delayed-02,"[""Schedule delay detected for the hourly customer refresh""]",0,550,550,delayed_run
+holdout-delayed-03,"[""Daily aggregate missed its SLA by 14 minutes""]",0,620,620,delayed_run
+holdout-duplicate-01,"[""Retry introduced duplicate records in the destination""]",0,800,816,duplicate_data
+holdout-duplicate-02,"[""Target contains more rows than expected after replay""]",0,1000,1013,duplicate_data
+holdout-duplicate-03,"[""Run finished with a row-count mismatch after a retry""]",0,1000,1008,duplicate_data
+holdout-conflict-01,"[""Pipeline completed successfully"", ""Final status reported failed""]",0,300,300,conflicting_evidence
+holdout-conflict-02,"[""All expected rows processed"", ""Worker error recorded after commit""]",0,650,650,conflicting_evidence
+holdout-conflict-03,"[""Finished successfully with 800 rows"", ""Control table marked run as aborted""]",0,800,800,conflicting_evidence
+holdout-unknown-01,"[""Worker exited with signal 15 and no further diagnostic record""]",0,500,500,unclassified
+holdout-unknown-02,"[""Timeout setting is 30 minutes for this pipeline""]",0,450,450,unclassified
+holdout-unknown-03,"[""Maintenance window notification acknowledged by scheduler""]",0,700,700,unclassified

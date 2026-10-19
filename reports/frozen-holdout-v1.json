@@ -1,0 +1,214 @@
+{
+  "evaluation": "frozen-synthetic-holdout-v1",
+  "dataset_file": "frozen_holdout_v1.csv",
+  "dataset_sha256": "a7da47b53b8b985238cfb4f59cfb71755a3b76a283467df125c99e46fa181f71",
+  "classifier_file": "app/investigator.py",
+  "classifier_sha256": "762eee2ad9077a1ee067e2c1276015b6a9eb4e253be1e05c8127b5abad724181",
+  "classifier_commit": "eb7a2d8c2202a45603015c32e9a187de533f5a21",
+  "correct": 27,
+  "total": 27,
+  "accuracy_pct": 100.0,
+  "category_results": {
+    "conflicting_evidence": {
+      "correct": 3,
+      "total": 3
+    },
+    "delayed_run": {
+      "correct": 3,
+      "total": 3
+    },
+    "dependency_failure": {
+      "correct": 3,
+      "total": 3
+    },
+    "duplicate_data": {
+      "correct": 3,
+      "total": 3
+    },
+    "early_termination": {
+      "correct": 3,
+      "total": 3
+    },
+    "incomplete_data": {
+      "correct": 3,
+      "total": 3
+    },
+    "schema_mismatch": {
+      "correct": 3,
+      "total": 3
+    },
+    "timeout": {
+      "correct": 3,
+      "total": 3
+    },
+    "unclassified": {
+      "correct": 3,
+      "total": 3
+    }
+  },
+  "scope": "Project-authored synthetic holdout frozen before execution; not an independent or production accuracy estimate.",
+  "results": [
+    {
+      "id": "holdout-timeout-01",
+      "expected": "timeout",
+      "predicted": "timeout",
+      "correct": true
+    },
+    {
+      "id": "holdout-timeout-02",
+      "expected": "timeout",
+      "predicted": "timeout",
+      "correct": true
+    },
+    {
+      "id": "holdout-timeout-03",
+      "expected": "timeout",
+      "predicted": "timeout",
+      "correct": true
+    },
+    {
+      "id": "holdout-schema-01",
+      "expected": "schema_mismatch",
+      "predicted": "schema_mismatch",
+      "correct": true
+    },
+    {
+      "id": "holdout-schema-02",
+      "expected": "schema_mismatch",
+      "predicted": "schema_mismatch",
+      "correct": true
+    },
+    {
+      "id": "holdout-schema-03",
+      "expected": "schema_mismatch",
+      "predicted": "schema_mismatch",
+      "correct": true
+    },
+    {
+      "id": "holdout-dependency-01",
+      "expected": "dependency_failure",
+      "predicted": "dependency_failure",
+      "correct": true
+    },
+    {
+      "id": "holdout-dependency-02",
+      "expected": "dependency_failure",
+      "predicted": "dependency_failure",
+      "correct": true
+    },
+    {
+      "id": "holdout-dependency-03",
+      "expected": "dependency_failure",
+      "predicted": "dependency_failure",
+      "correct": true
+    },
+    {
+      "id": "holdout-termination-01",
+      "expected": "early_termination",
+      "predicted": "early_termination",
+      "correct": true
+    },
+    {
+      "id": "holdout-termination-02",
+      "expected": "early_termination",
+      "predicted": "early_termination",
+      "correct": true
+    },
+    {
+      "id": "holdout-termination-03",
+      "expected": "early_termination",
+      "predicted": "early_termination",
+      "correct": true
+    },
+    {
+      "id": "holdout-incomplete-01",
+      "expected": "incomplete_data",
+      "predicted": "incomplete_data",
+      "correct": true
+    },
+    {
+      "id": "holdout-incomplete-02",
+      "expected": "incomplete_data",
+      "predicted": "incomplete_data",
+      "correct": true
+    },
+    {
+      "id": "holdout-incomplete-03",
+      "expected": "incomplete_data",
+      "predicted": "incomplete_data",
+      "correct": true
+    },
+    {
+      "id": "holdout-delayed-01",
+      "expected": "delayed_run",
+      "predicted": "delayed_run",
+      "correct": true
+    },
+    {
+      "id": "holdout-delayed-02",
+      "expected": "delayed_run",
+      "predicted": "delayed_run",
+      "correct": true
+    },
+    {
+      "id": "holdout-delayed-03",
+      "expected": "delayed_run",
+      "predicted": "delayed_run",
+      "correct": true
+    },
+    {
+      "id": "holdout-duplicate-01",
+      "expected": "duplicate_data",
+      "predicted": "duplicate_data",
+      "correct": true
+    },
+    {
+      "id": "holdout-duplicate-02",
+      "expected": "duplicate_data",
+      "predicted": "duplicate_data",
+      "correct": true
+    },
+    {
+      "id": "holdout-duplicate-03",
+      "expected": "duplicate_data",
+      "predicted": "duplicate_data",
+      "correct": true
+    },
+    {
+      "id": "holdout-conflict-01",
+      "expected": "conflicting_evidence",
+      "predicted": "conflicting_evidence",
+      "correct": true
+    },
+    {
+      "id": "holdout-conflict-02",
+      "expected": "conflicting_evidence",
+      "predicted": "conflicting_evidence",
+      "correct": true
+    },
+    {
+      "id": "holdout-conflict-03",
+      "expected": "conflicting_evidence",
+      "predicted": "conflicting_evidence",
+      "correct": true
+    },
+    {
+      "id": "holdout-unknown-01",
+      "expected": "unclassified",
+      "predicted": "unclassified",
+      "correct": true
+    },
+    {
+      "id": "holdout-unknown-02",
+      "expected": "unclassified",
+      "predicted": "unclassified",
+      "correct": true
+    },
+    {
+      "id": "holdout-unknown-03",
+      "expected": "unclassified",
+      "predicted": "unclassified",
+      "correct": true
+    }
+  ]
+}

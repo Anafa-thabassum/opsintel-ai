@@ -118,7 +118,7 @@ The deliberate safety boundary is:
 opsintel-ai/
 ├── app/                         # API, database access and investigation logic
 ├── docs/                        # Demo, Q&A and submission guidance
-├── evaluation/                  # Independent holdout runner template
+├── evaluation/                  # Frozen and external-reviewer holdout data
 ├── frontend/                    # React dashboard
 ├── reports/
 │   ├── evaluation.md            # Reproducible evaluation summary
@@ -284,6 +284,8 @@ Latest verified results:
 
 - **60/60 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
+- **27/27 frozen synthetic holdout cases classified correctly** across all
+  nine outcomes.
 - **1,000,000 synthetic Exasol runs queried in 473.209 ms median and
   503.947 ms p95** across seven local repetitions.
 - **Frontend lint passed with no warnings**.
@@ -302,10 +304,16 @@ accuracy, throughput, or concurrency claims. See
 The [`judging evidence map`](reports/judging-scorecard.md) links each published
 criterion to a concrete file or demo moment.
 
-An external evaluator can create unseen cases from
+The separate [`frozen synthetic holdout`](evaluation/frozen_holdout_v1.csv)
+contains 27 versioned cases and a published
+[`result report`](reports/frozen-holdout-v1.md). Reproduce it with
+`make holdout`. The project team authored this dataset, so its 27/27 result is
+not an independent or production accuracy claim.
+
+An external evaluator can still create genuinely unseen cases from
 [`evaluation/holdout_template.csv`](evaluation/holdout_template.csv) and run
 them against a frozen commit with `python -m scripts.evaluate_holdout`. No
-independent score is claimed until that process is completed.
+independent score is claimed until that separate process is completed.
 
 For the human-impact study, copy
 [`evaluation/impact_template.csv`](evaluation/impact_template.csv), record

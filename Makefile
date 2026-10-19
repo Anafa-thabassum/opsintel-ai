@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup database api frontend verify evaluate impact exasol-proof benchmark
+.PHONY: setup database api frontend verify evaluate holdout impact exasol-proof benchmark
 
 setup:
 	python3 -m venv .venv
@@ -24,6 +24,9 @@ verify:
 
 evaluate:
 	$(PYTHON) -m tests.run_evaluation
+
+holdout:
+	$(PYTHON) -m scripts.evaluate_holdout evaluation/frozen_holdout_v1.csv
 
 impact:
 	@test -n "$(FILE)" || (echo "Usage: make impact FILE=/path/to/results.csv" && exit 2)
