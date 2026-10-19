@@ -18,7 +18,33 @@ def load_statements(path):
         line for line in path.read_text().splitlines()
         if not line.lstrip().startswith("--")
     )
-    return [statement.strip() for statement in sql.split(";") if statement.strip()]
+    statements = []
+    current = []
+    in_string = False
+    index = 0
+
+    while index < len(sql):
+        character = sql[index]
+        current.append(character)
+
+        if character == "'":
+            if in_string and index + 1 < len(sql) and sql[index + 1] == "'":
+                current.append(sql[index + 1])
+                index += 1
+            else:
+                in_string = not in_string
+        elif character == ";" and not in_string:
+            statement = "".join(current[:-1]).strip()
+            if statement:
+                statements.append(statement)
+            current = []
+
+        index += 1
+
+    trailing = "".join(current).strip()
+    if trailing:
+        statements.append(trailing)
+    return statements
 
 
 def main():

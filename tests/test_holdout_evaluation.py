@@ -88,3 +88,29 @@ def test_independent_holdout_rejects_missing_freeze(tmp_path):
 
     with pytest.raises(ValueError, match="15 to 20"):
         evaluate(path, "independent")
+
+
+def test_error_analysis_records_inputs_and_a_fix_for_each_miss(tmp_path):
+    path = tmp_path / "miss.csv"
+    with path.open("w", newline="") as destination:
+        writer = csv.writer(destination)
+        writer.writerow([
+            "id", "logs_json", "missing_rows", "expected_rows",
+            "actual_rows", "expected",
+        ])
+        writer.writerow([
+            "miss-1", json.dumps(["Execution deadline exceeded"]), 0,
+            100, 100, "schema_mismatch",
+        ])
+
+    result = evaluate(path)
+    rendered = render_markdown(result)
+
+    assert result["results"][0]["inputs"]["logs"] == [
+        "Execution deadline exceeded"
+    ]
+    assert "miss-1" in rendered
+    assert "schema_mismatch" in rendered
+    assert "timeout" in rendered
+    assert "Evidence reviewed" in rendered
+    assert "smallest rule or abstention test" in rendered

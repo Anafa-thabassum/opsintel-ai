@@ -2,11 +2,24 @@
 
 Target duration: **2 minutes 45 seconds**, leaving 15 seconds of upload margin.
 
+## 60-second judge path
+
+1. **0:00–0:10:** open the dashboard and select `daily_sales_import`.
+2. **0:10–0:35:** move left to right through observed facts, candidate causes,
+   and “not yet verified”; point to the next safe check.
+3. **0:35–0:50:** show the Exasol cascade from `customer_sync` to three failed
+   downstream runs.
+4. **0:50–1:00:** select `partner_feed` and show that unfamiliar evidence stays
+   “Unknown — evidence insufficient” with a useful next check.
+
 ## 0:00-0:20 - Problem
 
-> Overnight data pipelines fail, and the engineer on call has to join run
-> metadata, row counts, and scattered logs before they can even form a useful
-> hypothesis. OpsIntel AI turns that evidence into a traceable investigation.
+> At 3:07 a.m., a pipeline alert says “failed,” but the engineer still has to
+> explain why a run expected 100 rows but received 80. They must join run
+> metadata, row counts, and scattered logs before forming a useful
+> hypothesis. OpsIntel turns that evidence into a traceable investigation. It
+> refuses to name an unverified root cause and keeps facts separate from
+> explanation. The impact study has not run yet, so no time saving is claimed.
 
 Show the title slide, then move immediately to the live dashboard.
 
@@ -57,15 +70,16 @@ Show the failure-cascade panel.
 
 Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
 
-> Exasol is the analytical core. Window functions calculate previous status,
-> rolling row-count baselines, completeness, and rolling failure rates. A
-> reproducible local benchmark exercises the same window analytics over one
-> million synthetic runs. The recorded median query was 473 milliseconds,
-> with the exact script and raw measurements included in the repository.
+> Exasol is the operational analytical core. Window functions calculate
+> previous status, rolling row-count baselines, completeness, and failure
+> rates; CONNECT BY traverses dependencies; and the bulk import path loads the
+> synthetic benchmark. In the controlled cache-off comparison, DuckDB was
+> faster on this laptop, including about 4.5 times faster at ten million rows.
+> We publish that result instead of claiming an unsupported Exasol speed win.
 
 ## 2:25-2:50 - Evidence and close
 
-> The project has 71 automated tests, a 16-case regression challenge set, and
+> The project has 75 automated tests, a 16-case regression challenge set, and
 > a separate versioned project-authored holdout with 27 of 27 correct
 > classifications
 > across all nine outcomes. The project team authored that holdout. The external

@@ -102,6 +102,7 @@ def run_comparison(row_counts, repetitions, engines):
                 "rows": rows,
                 "result_days": result["result_days"],
                 "repetitions": repetitions,
+                "query_cache": result["query_cache"],
                 "load_seconds": result["import_seconds"],
                 "query_latency_ms": result["query_latency_ms"],
             })
@@ -114,6 +115,7 @@ def run_comparison(row_counts, repetitions, engines):
         "row_counts": row_counts,
         "repetitions": repetitions,
         "execution": "sequential local single-user runs",
+        "cache_policy": "Exasol query cache disabled; DuckDB in-memory connection reused",
         "environment": {
             "python": platform.python_version(),
             "platform": platform.platform(),
@@ -142,6 +144,24 @@ def render_svg(result, path):
         raise ValueError("Benchmark result contains no positive median latencies")
     minimum = max(1, min(values) / 1.5)
     maximum = max(values) * 1.35
+    largest_workload = max(rows)
+    largest_results = sorted(
+        (
+            (engine, indexed[(largest_workload, engine)])
+            for engine in engines
+            if (largest_workload, engine) in indexed
+        ),
+        key=lambda item: item[1],
+    )
+    if len(largest_results) > 1:
+        winner, winner_ms = largest_results[0]
+        ratio = largest_results[-1][1] / winner_ms
+        headline = (
+            f"At {largest_workload / 1_000_000:g}M rows, {winner} was "
+            f"{ratio:.1f}× faster in this local test"
+        )
+    else:
+        headline = "Recorded median analytical-query latency"
     log_min, log_max = math.log10(minimum), math.log10(maximum)
     colors = ["#9b8cff", "#58ddb0", "#61d9f7"]
     width, height = 960, 540
@@ -156,8 +176,8 @@ def render_svg(result, path):
     lines = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">',
         '<rect width="960" height="540" fill="#090c14"/>',
-        '<text x="48" y="46" fill="#f0f3fa" font-family="Arial" font-size="27" font-weight="700">Median analytical-query latency</text>',
-        '<text x="48" y="72" fill="#9aa5bd" font-family="Arial" font-size="14">Identical deterministic workload · local single-user · milliseconds on a logarithmic scale</text>',
+        f'<text x="48" y="46" fill="#f0f3fa" font-family="Arial" font-size="25" font-weight="700">{html.escape(headline)}</text>',
+        '<text x="48" y="72" fill="#9aa5bd" font-family="Arial" font-size="14">Same deterministic workload · seven runs · Exasol query cache OFF · local single-user</text>',
     ]
     for tick in (10, 100, 1000, 10000):
         if minimum <= tick <= maximum:

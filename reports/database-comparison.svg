@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+<rect width="960" height="540" fill="#090c14"/>
+<text x="48" y="46" fill="#f0f3fa" font-family="Arial" font-size="25" font-weight="700">At 10M rows, DuckDB was 4.5× faster in this local test</text>
+<text x="48" y="72" fill="#9aa5bd" font-family="Arial" font-size="14">Same deterministic workload · seven runs · Exasol query cache OFF · local single-user</text>
+<line x1="100" y1="405.3" x2="890" y2="405.3" stroke="#273149" stroke-width="1"/>
+<text x="86" y="410.3" text-anchor="end" fill="#74809a" font-family="Arial" font-size="13">100</text>
+<line x1="100" y1="234.9" x2="890" y2="234.9" stroke="#273149" stroke-width="1"/>
+<text x="86" y="239.9" text-anchor="end" fill="#74809a" font-family="Arial" font-size="13">1,000</text>
+<rect x="205.5" y="395.0" width="80.0" height="30.0" rx="8" fill="#9b8cff"/>
+<text x="245.5" y="385.0" text-anchor="middle" fill="#f0f3fa" font-family="Arial" font-size="13" font-weight="700">114.9 ms</text>
+<rect x="297.5" y="296.1" width="80.0" height="128.9" rx="8" fill="#58ddb0"/>
+<text x="337.5" y="286.1" text-anchor="middle" fill="#f0f3fa" font-family="Arial" font-size="13" font-weight="700">437.1 ms</text>
+<text x="297.5" y="456" text-anchor="middle" fill="#d7deef" font-family="Arial" font-size="15">1M rows</text>
+<rect x="600.5" y="229.1" width="80.0" height="195.9" rx="8" fill="#9b8cff"/>
+<text x="640.5" y="219.1" text-anchor="middle" fill="#f0f3fa" font-family="Arial" font-size="13" font-weight="700">1,080.4 ms</text>
+<rect x="692.5" y="117.2" width="80.0" height="307.8" rx="8" fill="#58ddb0"/>
+<text x="732.5" y="107.2" text-anchor="middle" fill="#f0f3fa" font-family="Arial" font-size="13" font-weight="700">4,902.3 ms</text>
+<text x="692.5" y="456" text-anchor="middle" fill="#d7deef" font-family="Arial" font-size="15">10M rows</text>
+<rect x="100" y="486" width="14" height="14" rx="3" fill="#9b8cff"/>
+<text x="122" y="498" fill="#9aa5bd" font-family="Arial" font-size="14">DuckDB</text>
+<rect x="280" y="486" width="14" height="14" rx="3" fill="#58ddb0"/>
+<text x="302" y="498" fill="#9aa5bd" font-family="Arial" font-size="14">Exasol Personal</text>
+</svg>

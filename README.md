@@ -22,7 +22,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 71 automated tests and a 16-case synthetic challenge set.
+- 75 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -293,12 +293,13 @@ npm run build
 
 Latest verified results:
 
-- **71/71 automated tests passed**.
+- **75/75 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
-- **1,000,000 synthetic Exasol runs queried in 473.209 ms median and
-  503.947 ms p95** across seven local repetitions.
+- **Controlled 1M/10M Exasol–DuckDB comparison recorded** with seven runs per
+  engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
+  this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.
 - **Frontend lint passed with no warnings**.
 - **Frontend production build passed**.
 
@@ -309,8 +310,9 @@ Keep that output with the benchmark record when preparing the judging demo.
 These results demonstrate reproducibility on the included synthetic scenarios
 and a local, single-user analytical benchmark; they are not production
 accuracy, throughput, or concurrency claims. See
-[`reports/evaluation.md`](reports/evaluation.md) and the raw
-[`benchmark result`](reports/exasol-benchmark.json).
+[`reports/evaluation.md`](reports/evaluation.md), the earlier raw
+[`Exasol benchmark`](reports/exasol-benchmark.json), and the controlled
+[`database comparison`](reports/database-comparison.json).
 
 The [`judging evidence map`](reports/judging-scorecard.md) links each published
 criterion to a concrete file or demo moment.
@@ -358,17 +360,23 @@ is **0/40 trials from 0/4 participants**.
 
 `make benchmark-compare` runs the same window-analytics and daily-aggregation
 workload on Exasol Personal and DuckDB at one million and ten million rows. The
-repository currently includes a measured
-[`DuckDB baseline`](reports/duckdb-baseline.json) and an
-[`editable SVG chart`](reports/duckdb-baseline.svg). A complete engine comparison
-is not claimed until the command records both engines in
-`reports/database-comparison.json` on the same machine.
+repository includes the same-machine
+[`database comparison`](reports/database-comparison.json) and an
+[`editable SVG chart`](reports/database-comparison.svg). Exasol's repeated-query
+cache is disabled; both engines run sequentially with seven measured queries.
+
+The result is deliberately not cherry-picked. At 1M rows, DuckDB recorded a
+114.912 ms median versus Exasol's 437.118 ms. At 10M rows, DuckDB recorded
+1,080.358 ms versus Exasol's 4,902.269 ms—about 4.5× faster in this local test.
+This does not support an Exasol speed-win claim.
 
 This comparison is local and single-user. It tests query latency, not
 concurrency, distributed scale, operational cost, or production reliability.
 Exasol remains central because shared pipeline history, window features, log
-evidence, and dependency cascades stay queryable inside the operational
-analytical database instead of being extracted into the API process.
+evidence, and hierarchical dependency cascades stay queryable inside the
+operational analytical database instead of being extracted into the API
+process. The implementation uses analytical window functions, `CONNECT BY`,
+and PyExasol's bulk iterable import path. It does not implement a UDF.
 
 ## Airflow and dbt import sample
 

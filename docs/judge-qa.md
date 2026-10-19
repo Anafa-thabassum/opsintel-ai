@@ -8,7 +8,13 @@ rolling row-count baselines, completeness, and rolling failure rate. Moving
 those calculations into the database keeps the API thin and makes the evidence
 queryable and reproducible. A second Exasol view uses hierarchical `CONNECT BY`
 processing to correlate one failed upstream pipeline with three failed
-downstream runs.
+downstream runs. The benchmark loader uses PyExasol's bulk iterable import path;
+the project does not claim to implement a UDF.
+
+The controlled cache-off comparison did not show an Exasol speed advantage:
+DuckDB was about 4.5× faster at 10M rows on this laptop. Exasol earns its role
+here by keeping shared operational evidence and cross-pipeline analysis in the
+database used by the live API, not by an unsupported benchmark claim.
 
 ## Is this really AI?
 
@@ -40,7 +46,7 @@ An external evaluator must use the reviewer template, which currently contains
 
 ## What has been measured?
 
-Automated tests, a predefined 16-case synthetic regression set, a separate
+Seventy-five automated tests, a predefined 16-case synthetic regression set, a separate
 27-case versioned project-authored holdout, frontend quality checks, and a
 reproducible local Exasol scale benchmark. The holdout is project-authored. The
 external holdout has 0 cases from 0 authors, while the frozen four-participant

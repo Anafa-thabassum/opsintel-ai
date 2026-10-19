@@ -23,7 +23,7 @@ const categoryLabels = {
   delayed_run: "Delayed run",
   duplicate_data: "Duplicate or excess data",
   conflicting_evidence: "Conflicting evidence",
-  unclassified: "Unclassified",
+  unclassified: "Unknown — evidence insufficient",
 };
 
 function navigate(route) {
@@ -563,41 +563,49 @@ function Dashboard({ onExit }) {
                     <div className="assessment-tags"><span><ShieldCheck size={13} /> Cause unconfirmed</span><span><FileSearch size={13} /> {investigation.evidence?.length || 0} evidence items</span></div>
                   </div>
 
-                  <div className="evidence-section">
-                    <div className="section-title"><span>Evidence trail</span><span>{investigation.evidence?.length || 0} OBSERVATIONS</span></div>
-                    <div className="evidence-list">
-                      {(investigation.evidence || []).map((item, index) => (
-                        <div className="evidence-item" key={`${item.type}-${item.log_id ?? index}`}>
-                          <div className={`evidence-marker ${item.type === "pipeline_log" ? "log-marker" : ""}`}>
-                            {item.type === "pipeline_log" ? <Terminal size={14} /> : <Database size={14} />}
+                  <div className="decision-grid" aria-label="Evidence, candidates, and verification state">
+                    <section className="decision-column observation-column">
+                      <div className="decision-column-heading"><Database size={14} /><span>01 · Observed facts</span><em>{investigation.evidence?.length || 0}</em></div>
+                      <div className="evidence-list">
+                        {(investigation.evidence || []).map((item, index) => (
+                          <div className="evidence-item" key={`${item.type}-${item.log_id ?? index}`}>
+                            <div className={`evidence-marker ${item.type === "pipeline_log" ? "log-marker" : ""}`}>
+                              {item.type === "pipeline_log" ? <Terminal size={14} /> : <Database size={14} />}
+                            </div>
+                            <div className="evidence-copy">
+                              <em>OBSERVED FACT</em>
+                              <p>{item.observation}</p>
+                              <span>{item.source}{item.log_id != null ? ` · LOG-${item.log_id}` : item.run_id != null ? ` · RUN-${item.run_id}` : ""}{item.timestamp ? ` · ${item.timestamp}` : ""}</span>
+                            </div>
                           </div>
-                          <div className="evidence-copy">
-                            <em>OBSERVED FACT</em>
-                            <p>{item.observation}</p>
-                            <span>{item.source}{item.log_id != null ? ` · LOG-${item.log_id}` : item.run_id != null ? ` · RUN-${item.run_id}` : ""}{item.timestamp ? ` · ${item.timestamp}` : ""}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                        ))}
+                      </div>
+                    </section>
 
-                  <div className="recommendation-card">
-                    <div className="recommendation-icon"><Zap size={17} /></div>
-                    <div><span>RECOMMENDED NEXT ACTION</span><p>{investigation.recommended_action}</p></div>
-                  </div>
-
-                  {rootCauses && (
-                    <div className="candidate-section">
-                      <div className="section-title"><span>Evidence-supported candidates</span><span>{rootCauses.candidates?.length || 0} CANDIDATES</span></div>
-                      {(rootCauses.candidates || []).map((candidate, index) => (
+                    <section className="decision-column candidate-column">
+                      <div className="decision-column-heading"><Sparkles size={14} /><span>02 · Candidate causes</span><em>{rootCauses?.candidates?.length || 0}</em></div>
+                      {(rootCauses?.candidates || []).map((candidate, index) => (
                         <div className="candidate-card" key={`${candidate.cause}-${index}`}>
                           <div className="candidate-number">{String(index + 1).padStart(2, "0")}</div>
                           <div className="candidate-copy"><strong>{candidate.cause}</strong><p>{candidate.next_action}</p><span>CANDIDATE · {candidate.status.replaceAll("_", " ")}</span></div>
                         </div>
                       ))}
-                      <div className="not-confirmed"><ShieldCheck size={15} /><span>Confirmed root cause: <strong>{rootCauses.confirmed_root_cause ?? "None"}</strong></span></div>
-                    </div>
-                  )}
+                      {!rootCauses && <div className="column-placeholder">Candidate retrieval pending.</div>}
+                    </section>
+
+                    <section className="decision-column confirmation-column">
+                      <div className="decision-column-heading"><ShieldCheck size={14} /><span>03 · Human confirmation</span></div>
+                      <div className="verification-state">
+                        <span>NOT YET VERIFIED</span>
+                        <strong>{rootCauses?.confirmed_root_cause ?? "No confirmed root cause"}</strong>
+                        <p>The system does not promote a candidate or run a repair.</p>
+                      </div>
+                      <div className="recommendation-card">
+                        <div className="recommendation-icon"><Zap size={17} /></div>
+                        <div><span>NEXT SAFE CHECK</span><p>{investigation.recommended_action}</p></div>
+                      </div>
+                    </section>
+                  </div>
 
                   {investigation.llm_summary?.status === "generated" && (
                     <div className="llm-summary-card">

@@ -8,6 +8,19 @@ def test_sql_loader_ignores_comments_and_splits_statements(tmp_path):
     assert load_statements(sql_file) == ["SELECT 1", "SELECT 2"]
 
 
+def test_sql_loader_preserves_semicolons_and_escaped_quotes_in_literals(tmp_path):
+    sql_file = tmp_path / "quoted.sql"
+    sql_file.write_text(
+        "INSERT INTO logs VALUES ('Pipeline started; it''s running');\n"
+        "SELECT 2;\n"
+    )
+
+    assert load_statements(sql_file) == [
+        "INSERT INTO logs VALUES ('Pipeline started; it''s running')",
+        "SELECT 2",
+    ]
+
+
 def test_reset_recreates_schema_seed_and_analytics(monkeypatch, capsys):
     from scripts import setup_database
 

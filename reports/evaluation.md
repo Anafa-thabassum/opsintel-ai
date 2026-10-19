@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **71 passed**
+- Automated tests: **75 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -107,14 +107,23 @@ The complete samples and environment are preserved in
 [`reports/exasol-benchmark.json`](exasol-benchmark.json). This is a local,
 single-user measurement, not a production throughput or concurrency claim.
 
-## Comparative benchmark status
+## Controlled comparative benchmark
 
-The benchmark runner can execute the same analytical workload on Exasol
-Personal and DuckDB at one million and ten million rows. A measured DuckDB-only
-baseline is recorded in `reports/duckdb-baseline.json`. The two-engine report
-remains pending because both engines must be measured sequentially on the same
-machine. The older Exasol result and the new DuckDB baseline must not be
-presented as a controlled engine comparison.
+`reports/database-comparison.json` records the same deterministic workload on
+Exasol Personal and DuckDB at one million and ten million rows, sequentially on
+the same machine, with seven measured queries per engine. Exasol's query cache
+was disabled so repeated result retrieval was not presented as SQL execution.
+
+| Rows | Exasol median | DuckDB median | Faster in this run |
+|---:|---:|---:|---|
+| 1,000,000 | 437.118 ms | 114.912 ms | DuckDB |
+| 10,000,000 | 4,902.269 ms | 1,080.358 ms | DuckDB, about 4.5× |
+
+This local single-user result does not establish concurrency, distributed
+scale, cost, or production performance. It also does not support an Exasol
+speed-win claim. Exasol's demonstrated role is the shared operational evidence
+layer: window analytics, live evidence retrieval, and a hierarchical
+`CONNECT BY` cascade consumed by the API and dashboard.
 
 ## Limitations
 

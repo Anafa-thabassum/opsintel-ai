@@ -134,6 +134,12 @@ def evaluate(path, provenance="project-authored", frozen_ref=None):
             "expected": expected,
             "predicted": predicted,
             "correct": predicted == expected,
+            "inputs": {
+                "logs": logs,
+                "missing_rows": int(row["missing_rows"]),
+                "expected_rows": expected_rows,
+                "actual_rows": actual_rows,
+            },
         })
 
     correct = sum(result["correct"] for result in results)
@@ -210,11 +216,22 @@ def render_markdown(report):
     if misses:
         lines.append("The evaluator recorded these misses:")
         lines.append("")
-        lines.append("| Case | Expected | Predicted |")
-        lines.append("|---|---|---|")
+        lines.append("| Case | Expected | Predicted | Evidence reviewed | Next fix to test |")
+        lines.append("|---|---|---|---|---|")
         for result in misses:
+            inputs = result["inputs"]
+            evidence = "; ".join(inputs["logs"])
+            if inputs["expected_rows"] is not None:
+                evidence += (
+                    f"; rows {inputs['actual_rows']}/{inputs['expected_rows']}"
+                    f"; missing {inputs['missing_rows']}"
+                )
+            safe_evidence = evidence.replace("|", "\\|")
             lines.append(
-                f"| {result['id']} | {result['expected']} | {result['predicted']} |"
+                f"| {result['id']} | {result['expected']} | {result['predicted']} "
+                f"| {safe_evidence} "
+                "| Add the smallest rule or abstention test that separates the "
+                "expected category without changing this frozen result. |"
             )
         lines.extend([
             "",

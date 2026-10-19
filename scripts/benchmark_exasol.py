@@ -53,6 +53,9 @@ def benchmark(rows, repetitions, keep_schema=False):
     connection = get_connection()
 
     try:
+        # Measure SQL execution rather than repeated-result retrieval. Exasol's
+        # query cache can otherwise return an identical SELECT from cache.
+        connection.execute("ALTER SESSION SET QUERY_CACHE='OFF'")
         connection.execute(f"DROP SCHEMA IF EXISTS {SCHEMA} CASCADE")
         connection.execute(f"CREATE SCHEMA {SCHEMA}")
         connection.execute(f"""
@@ -113,6 +116,7 @@ def benchmark(rows, repetitions, keep_schema=False):
             "incident_rate_pct": 5,
             "result_days": result_days,
             "repetitions": repetitions,
+            "query_cache": "OFF",
             "import_seconds": round(import_seconds, 3),
             "query_latency_ms": {
                 "minimum": round(min(timings_ms), 3),

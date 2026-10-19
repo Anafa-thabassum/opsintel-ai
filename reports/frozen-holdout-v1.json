@@ -1,10 +1,12 @@
 {
   "evaluation": "frozen-synthetic-holdout-v1",
+  "provenance": "project-authored",
+  "author_ids": [],
   "dataset_file": "frozen_holdout_v1.csv",
   "dataset_sha256": "a7da47b53b8b985238cfb4f59cfb71755a3b76a283467df125c99e46fa181f71",
   "classifier_file": "app/investigator.py",
   "classifier_sha256": "762eee2ad9077a1ee067e2c1276015b6a9eb4e253be1e05c8127b5abad724181",
-  "classifier_commit": "eb7a2d8c2202a45603015c32e9a187de533f5a21",
+  "classifier_commit": "df31d84f1437e8b10920ef414f29d4d9fe70a9d5",
   "correct": 27,
   "total": 27,
   "accuracy_pct": 100.0,
@@ -46,169 +48,388 @@
       "total": 3
     }
   },
-  "scope": "Project-authored versioned synthetic holdout; dataset and result entered Git history together, so freeze order is not independently proven. Not an independent or production accuracy estimate.",
+  "scope": "Project-authored synthetic holdout frozen before execution; not an independent or production accuracy estimate.",
   "results": [
     {
       "id": "holdout-timeout-01",
       "expected": "timeout",
       "predicted": "timeout",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Final merge timed out after 1,200 seconds"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 500,
+        "actual_rows": 500
+      }
     },
     {
       "id": "holdout-timeout-02",
       "expected": "timeout",
       "predicted": "timeout",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Nightly export hit the configured time limit during publish"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 750,
+        "actual_rows": 750
+      }
     },
     {
       "id": "holdout-timeout-03",
       "expected": "timeout",
       "predicted": "timeout",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Execution exceeded the allowed duration while waiting for lock release"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 1200,
+        "actual_rows": 1200
+      }
     },
     {
       "id": "holdout-schema-01",
       "expected": "schema_mismatch",
       "predicted": "schema_mismatch",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Column type for invoice_total is incompatible with DECIMAL"
+        ],
+        "missing_rows": 14,
+        "expected_rows": 800,
+        "actual_rows": 786
+      }
     },
     {
       "id": "holdout-schema-02",
       "expected": "schema_mismatch",
       "predicted": "schema_mismatch",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Load rejected payload after invalid cast on event_timestamp"
+        ],
+        "missing_rows": 7,
+        "expected_rows": 900,
+        "actual_rows": 893
+      }
     },
     {
       "id": "holdout-schema-03",
       "expected": "schema_mismatch",
       "predicted": "schema_mismatch",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Incoming customer_id data type does not match expected BIGINT"
+        ],
+        "missing_rows": 22,
+        "expected_rows": 1000,
+        "actual_rows": 978
+      }
     },
     {
       "id": "holdout-dependency-01",
       "expected": "dependency_failure",
       "predicted": "dependency_failure",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Upstream task failed before finance_rollup could start"
+        ],
+        "missing_rows": 600,
+        "expected_rows": 600,
+        "actual_rows": 0
+      }
     },
     {
       "id": "holdout-dependency-02",
       "expected": "dependency_failure",
       "predicted": "dependency_failure",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Pipeline stopped because an upstream dependency reported failure"
+        ],
+        "missing_rows": 450,
+        "expected_rows": 450,
+        "actual_rows": 0
+      }
     },
     {
       "id": "holdout-dependency-03",
       "expected": "dependency_failure",
       "predicted": "dependency_failure",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Prerequisite task failed: stage_inventory"
+        ],
+        "missing_rows": 300,
+        "expected_rows": 300,
+        "actual_rows": 0
+      }
     },
     {
       "id": "holdout-termination-01",
       "expected": "early_termination",
       "predicted": "early_termination",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Worker terminated before completion after checkpoint 9"
+        ],
+        "missing_rows": 31,
+        "expected_rows": 500,
+        "actual_rows": 469
+      }
     },
     {
       "id": "holdout-termination-02",
       "expected": "early_termination",
       "predicted": "early_termination",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Batch processing stopped early while closing partition 4"
+        ],
+        "missing_rows": 48,
+        "expected_rows": 700,
+        "actual_rows": 652
+      }
     },
     {
       "id": "holdout-termination-03",
       "expected": "early_termination",
       "predicted": "early_termination",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "The load aborted before completion when the writer closed"
+        ],
+        "missing_rows": 19,
+        "expected_rows": 250,
+        "actual_rows": 231
+      }
     },
     {
       "id": "holdout-incomplete-01",
       "expected": "incomplete_data",
       "predicted": "incomplete_data",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Extract validation found a row shortfall of 32 records"
+        ],
+        "missing_rows": 32,
+        "expected_rows": 900,
+        "actual_rows": 868
+      }
     },
     {
       "id": "holdout-incomplete-02",
       "expected": "incomplete_data",
       "predicted": "incomplete_data",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Source file contains missing rows for the final partition"
+        ],
+        "missing_rows": 18,
+        "expected_rows": 600,
+        "actual_rows": 582
+      }
     },
     {
       "id": "holdout-incomplete-03",
       "expected": "incomplete_data",
       "predicted": "incomplete_data",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Input delivered fewer rows than expected after filtering"
+        ],
+        "missing_rows": 25,
+        "expected_rows": 1000,
+        "actual_rows": 975
+      }
     },
     {
       "id": "holdout-delayed-01",
       "expected": "delayed_run",
       "predicted": "delayed_run",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Run started late after the scheduler queue backed up"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 400,
+        "actual_rows": 400
+      }
     },
     {
       "id": "holdout-delayed-02",
       "expected": "delayed_run",
       "predicted": "delayed_run",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Schedule delay detected for the hourly customer refresh"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 550,
+        "actual_rows": 550
+      }
     },
     {
       "id": "holdout-delayed-03",
       "expected": "delayed_run",
       "predicted": "delayed_run",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Daily aggregate missed its SLA by 14 minutes"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 620,
+        "actual_rows": 620
+      }
     },
     {
       "id": "holdout-duplicate-01",
       "expected": "duplicate_data",
       "predicted": "duplicate_data",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Retry introduced duplicate records in the destination"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 800,
+        "actual_rows": 816
+      }
     },
     {
       "id": "holdout-duplicate-02",
       "expected": "duplicate_data",
       "predicted": "duplicate_data",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Target contains more rows than expected after replay"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 1000,
+        "actual_rows": 1013
+      }
     },
     {
       "id": "holdout-duplicate-03",
       "expected": "duplicate_data",
       "predicted": "duplicate_data",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Run finished with a row-count mismatch after a retry"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 1000,
+        "actual_rows": 1008
+      }
     },
     {
       "id": "holdout-conflict-01",
       "expected": "conflicting_evidence",
       "predicted": "conflicting_evidence",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Pipeline completed successfully",
+          "Final status reported failed"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 300,
+        "actual_rows": 300
+      }
     },
     {
       "id": "holdout-conflict-02",
       "expected": "conflicting_evidence",
       "predicted": "conflicting_evidence",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "All expected rows processed",
+          "Worker error recorded after commit"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 650,
+        "actual_rows": 650
+      }
     },
     {
       "id": "holdout-conflict-03",
       "expected": "conflicting_evidence",
       "predicted": "conflicting_evidence",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Finished successfully with 800 rows",
+          "Control table marked run as aborted"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 800,
+        "actual_rows": 800
+      }
     },
     {
       "id": "holdout-unknown-01",
       "expected": "unclassified",
       "predicted": "unclassified",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Worker exited with signal 15 and no further diagnostic record"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 500,
+        "actual_rows": 500
+      }
     },
     {
       "id": "holdout-unknown-02",
       "expected": "unclassified",
       "predicted": "unclassified",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Timeout setting is 30 minutes for this pipeline"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 450,
+        "actual_rows": 450
+      }
     },
     {
       "id": "holdout-unknown-03",
       "expected": "unclassified",
       "predicted": "unclassified",
-      "correct": true
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Maintenance window notification acknowledged by scheduler"
+        ],
+        "missing_rows": 0,
+        "expected_rows": 700,
+        "actual_rows": 700
+      }
     }
   ]
 }

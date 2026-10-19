@@ -1,0 +1,110 @@
+{
+  "benchmark": "OpsIntel window analytics and daily aggregation",
+  "dataset": "identical deterministic synthetic pipeline history",
+  "row_counts": [
+    1000000,
+    10000000
+  ],
+  "repetitions": 7,
+  "execution": "sequential local single-user runs",
+  "cache_policy": "Exasol query cache disabled; DuckDB in-memory connection reused",
+  "environment": {
+    "python": "3.14.0",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+  },
+  "scope": "A local engine comparison, not a production throughput, concurrency, cost, or deployment benchmark.",
+  "results": [
+    {
+      "engine": "Exasol Personal",
+      "rows": 1000000,
+      "result_days": 695,
+      "repetitions": 7,
+      "query_cache": "OFF",
+      "load_seconds": 2.942,
+      "query_latency_ms": {
+        "minimum": 427.911,
+        "median": 437.118,
+        "p95_nearest_rank": 508.867,
+        "maximum": 508.867,
+        "samples": [
+          436.229,
+          508.867,
+          446.062,
+          432.918,
+          427.911,
+          437.118,
+          455.687
+        ]
+      }
+    },
+    {
+      "engine": "DuckDB",
+      "version": "1.5.6",
+      "rows": 1000000,
+      "result_days": 695,
+      "repetitions": 7,
+      "load_seconds": 0.244,
+      "query_latency_ms": {
+        "minimum": 92.139,
+        "median": 114.912,
+        "p95_nearest_rank": 132.461,
+        "maximum": 132.461,
+        "samples": [
+          92.139,
+          122.361,
+          101.761,
+          119.635,
+          114.912,
+          109.337,
+          132.461
+        ]
+      }
+    },
+    {
+      "engine": "Exasol Personal",
+      "rows": 10000000,
+      "result_days": 6945,
+      "repetitions": 7,
+      "query_cache": "OFF",
+      "load_seconds": 30.388,
+      "query_latency_ms": {
+        "minimum": 4134.953,
+        "median": 4902.269,
+        "p95_nearest_rank": 6332.172,
+        "maximum": 6332.172,
+        "samples": [
+          5310.894,
+          6027.066,
+          4902.269,
+          6332.172,
+          4871.007,
+          4172.563,
+          4134.953
+        ]
+      }
+    },
+    {
+      "engine": "DuckDB",
+      "version": "1.5.6",
+      "rows": 10000000,
+      "result_days": 6945,
+      "repetitions": 7,
+      "load_seconds": 2.444,
+      "query_latency_ms": {
+        "minimum": 1062.951,
+        "median": 1080.358,
+        "p95_nearest_rank": 1099.725,
+        "maximum": 1099.725,
+        "samples": [
+          1089.547,
+          1099.725,
+          1062.951,
+          1087.453,
+          1064.871,
+          1069.421,
+          1080.358
+        ]
+      }
+    }
+  ]
+}

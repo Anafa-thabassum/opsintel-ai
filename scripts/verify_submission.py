@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = {
     "README.md",
     "reports/evaluation.md",
+    "reports/database-comparison.json",
     "reports/exasol-benchmark.json",
     "reports/frozen-holdout-v1.json",
     "submission/opsintel-ai-pitch-deck.pptx",
@@ -57,9 +58,13 @@ def pptx_text_and_slide_count(path):
             name for name in package.namelist()
             if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)
         )
+        charts = sorted(
+            name for name in package.namelist()
+            if re.fullmatch(r"ppt/(?:slides/)?charts/chart\d+\.xml", name)
+        )
         text = " ".join(
             re.sub(r"<[^>]+>", " ", package.read(name).decode("utf-8"))
-            for name in slides
+            for name in slides + charts
         )
     return re.sub(r"\s+", " ", text), len(slides)
 
@@ -94,6 +99,9 @@ def verify(allow_dirty=False):
 
     holdout = json.loads((ROOT / "reports/frozen-holdout-v1.json").read_text())
     benchmark = json.loads((ROOT / "reports/exasol-benchmark.json").read_text())
+    comparison = json.loads(
+        (ROOT / "reports/database-comparison.json").read_text()
+    )
     evaluation = (ROOT / "reports/evaluation.md").read_text()
     readme = (ROOT / "README.md").read_text()
     narration = (ROOT / "submission/video-narration.txt").read_text().lower()
@@ -101,17 +109,43 @@ def verify(allow_dirty=False):
     correct = holdout["correct"]
     median = benchmark["query_latency_ms"]["median"]
     p95 = benchmark["query_latency_ms"]["p95_nearest_rank"]
+    largest_workload = max(comparison["row_counts"])
+    comparison_results = {
+        item["engine"]: item
+        for item in comparison["results"]
+        if item["rows"] == largest_workload
+    }
+    exasol_median = comparison_results["Exasol Personal"]["query_latency_ms"]["median"]
+    duckdb_median = comparison_results["DuckDB"]["query_latency_ms"]["median"]
+    speed_ratio = round(exasol_median / duckdb_median, 1)
 
-    for claim in (f"{correct}/{total}", f"{median}", f"{p95}"):
+    for claim in (f"{correct}/{total}",):
         if claim not in evaluation or claim not in readme:
             failures.append(f"Claim {claim!r} is inconsistent between the report and README")
+    for claim in (f"{exasol_median:,.3f}", f"{duckdb_median:,.3f}"):
+        if claim not in evaluation or claim not in readme:
+            failures.append(
+                f"Controlled benchmark {claim!r} is inconsistent between the report and README"
+            )
     if not re.search(rf"{correct}\s*/\s*{total}", deck_text):
         failures.append("Holdout result is inconsistent in the deck")
-    for value, label in ((round(median), "median"), (round(p95), "p95")):
+    for value, label in (
+        (exasol_median, "Exasol 10M median"),
+        (duckdb_median, "DuckDB 10M median"),
+    ):
         if str(value) not in deck_text:
-            failures.append(f"Rounded {label} benchmark is inconsistent in the deck")
-    if "seventy-one" not in narration:
-        failures.append("Narration does not state the current seventy-one-test result")
+            failures.append(f"Rounded {label} is inconsistent in the deck")
+    if str(speed_ratio) not in deck_text:
+        failures.append("Controlled benchmark ratio is inconsistent in the deck")
+    for artifact_name, content in (
+        ("README", readme),
+        ("evaluation report", evaluation),
+        ("deck", deck_text),
+    ):
+        if "75" not in content:
+            failures.append(f"Current 75-test result is missing from the {artifact_name}")
+    if "seventy-five" not in narration:
+        failures.append("Narration does not state the current seventy-five-test result")
 
     return {
         "commit": _git("rev-parse", "HEAD").strip(),

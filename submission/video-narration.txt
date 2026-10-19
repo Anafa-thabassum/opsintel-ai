@@ -1,4 +1,4 @@
-Overnight data pipelines fail, and the engineer on call must assemble run metadata, row counts, and scattered logs before forming a useful hypothesis. OpsIntel AI turns that evidence into a traceable investigation.
+At 3:07 a.m., a pipeline alert says failed, but the engineer on call still has to explain why a run expected one hundred rows and received eighty. They must assemble run metadata, row counts, and scattered logs before forming a useful hypothesis. OpsIntel AI turns that evidence into a traceable investigation. It refuses to name an unverified root cause and keeps facts separate from explanation. The impact study has not run, so no time saving is claimed.
 
 The target user is a data engineer responsible for business-critical pipelines. Manual investigation means finding the failed run, comparing counts, searching logs, and choosing the next check. OpsIntel is designed to reduce those context switches. A real participant study is prepared, but no time-saving claim is made before it is run.
 
@@ -10,12 +10,12 @@ Selecting daily sales import starts the investigation. The run expected one hund
 
 Exasol calculates previous-run status, rolling row-count baselines, failure rate, completeness, and daily incident telemetry before FastAPI responds. The slide shows the exact view query and recorded output from the original four-case seed. The expanded seed must be reset before the live demonstration.
 
-A second Exasol query uses CONNECT BY to traverse pipeline dependencies. One failed customer sync can expose three downstream incidents that share the same upstream evidence. A DuckDB baseline is recorded at one and ten million rows; the controlled same-machine Exasol comparison is still pending, so no database winner is claimed.
+A second Exasol query uses CONNECT BY to traverse pipeline dependencies. One failed customer sync exposes three downstream incidents that share the same upstream evidence. The controlled cache-off comparison is recorded at one and ten million rows. DuckDB was faster on this laptop, including about four point five times faster at ten million rows. Exasol's value here is the shared operational evidence layer and live hierarchical analysis, not an unsupported speed claim.
 
 The measured Exasol benchmark imported one million deterministic synthetic runs in three point zero two five seconds. Across seven analytical queries, median latency was four hundred and seventy-three milliseconds and p ninety-five was five hundred and four milliseconds in a local single-user environment. This is not a concurrency guarantee.
 
 The product is designed to abstain before it overclaims. Observations are source-backed facts. Candidates are evidence-supported possibilities. Confirmation is reserved for the engineer. Every optional language-model claim must cite a retrieved run or log identifier; one unknown reference rejects the entire generated response.
 
-The repository has seventy-one passing automated tests, a sixteen-case regression suite, and a versioned project-authored holdout scoring twenty-seven of twenty-seven. Its dataset and result entered Git history together, so freeze order is not independently proven. The external holdout currently has zero reviewer cases from zero external authors. The impact study has zero of forty assigned trials from zero of four participants.
+The repository has seventy-five passing automated tests, a sixteen-case regression suite, and a versioned project-authored holdout scoring twenty-seven of twenty-seven. Its dataset and result entered Git history together, so freeze order is not independently proven. The external holdout currently has zero reviewer cases from zero external authors. The impact study has zero of forty assigned trials from zero of four participants.
 
 OpsIntel AI brings the failed run, source evidence, candidate explanations, and the next safe action into one investigation view. Follow the evidence. Investigate faster. Confirm carefully.
