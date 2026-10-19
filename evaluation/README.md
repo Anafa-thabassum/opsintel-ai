@@ -1,14 +1,15 @@
 # Holdout evaluation
 
-## Published frozen holdout
+## Published versioned holdout
 
 `frozen_holdout_v1.csv` contains 27 project-authored synthetic cases that are
 separate from the 16-case regression suite. It covers all nine classifier
 outcomes with three cases per expected category.
 
-The labels were frozen before execution. The published report records the
-dataset hash, classifier hash, classifier commit, category totals, and every
-prediction:
+The published report records the dataset hash, classifier hash, classifier
+commit, category totals, and every prediction. The dataset and result first
+entered Git history together, so v1 does not independently prove pre-run label
+freezing:
 
 - `reports/frozen-holdout-v1.md`
 - `reports/frozen-holdout-v1.json`

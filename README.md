@@ -295,7 +295,7 @@ Latest verified results:
 
 - **71/71 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
-- **27/27 frozen synthetic holdout cases classified correctly** across all
+- **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
 - **1,000,000 synthetic Exasol runs queried in 473.209 ms median and
   503.947 ms p95** across seven local repetitions.
@@ -315,7 +315,7 @@ accuracy, throughput, or concurrency claims. See
 The [`judging evidence map`](reports/judging-scorecard.md) links each published
 criterion to a concrete file or demo moment.
 
-The separate [`frozen synthetic holdout`](evaluation/frozen_holdout_v1.csv)
+The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published
 [`result report`](reports/frozen-holdout-v1.md). Reproduce it with
 `make holdout`. The project team authored this dataset, so its 27/27 result is
@@ -333,8 +333,9 @@ make independent-holdout \
 
 The evaluator verifies the tagged dataset and classifier hashes, requires two
 or three pseudonymous case-author IDs, and publishes JSON plus Markdown error
-analysis. No independent score is claimed until external reviewers complete
-that process.
+analysis. Current external-reviewer status: **0 cases recorded by 0 external
+authors**. The template must be completed, committed, and tagged before an
+independent result can be reported.
 
 The [human-impact study protocol](reports/impact-study-protocol.md) now includes
 ten frozen cases and a counterbalanced 40-trial assignment for four
@@ -350,8 +351,8 @@ make impact \
 
 The summarizer verifies the frozen assignment, derives outcomes from the hidden
 case key, records hashes and the tested commit, and reports time, agreement,
-traceability, confidence, and unsafe-certainty events. No productivity result
-is claimed until four real participants complete the study.
+traceability, confidence, and unsafe-certainty events. The current result count
+is **0/40 trials from 0/4 participants**.
 
 ## Comparative database benchmark
 
@@ -399,9 +400,9 @@ connector.
 - Classification uses transparent rules rather than semantic language models.
 - Production concurrency and live orchestrator connectivity have not been
   established; the repository includes exported-JSON adapter samples only.
-- Human productivity impact remains unmeasured; the frozen cases,
-  counterbalanced assignment, prefilled recording template, and result summarizer
-  are ready for a real four-participant study.
+- Human-impact study status: **0/40 assigned trials recorded across 0/4
+  participants**. The frozen cases, counterbalanced assignment, recording
+  template, and result summarizer are ready for administration.
 - Recommendations are diagnostic suggestions, not executed repairs.
 
 ## Licence

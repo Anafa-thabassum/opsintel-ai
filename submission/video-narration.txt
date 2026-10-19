@@ -16,6 +16,6 @@ The measured Exasol benchmark imported one million deterministic synthetic runs 
 
 The product is designed to abstain before it overclaims. Observations are source-backed facts. Candidates are evidence-supported possibilities. Confirmation is reserved for the engineer. Every optional language-model claim must cite a retrieved run or log identifier; one unknown reference rejects the entire generated response.
 
-The repository has seventy-one passing automated tests, a sixteen-case regression suite, and a project-authored frozen holdout scoring twenty-seven of twenty-seven. External-reviewer and human-impact workflows are ready, but no independent accuracy score or measured productivity gain is claimed until real participants complete them.
+The repository has seventy-one passing automated tests, a sixteen-case regression suite, and a versioned project-authored holdout scoring twenty-seven of twenty-seven. Its dataset and result entered Git history together, so freeze order is not independently proven. The external holdout currently has zero reviewer cases from zero external authors. The impact study has zero of forty assigned trials from zero of four participants.
 
 OpsIntel AI brings the failed run, source evidence, candidate explanations, and the next safe action into one investigation view. Follow the evidence. Investigate faster. Confirm carefully.

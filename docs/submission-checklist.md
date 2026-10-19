@@ -11,7 +11,7 @@
 ## Required submission assets
 
 - [x] Clear problem statement and target user.
-- [ ] Public repository updated with the final local changes.
+- [x] Public repository updated with the final consistency changes.
 - [x] Clean README with setup, usage, deployment, and run guide.
 - [x] Reproducible tests and evaluation report.
 - [x] Final pitch deck PDF and PPTX generated in `submission/`.
@@ -22,7 +22,7 @@
 ## Before the deadline
 
 - [x] Run backend tests, evaluation, frontend lint, and production build.
-- [ ] Run the Exasol benchmark and preserve its raw result.
+- [x] Run the Exasol benchmark and preserve its raw result.
 - [ ] Commit the final changes, then perform a clean-clone setup rehearsal.
 - [ ] Check every repository, deck, and video link in a private browser window.
 - [ ] Remove secrets, personal tabs, and local paths from public artifacts.

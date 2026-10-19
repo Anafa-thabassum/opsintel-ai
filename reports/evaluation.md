@@ -44,12 +44,14 @@ unknown evidence.
 The measured result is **16/16 on this predefined synthetic challenge set**.
 It is a reproducible regression benchmark, not a production accuracy claim.
 
-## Frozen synthetic holdout
+## Versioned project-authored holdout
 
 A separate versioned dataset contains 27 cases that do not appear in the
 regression suite. It covers all nine classifier outcomes with three cases per
-expected category. The expected labels were frozen before the evaluator ran,
-and the classifier was not changed between the freeze and the recorded result.
+expected category. The recorded classifier hash matches the pre-existing
+`eb7a2d8` implementation commit. The dataset and result report first entered Git
+history together in `73c44ed`, so the repository does not independently prove
+that the labels were committed before scoring.
 
 | Measure | Result |
 |---|---:|
@@ -117,15 +119,15 @@ presented as a controlled engine comparison.
 ## Limitations
 
 - The scenarios and logs are synthetic.
-- The regression and frozen holdout sets are small and are stored with the
+- The regression and project-authored holdout sets are small and are stored with the
   implementation.
-- The project team authored the frozen holdout; an independent reviewer result
-  remains pending.
+- External-reviewer holdout status: **0 cases recorded by 0 external authors**.
+  The project team authored the published 27-case versioned holdout.
 - Keyword rules do not establish semantic understanding.
 - The optional LLM summary has not received an independent quality evaluation.
-- Human investigation-time impact remains unmeasured; the repository includes
-  ten frozen cases, a counterbalanced four-participant assignment, a recording
-  template, and a deterministic result summarizer ready for administration.
+- Human-impact study status: **0/40 assigned trials recorded across 0/4
+  participants**. The repository includes ten frozen cases, a counterbalanced
+  assignment, a recording template, and a deterministic result summarizer.
 - Candidate explanations remain unconfirmed until an engineer verifies them.
 - Concurrency and production infrastructure have not been evaluated. Airflow
   and dbt exported-JSON adapter samples are included, but they are not live

@@ -46,7 +46,7 @@
       "total": 3
     }
   },
-  "scope": "Project-authored synthetic holdout frozen before execution; not an independent or production accuracy estimate.",
+  "scope": "Project-authored versioned synthetic holdout; dataset and result entered Git history together, so freeze order is not independently proven. Not an independent or production accuracy estimate.",
   "results": [
     {
       "id": "holdout-timeout-01",

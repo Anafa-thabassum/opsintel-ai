@@ -66,10 +66,13 @@ Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
 ## 2:25-2:50 - Evidence and close
 
 > The project has 71 automated tests, a 16-case regression challenge set, and
-> a separate frozen synthetic holdout with 27 of 27 correct classifications
-> across all nine outcomes. The project team authored that holdout, so an
-> independent reviewer result remains pending. OpsIntel puts the failed run,
-> its evidence, candidate explanations, and the next safe check in one view.
+> a separate versioned project-authored holdout with 27 of 27 correct
+> classifications
+> across all nine outcomes. The project team authored that holdout. The external
+> holdout currently contains zero reviewer cases from zero external authors,
+> and the impact study contains zero of forty trials from zero of four
+> participants. OpsIntel puts the failed run, its evidence, candidate
+> explanations, and the next safe check in one view.
 
 End on the repository URL and QR code if one is added during editing.
 

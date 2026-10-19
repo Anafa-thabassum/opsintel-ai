@@ -5,12 +5,12 @@ a self-awarded score.
 
 | Criterion | Evidence | Best demo moment | Claim boundary |
 |---|---|---|---|
-| Innovation and problem impact (25%) | Clear on-call engineer problem, evidence-first workflow, ten frozen study cases and a counterbalanced four-participant protocol | Open an incident and move from row discrepancy to next action | Human time savings remain unmeasured until participants complete all 40 assigned trials |
+| Innovation and problem impact (25%) | Clear on-call engineer problem, evidence-first workflow, ten frozen study cases and a counterbalanced four-participant protocol | Open an incident and move from row discrepancy to next action | 0/40 trials recorded across 0/4 participants; no time-saving result yet |
 | Effective use of Exasol Personal (25%) | Exasol-backed runs and logs, analytical window-function view, hierarchical failure-cascade query, live telemetry, one-million-row benchmark | Show the trend, cascade panel, analytical SQL and benchmark slide | Local single-user benchmark only; two-engine comparison remains pending |
-| Technical excellence (20%) | FastAPI, parameterized queries, timestamped evidence, claim-level LLM references, 71 tests, a 27-case frozen synthetic holdout, CI, frontend lint and production build | Run `make verify` and `make holdout` or open CI | Project-authored synthetic evaluation, not production accuracy or infrastructure |
+| Technical excellence (20%) | FastAPI, parameterized queries, timestamped evidence, claim-level LLM references, 71 tests, a 27-case versioned project-authored holdout, CI, frontend lint and production build | Run `make verify` and `make holdout` or open CI | External holdout has 0 cases from 0 authors; v1 freeze order is not independently proven |
 | Solution design and UX (15%) | Responsive incident dashboard, recent-run timeline, timestamped evidence trail, database source labels, safe next action and session review state | Select `daily_sales_import` and scroll through observations | Review state is demo-session only; accessibility has not received an external audit |
 | Documentation and reproducibility (10%) | README, database setup, deployment guide, evaluation report, raw benchmark, demo script and submission package | Follow the run guide from setup to `/health` | Clean-clone rehearsal on a second machine remains recommended |
-| Open-source quality (5%) | MIT licence, CI, contributing guide, security policy and public repository | Open the repository root | Final local changes still need to be pushed |
+| Open-source quality (5%) | MIT licence, CI, contributing guide, security policy and public repository | Open the repository root | Verify the final commit and public links again after the video replacement |
 
 ## Judge path in five minutes
 

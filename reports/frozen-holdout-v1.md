@@ -10,7 +10,7 @@
 This is a project-authored synthetic holdout, not an independent evaluation or
 a production accuracy estimate.
 
-## Freeze evidence
+## Recorded version evidence
 
 | Item | Frozen value |
 |---|---|
@@ -20,10 +20,11 @@ a production accuracy estimate.
 | Classifier SHA-256 | `762eee2ad9077a1ee067e2c1276015b6a9eb4e253be1e05c8127b5abad724181` |
 | Classifier commit | `eb7a2d8c2202a45603015c32e9a187de533f5a21` |
 
-The expected labels were written into the versioned dataset before the
-evaluator ran. The classifier was not changed between freezing the dataset and
-recording the result. Future case changes must use a new versioned dataset
-instead of editing v1.
+The classifier hash matches the pre-existing `eb7a2d8` implementation commit.
+The dataset and result report first entered Git history together in `73c44ed`,
+so the repository does not independently prove that the expected labels were
+committed before scoring. Future external cases must be committed and tagged
+before the evaluator runs, with the result added in a later commit.
 
 ## Category results
 

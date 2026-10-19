@@ -32,19 +32,19 @@ available.
 
 The recommendation is a diagnostic starting point, not an automated repair.
 The engineer can inspect every source observation. Regression cases include
-paraphrases and benign timeout configuration. A separate 27-case synthetic
-holdout was frozen before execution and scored 27/27 across all nine outcomes.
-Because the project team authored it, an external evaluator must still use the
-reviewer template for a genuinely independent result.
+paraphrases and benign timeout configuration. A separate 27-case versioned
+synthetic holdout scored 27/27 across all nine outcomes. Its dataset and result
+entered Git history together, so it does not independently prove freeze order.
+An external evaluator must use the reviewer template, which currently contains
+0 cases from 0 external authors.
 
 ## What has been measured?
 
 Automated tests, a predefined 16-case synthetic regression set, a separate
-27-case frozen synthetic holdout, frontend quality checks, and a reproducible
-local Exasol scale benchmark. The holdout is project-authored, so these results
-are not presented as independent production accuracy or a human productivity
-study. A frozen, counterbalanced four-participant impact study is ready to run,
-but no participant result is claimed yet.
+27-case versioned project-authored holdout, frontend quality checks, and a
+reproducible local Exasol scale benchmark. The holdout is project-authored. The
+external holdout has 0 cases from 0 authors, while the frozen four-participant
+impact study has 0/40 recorded trials from 0/4 participants.
 
 ## What would productionization require?
 
