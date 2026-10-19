@@ -1,11 +1,13 @@
 # OpsIntel AI
 
-**Evidence-based data pipeline investigation powered by Exasol Personal**
+**Evidence-based data pipeline incident investigation using Exasol Personal, FastAPI, and React.**
 
 > ExaThon India 2026 · Track 04: The Work Behind the Work
 
 [![CI](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml)
 [![Licence: MIT](https://img.shields.io/badge/Licence-MIT-green.svg)](LICENSE)
+
+exasol, data-engineering, pipeline-monitoring, root-cause-analysis, fastapi, react, observability
 
 On-call data engineers cannot quickly determine why overnight pipelines failed
 because run metadata, row-count discrepancies, and logs are scattered across
