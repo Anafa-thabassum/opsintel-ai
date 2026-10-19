@@ -125,6 +125,9 @@ def summarize(path, key_path=DEFAULT_KEY, assignment_path=DEFAULT_ASSIGNMENT):
         diagnosis = row["diagnosis"].strip().lower()
         key = (participant_id, case_id)
 
+        required_values = ("seconds", "diagnosis", "confidence", "unsafe_confirmation")
+        if any(not row[field].strip() for field in required_values):
+            raise ValueError(f"Row {row_number}: incomplete measurement")
         if not participant_id or case_id not in expected_by_case:
             raise ValueError(f"Row {row_number}: unknown participant or case")
         if key not in assignments or key in observed:

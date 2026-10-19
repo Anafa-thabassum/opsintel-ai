@@ -39,6 +39,16 @@ other personal information.
 This is a small counterbalanced convenience sample, not a controlled production
 study. Participant recruitment must be reported honestly.
 
+## Standard participant prompt
+
+> Investigate the displayed incident and stop when you can submit one category:
+> timeout, schema mismatch, dependency failure, early termination, incomplete
+> data, or unresolved. Cite the run or log record that supports your choice,
+> rate confidence from 1–5, and do not present a possible cause as confirmed.
+
+Use this wording for both conditions. Do not describe OpsIntel as more accurate
+or faster before the trials.
+
 ## Facilitator procedure
 
 1. Freeze and record the tested Git commit. Start Exasol Personal.
