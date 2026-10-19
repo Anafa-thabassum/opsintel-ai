@@ -42,7 +42,7 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 | Reproducible run guide | Available below |
 | Pitch deck PDF and PPTX | Present in `submission/`; factual refresh required |
 | Three-minute demo script | Available in `docs/demo-script.md` |
-| Recorded demo video | Existing 2:34 draft must be re-recorded after the final Exasol reset |
+| Recorded demo video | Existing 2:34 draft must be re-recorded from the current build; use an authorized disposable Exasol deployment for any live database rehearsal |
 
 ## What the prototype does
 
@@ -100,13 +100,17 @@ An optional OpenAI Responses API step can turn the retrieved evidence and
 candidates into a concise narrative and a list of evidence gaps. Every factual
 claim must cite one or more retrieved run or log references; the integration
 requires exact supporting excerpts and rejects the entire model response when
-any claim uses an unknown reference, invents a numeric fact or identifier, or
-asserts a confirmed cause. It is disabled by default and does not replace or
-modify the deterministic assessment. The configured `gpt-6-luna` model ID is
+any claim uses an unknown reference, borrows facts from uncited evidence,
+invents a numeric fact or identifier, or asserts a confirmed cause. Evidence
+gaps must be selected verbatim from a server-owned category allowlist. The
+integration is disabled by default and does not replace or modify the
+deterministic assessment. The configured `gpt-6-luna` model ID is
 listed in the
 [official OpenAI model catalog](https://developers.openai.com/api/docs/models/gpt-6-luna).
 The [Batch 7 evaluation record](reports/llm-evaluation.md) separates 14 passing
-mocked boundary tests from the still-pending live-model evaluation.
+mocked boundary tests from the still-pending live-model evaluation. The current
+focused suite also checks per-citation fact binding and rejects evidence gaps
+outside the server-owned allowlist without adding new test cases.
 
 The deliberate safety boundary is:
 

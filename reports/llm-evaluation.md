@@ -33,7 +33,7 @@ Recorded result: **14/14 tests passed**.
 |---|---|
 | Feature disabled | No request; deterministic result remains available |
 | Missing API key | Optional summary unavailable |
-| Structured grounded response | Accepted with exact evidence reference |
+| Structured grounded response | Accepted with exact reference and excerpt |
 | Connection error | Safe deterministic fallback |
 | Request timeout | Safe deterministic fallback |
 | HTTP 429 rate limit | Safe fallback; key absent from returned error state |
@@ -41,19 +41,22 @@ Recorded result: **14/14 tests passed**.
 | Incomplete structured response | Rejected |
 | Unknown evidence reference | Entire response rejected |
 | One ungrounded claim among grounded claims | Entire response rejected |
-| Fabricated numeric metric with a valid reference | Entire response rejected |
+| Fact borrowed from a different, uncited record | Entire response rejected |
 | Fabricated log claim with a valid reference | Entire response rejected |
 | Language claiming a confirmed cause | Entire response rejected |
-| Insufficient evidence | Unresolved narrative preserved; cause remains unset |
+| Unsupported free-form evidence gap | Entire response rejected |
+| Insufficient evidence | Approved gap preserved; cause remains unset |
 
 ## Grounding controls
 
 The request uses a strict JSON schema. Each claim must provide one or more
 retrieved evidence references and an exact excerpt from every cited
 observation. Post-response validation rejects unknown references, excerpts not
-present in the cited observations, numeric or run/log identifier tokens absent
-from the supplied investigation, and language that claims a confirmed cause or
-executed repair. One failed claim rejects the whole optional narrative.
+present in the cited observations, facts absent from the observations cited by
+that claim, and language that claims a confirmed cause or executed repair.
+Evidence gaps must match exact server-owned options for the deterministic
+category. One failed claim or unsupported gap rejects the whole optional
+narrative.
 
 These checks reduce obvious unsupported claims; they do not prove semantic
 faithfulness of every paraphrase. A real-model evaluation should therefore

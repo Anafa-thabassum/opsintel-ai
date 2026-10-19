@@ -78,13 +78,19 @@ def test_schema_mismatch_evidence_produces_schema_candidate():
     )
 
 
-def test_empty_evidence_does_not_invent_root_causes():
-    incident = {"evidence": []}
+def test_empty_or_benign_evidence_does_not_invent_root_causes():
+    evidence_sets = [
+        [],
+        [{"observation": "Timeout threshold configured at 30 minutes"}],
+        [{"observation": "Schema validation passed; schema compatible"}],
+        [{"observation": "All dependencies succeeded"}],
+    ]
 
-    result = assess_root_causes(incident)
+    for evidence in evidence_sets:
+        result = assess_root_causes({"evidence": evidence})
 
-    assert result["candidates"] == []
-    assert result["confirmed_root_cause"] is None
+        assert result["candidates"] == []
+        assert result["confirmed_root_cause"] is None
 
 
 def test_investigation_deduplicates_pipeline_logs(monkeypatch):

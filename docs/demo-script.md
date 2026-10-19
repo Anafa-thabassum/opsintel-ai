@@ -1,99 +1,87 @@
 # Three-minute demo script
 
-Target duration: **2 minutes 45 seconds**, leaving 15 seconds of upload margin.
+Target duration: **2 minutes 50 seconds**, leaving ten seconds of upload margin.
+Use the current application with synthetic data. Do not show a database reset,
+claim a repair, or enable the optional LLM unless a separate live request has
+been authorized.
 
-## 60-second judge path
+## 0:00-0:20 — Problem and introduction
 
-1. **0:00–0:10:** open the dashboard and select `daily_sales_import`.
-2. **0:10–0:35:** move left to right through observed facts, candidate causes,
-   and “not yet verified”; point to the next safe check.
-3. **0:35–0:50:** show the Exasol cascade from `customer_sync` to three failed
-   downstream runs.
-4. **0:50–1:00:** select `partner_feed` and show that unfamiliar evidence stays
-   “Unknown — evidence insufficient” with a useful next check.
+Show the title, then move directly to the dashboard.
 
-## 0:00-0:20 - Problem
+> At 3:07 a.m., a pipeline alert says failed, but the on-call engineer still
+> has to explain why a run expected 100 rows and received 80. Run metadata,
+> counts, and logs are scattered. OpsIntel brings that evidence together while
+> refusing to name an unverified root cause. The impact study is still pending,
+> so no time saving is claimed.
 
-> At 3:07 a.m., a pipeline alert says “failed,” but the engineer still has to
-> explain why a run expected 100 rows but received 80. They must join run
-> metadata, row counts, and scattered logs before forming a useful
-> hypothesis. OpsIntel turns that evidence into a traceable investigation. It
-> refuses to name an unverified root cause and keeps facts separate from
-> explanation. The impact study has not run yet, so no time saving is claimed.
+## 0:20-0:50 — Reproducible incident
 
-Show the title slide, then move immediately to the live dashboard.
+Point to the synthetic-data label, Exasol connection indicator, trend, and
+incident table. Select `daily_sales_import`.
 
-## 0:20-0:42 - Operational overview
+> These are synthetic incidents stored and analysed in Exasol. The dashboard
+> is not hardcoded: SQL calculates completeness and historical features. I am
+> selecting the reproducible daily-sales failure, where 100 rows were expected
+> and 80 arrived.
 
-> The dashboard is reading incident telemetry calculated in Exasol. The trend
-> is not hardcoded: Exasol computes completeness and rolling failure features
-> over pipeline history. Eleven current incidents cover the main rule outcomes.
+## 0:50-1:40 — Evidence, candidates, and cascade
 
-Point to the Exasol connection indicator, trend, and incident table.
+Move left to right through observations, candidates, and the unconfirmed state.
+Point to source IDs, timestamps, the last-success comparison, and the next
+action. Do not imply that marking evidence as reviewed confirms a cause.
 
-## 0:42-1:35 - Investigation
+> OpsIntel retrieves the run and logs, then applies deterministic rules. Each
+> observation names its source. Early termination is a candidate explanation,
+> while the confirmed root cause remains empty. The engineer receives the next
+> diagnostic check; no repair runs automatically.
 
-Select `daily_sales_import`.
+Open the cascade panel.
 
-> I select a failed run. OpsIntel retrieves the run and its logs from Exasol,
-> then classifies the available evidence. It reports early termination as a
-> candidate explanation, not a confirmed root cause. Every observation names
-> its source table, and the next action tells the engineer what to inspect.
+> Exasol traverses the dependency graph. The failed customer-sync run is
+> temporally correlated with three downstream failures that occur after it and
+> within a 120-minute window. Timestamps and non-negative lag support the
+> investigation, but temporal correlation does not establish causation.
 
-Point to expected versus actual rows, each evidence item, the candidate cause,
-the recent-run timeline, and the “not confirmed” boundary. Point out that each
-log observation includes its source ID and timestamp. Scroll to `Confirmed root
-cause: None`, set the engineer review to “Evidence reviewed”, and explain that
-this demo-session state does not confirm a cause or run a repair.
+If time permits, select `partner_feed` and show that unfamiliar evidence stays
+unresolved instead of being forced into a confident category.
 
-If the optional summarizer is enabled, point to each narrative claim and its
-evidence reference. Explain that an unknown reference rejects the whole model
-response, and the model cannot change the classification or confirm a cause.
+## 1:40-2:10 — Safe next steps and limitations
 
-Select `product_catalog`.
+> The next action is diagnostic: inspect the first termination error and source
+> counts before deciding whether to rerun anything. Optional model text cannot
+> alter the deterministic category or confirm a cause. External-reviewer
+> validation, the 40-trial human study, and live-model grounding have not been
+> completed.
 
-> A different incident is separated as a schema mismatch because the log
-> names an incompatible incoming type. The same flow handles timeout,
-> dependency, incomplete-data, and unknown evidence without forcing every case
-> into a confident answer.
+## 2:10-2:40 — Why Exasol and measured results
 
-## 1:35-1:55 - Failure cascade
+Show the architecture or `sql/analysis/pipeline_health_features.sql`, then the
+evaluation slide.
 
-Show the failure-cascade panel.
+> Exasol is the shared analytical evidence layer. Window functions calculate
+> previous status, rolling row-count baselines, completeness, and failure rate;
+> CONNECT BY traverses dependencies. The repository has 132 passing automated
+> tests and 16 of 16 predefined synthetic regression cases. The separate 27 of
+> 27 holdout is project-authored, not independent validation. In the published
+> cache-off comparison, DuckDB was faster on this laptop, so no Exasol speed
+> advantage is claimed.
 
-> Exasol follows the dependency graph with a hierarchical query. One failed
-> customer-sync run is temporally correlated with three downstream failures
-> that occur within 120 minutes. The timestamps and lag help the engineer
-> investigate shared evidence; causation is not confirmed.
+## 2:40-3:00 — Close
 
-## 1:55-2:25 - Why Exasol
+End on the repository URL and closing slide.
 
-Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
-
-> Exasol is the operational analytical core. Window functions calculate
-> previous status, rolling row-count baselines, completeness, and failure
-> rates; CONNECT BY traverses dependencies; and the bulk import path loads the
-> synthetic benchmark. In the controlled cache-off comparison, DuckDB was
-> faster on this laptop, including about 4.5 times faster at ten million rows.
-> We publish that result instead of claiming an unsupported Exasol speed win.
-
-## 2:25-2:50 - Evidence and close
-
-> The project has 132 automated tests, a 16-case regression challenge set, and
-> a separate versioned project-authored holdout with 27 of 27 correct
-> classifications
-> across all nine outcomes. The project team authored that holdout. The external
-> holdout currently contains zero reviewer cases from zero external authors,
-> and the impact study contains zero of forty trials from zero of four
-> participants. OpsIntel puts the failed run, its evidence, candidate
-> explanations, and the next safe check in one view.
-
-End on the repository URL and QR code if one is added during editing.
+> OpsIntel places the failed run, source-backed observations, candidate
+> explanations, and next safe check in one view. It does not claim production
+> accuracy, measured time savings, causal cascade detection, or automatic
+> recovery. Follow the evidence. Investigate faster. Confirm carefully.
 
 ## Recording checklist
 
 - Record at 1080p with browser zoom between 90% and 100%.
-- Hide notifications, bookmarks, passwords, and unrelated tabs.
+- Hide notifications, bookmarks, passwords, credentials, and unrelated tabs.
 - Use one continuous cursor path and pause briefly after each click.
-- Do not claim a confirmed cause, production accuracy, or production scale.
-- Export MP4, verify audio, and keep the final duration below three minutes.
+- Keep the synthetic-data label visible when incident values are shown.
+- Do not run `make smoke` while recording; it resets the synthetic schema.
+- Export MP4, verify audio and scenes, and keep the duration below three minutes.
+- Run `make submission-check` after replacing the existing draft video.

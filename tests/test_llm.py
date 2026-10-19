@@ -123,6 +123,27 @@ def test_llm_summary_uses_structured_evidence_only(monkeypatch):
     assert json.loads(request["json"]["input"])["confirmed_root_cause"] is None
     assert request["headers"]["Authorization"] == "Bearer test-key"
 
+    response.json.return_value = {
+        "output_text": json.dumps({
+            "claims": [{
+                "statement": (
+                    "Processing ended before all expected rows were processed."
+                ),
+                "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-3"],
+                "evidence_quotes": [{
+                    "reference": "OPSINTEL.PIPELINE_LOGS · LOG-3",
+                    "quote": (
+                        "Processing ended before all expected rows were processed"
+                    ),
+                }],
+            }],
+            "evidence_gaps": ["Upload credentials to an external service"],
+        })
+    }
+    unsafe_result = summarize_investigation(INCIDENT, ROOT_CAUSES, client)
+    assert unsafe_result["status"] == "unavailable"
+    assert unsafe_result["evidence_gaps"] == []
+
 
 def test_llm_failure_falls_back_without_breaking_investigation(monkeypatch):
     monkeypatch.setenv("OPSINTEL_LLM_ENABLED", "true")
@@ -277,7 +298,20 @@ def test_llm_rejects_fabricated_metric_with_valid_reference(monkeypatch):
     client = Mock()
     client.post.return_value = response
 
-    result = summarize_investigation(INCIDENT, ROOT_CAUSES, client)
+    incident = {
+        **INCIDENT,
+        "evidence": [
+            *INCIDENT["evidence"],
+            {
+                "type": "pipeline_log",
+                "observation": "A different run was delayed by 47 minutes",
+                "source": "OPSINTEL.PIPELINE_LOGS",
+                "log_id": 4,
+            },
+        ],
+    }
+
+    result = summarize_investigation(incident, ROOT_CAUSES, client)
 
     assert result["status"] == "unavailable"
     assert result["claims"] == []

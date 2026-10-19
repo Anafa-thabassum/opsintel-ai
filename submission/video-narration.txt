@@ -1,21 +1,17 @@
-At 3:07 a.m., a pipeline alert says failed, but the engineer on call still has to explain why a run expected one hundred rows and received eighty. They must assemble run metadata, row counts, and scattered logs before forming a useful hypothesis. OpsIntel AI turns that evidence into a traceable investigation. It refuses to name an unverified root cause and keeps facts separate from explanation. The impact study has not run, so no time saving is claimed.
+[0:00-0:20 — Problem]
+At 3:07 a.m., a pipeline alert says failed, but the on-call engineer still has to explain why a run expected one hundred rows and received eighty. Run metadata, counts, and logs are scattered. OpsIntel AI brings that evidence together while refusing to name an unverified root cause. The impact study is pending, so no time saving is claimed.
 
-The target user is a data engineer responsible for business-critical pipelines. Manual investigation means finding the failed run, comparing counts, searching logs, and choosing the next check. OpsIntel is designed to reduce those context switches. A real participant study is prepared, but no time-saving claim is made before it is run.
+[0:20-0:50 — Reproducible incident]
+These are synthetic incidents stored and analysed in Exasol. The dashboard is not hardcoded: SQL calculates completeness and historical features. I am selecting the reproducible daily-sales failure, where one hundred rows were expected and eighty arrived.
 
-Pipeline runs and logs enter Exasol. SQL adds historical context and retrieves incident evidence. FastAPI applies deterministic rules, proposes candidates and a next action, then the React dashboard presents the evidence for human verification. The optional language model explains retrieved evidence; it cannot confirm a root cause or run a repair.
+[0:50-1:40 — Evidence, candidates, and cascade]
+OpsIntel retrieves the run and logs, then applies deterministic rules. Each observation names its source. Early termination is a candidate explanation, while the confirmed root cause remains empty. The engineer receives the next diagnostic check; no repair runs automatically. Exasol also traverses the dependency graph. The failed customer-sync run is temporally correlated with three downstream failures that occur after it and within a one-hundred-and-twenty-minute window. Timestamps and non-negative lag support the investigation, but temporal correlation does not establish causation.
 
-This captured dashboard shows the original four-incident synthetic baseline and one thousand two hundred and twenty missing rows. The expanded seed now covers eleven incident scenarios, including late files, partial loads, duplicate runs, conflicting signals, and an unknown messy log. All values are synthetic.
+[1:40-2:10 — Safe next steps and limitations]
+The next action is diagnostic: inspect the first termination error and source counts before deciding whether to rerun anything. Optional model text cannot alter the deterministic category or confirm a cause. External-reviewer validation remains at zero cases from zero reviewers. The human study remains at zero of forty trials from zero of four participants, and live-model grounding has not been verified.
 
-Selecting daily sales import starts the investigation. The run expected one hundred rows but received eighty. Five observations show the status, row-count discrepancy, and supporting log records. Candidate explanations remain visually separate from the confirmed root cause, which is still empty.
+[2:10-2:40 — Exasol and measured results]
+Exasol is the shared analytical evidence layer. Window functions calculate previous status, rolling row-count baselines, completeness, and failure rate, while CONNECT BY traverses dependencies. The repository has one hundred thirty-two passing automated tests and sixteen of sixteen predefined synthetic regression cases. The separate twenty-seven of twenty-seven holdout is project-authored, not independent validation. In the published cache-off comparison, DuckDB was faster on this laptop, so no Exasol speed advantage is claimed.
 
-Exasol calculates previous-run status, rolling row-count baselines, failure rate, completeness, and daily incident telemetry before FastAPI responds. The slide shows the exact view query and recorded output from the original four-case seed. The expanded seed must be reset before the live demonstration.
-
-A second Exasol query uses CONNECT BY to traverse pipeline dependencies. One failed customer sync is temporally correlated with three downstream failures occurring within one hundred and twenty minutes. The timestamps and lag support investigation, but causation is not confirmed. The controlled cache-off comparison is recorded at one and ten million rows. DuckDB was faster on this laptop, including about four point five times faster at ten million rows. Exasol's value here is the shared operational evidence layer and live hierarchical analysis, not an unsupported speed claim.
-
-The measured Exasol benchmark imported one million deterministic synthetic runs in three point zero two five seconds. Across seven analytical queries, median latency was four hundred and seventy-three milliseconds and p ninety-five was five hundred and four milliseconds in a local single-user environment. This is not a concurrency guarantee.
-
-The product is designed to abstain before it overclaims. Observations are source-backed facts. Candidates are evidence-supported possibilities. Confirmation is reserved for the engineer. Every optional language-model claim must cite a retrieved run or log identifier; one unknown reference rejects the entire generated response.
-
-The repository has one hundred thirty-two passing automated tests, a sixteen-case regression suite, and a versioned project-authored holdout scoring twenty-seven of twenty-seven. Its dataset and result entered Git history together, so freeze order is not independently proven. The external holdout currently has zero reviewer cases from zero external authors. The impact study has zero of forty assigned trials from zero of four participants.
-
-OpsIntel AI brings the failed run, source evidence, candidate explanations, and the next safe action into one investigation view. Follow the evidence. Investigate faster. Confirm carefully.
+[2:40-3:00 — Close]
+OpsIntel places the failed run, source-backed observations, candidate explanations, and next safe check in one view. It does not claim production accuracy, measured time savings, causal cascade detection, or automatic recovery. Follow the evidence. Investigate faster. Confirm carefully.

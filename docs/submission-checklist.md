@@ -11,12 +11,11 @@
 ## Required submission assets
 
 - [x] Clear problem statement and target user.
-- [ ] Commit and push the Batch 8 consistency changes and refreshed artifacts.
+- [ ] Review, commit, and push the final working-tree changes.
 - [x] Clean README with setup, usage, deployment, and run guide.
 - [x] Reproducible tests and evaluation report.
-- [ ] Refresh the pitch deck PDF and PPTX: replace the 80-test claim with
-      132/132 and label the 120-minute cascade as temporal correlation, with
-      causation unconfirmed.
+- [x] Pitch deck PDF and PPTX show 132/132 and label the 120-minute cascade as
+      temporal correlation, with causation unconfirmed.
 - [ ] Re-record the demo from `submission/video-narration.txt`; the existing
       2:34 MP4 predates the final cascade, test count, and LLM grounding changes.
 - [ ] Upload the deck and video and add publicly accessible links.
@@ -25,7 +24,12 @@
 
 - [x] Run backend tests, evaluation, frontend lint, and production build.
 - [x] Run the Exasol benchmark and preserve its raw result.
-- [ ] Commit the final changes, then perform a clean-clone setup rehearsal.
+- [x] Historical isolated clean-clone rehearsal completed at revision
+      `2a17d4f`; dependency installation, automated checks, API startup, and
+      frontend startup passed, while the Exasol-backed workflow was blocked.
+- [ ] After publishing, repeat the final clean-clone check on the submitted
+      revision and use only an authorized disposable Exasol database for any
+      database-backed rehearsal.
 - [ ] Check every repository, deck, and video link in a private browser window.
 - [ ] Remove secrets, personal tabs, and local paths from public artifacts.
 - [ ] Update the GitHub description so it does not claim automated recovery.

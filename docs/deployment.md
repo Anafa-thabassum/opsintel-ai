@@ -34,6 +34,11 @@ allow outbound HTTPS access to `api.openai.com`, and review operational log
 content before sending it to an external model. Leave `OPSINTEL_LLM_ENABLED`
 unset or `false` for deterministic-only deployments.
 
+Generated claims are accepted only when their exact excerpts and facts match
+the observations they cite. Generated evidence gaps must match a server-owned
+category allowlist; any unsupported claim or gap discards the whole narrative
+and leaves the deterministic investigation available.
+
 ### Frontend
 
 `VITE_API_URL` is embedded at build time:

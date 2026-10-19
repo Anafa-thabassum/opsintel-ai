@@ -130,6 +130,28 @@ def _build_run_comparison(run_id, expected_rows, actual_rows, log_rows,
     }
 
 
+_BENIGN_EVIDENCE_PHRASES = (
+    "no timeout",
+    "without timeout",
+    "timeout setting",
+    "timeout threshold configured",
+    "no schema mismatch",
+    "schema check passed",
+    "schema validation passed",
+    "schema compatible",
+    "no dependency failure",
+    "without dependency failure",
+    "dependency check passed",
+    "upstream dependency succeeded",
+    "all dependencies succeeded",
+)
+
+
+def _is_actionable_evidence(observation):
+    text = str(observation).lower()
+    return not any(phrase in text for phrase in _BENIGN_EVIDENCE_PHRASES)
+
+
 def classify_evidence(
     log_messages,
     missing_rows,
@@ -137,16 +159,10 @@ def classify_evidence(
     actual_rows=None,
 ):
     """Classify evidence without claiming an unverified root cause."""
-    benign_phrases = (
-        "no timeout",
-        "without timeout",
-        "timeout setting",
-        "timeout threshold configured",
-    )
     text = " ".join(
         message.lower()
         for message in log_messages
-        if not any(phrase in message.lower() for phrase in benign_phrases)
+        if _is_actionable_evidence(message)
     )
 
     has_success_signal = any(phrase in text for phrase in (
@@ -532,6 +548,7 @@ def assess_root_causes(incident):
     evidence_text = " ".join(
         item.get("observation", "").lower()
         for item in evidence
+        if _is_actionable_evidence(item.get("observation", ""))
     )
 
     def matching_evidence(keywords):
@@ -541,7 +558,7 @@ def assess_root_causes(incident):
                 "observation": item.get("observation", ""),
             }
             for index, item in enumerate(evidence)
-            if any(
+            if _is_actionable_evidence(item.get("observation", "")) and any(
                 keyword in item.get("observation", "").lower()
                 for keyword in keywords
             )

@@ -31,6 +31,39 @@ _UNSAFE_CONCLUSION_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+_EVIDENCE_GAPS_BY_CATEGORY = {
+    "conflicting_evidence": (
+        "The final orchestrator state and latest status record",
+    ),
+    "delayed_run": (
+        "Scheduled and actual start times plus upstream queue timing",
+    ),
+    "duplicate_data": (
+        "Source and target key counts plus retry or deduplication logs",
+    ),
+    "timeout": (
+        "Detailed execution duration and timing data",
+        "Resource-usage evidence and query plans",
+        "Information about recent workload changes",
+    ),
+    "schema_mismatch": (
+        "Incoming and target schema definitions for the failing field",
+    ),
+    "dependency_failure": (
+        "Upstream task status, logs, and execution order",
+    ),
+    "early_termination": (
+        "The first termination error",
+        "Logs around the point of termination",
+    ),
+    "incomplete_data": (
+        "Source delivery counts and rejected-row logs",
+    ),
+    "unclassified": (
+        "A diagnostic log with a recognizable failure signal",
+    ),
+}
+
 
 def _base_result(status, model=None):
     return {
@@ -81,6 +114,10 @@ def _summary_input(incident, root_causes):
         ],
         "candidate_explanations": root_causes.get("candidates", [])[:10],
         "confirmed_root_cause": root_causes.get("confirmed_root_cause"),
+        "allowed_evidence_gaps": list(_EVIDENCE_GAPS_BY_CATEGORY.get(
+            incident.get("category"),
+            _EVIDENCE_GAPS_BY_CATEGORY["unclassified"],
+        )),
     }
 
 
@@ -122,7 +159,10 @@ def _claim_is_grounded(statement, references, evidence_quotes, summary_input):
     if quoted_refs != set(references):
         return False
 
-    supplied_context = json.dumps(summary_input, sort_keys=True).lower()
+    supplied_context = " ".join(
+        evidence_by_ref[reference]
+        for reference in references
+    ).lower()
     supplied_fact_tokens = {
         token.lower() for token in _FACT_TOKEN_PATTERN.findall(supplied_context)
     }
@@ -171,6 +211,7 @@ def summarize_investigation(incident, root_causes, http_client=None):
         timeout = 10.0
 
     summary_input = _summary_input(incident, root_causes)
+    allowed_evidence_gaps = summary_input["allowed_evidence_gaps"]
     request_body = {
         "model": model,
         "store": False,
@@ -187,8 +228,8 @@ def summarize_investigation(incident, root_causes, http_client=None):
             "Clearly preserve uncertainty. "
             "Do not state or imply "
             "that a root cause is confirmed. Do not recommend or claim that any "
-            "repair was executed. List the evidence still needed to confirm a "
-            "cause."
+            "repair was executed. For evidence gaps, copy only exact values "
+            "from allowed_evidence_gaps in the supplied JSON."
         ),
         "input": json.dumps(summary_input),
         "text": {
@@ -235,7 +276,11 @@ def summarize_investigation(incident, root_causes, http_client=None):
                         },
                         "evidence_gaps": {
                             "type": "array",
-                            "items": {"type": "string"},
+                            "uniqueItems": True,
+                            "items": {
+                                "type": "string",
+                                "enum": allowed_evidence_gaps,
+                            },
                         },
                     },
                     "required": [
@@ -267,6 +312,8 @@ def summarize_investigation(incident, root_causes, http_client=None):
             for gap in parsed["evidence_gaps"]
             if isinstance(gap, str) and gap.strip()
         ]
+        if any(gap not in allowed_evidence_gaps for gap in evidence_gaps):
+            raise ValueError("The model returned an unsupported evidence gap")
         valid_refs = {
             _evidence_reference(item)
             for item in incident.get("evidence", [])[:25]

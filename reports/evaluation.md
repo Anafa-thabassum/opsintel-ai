@@ -66,7 +66,9 @@ credentials, connection errors, timeouts, malformed structured output, unknown
 evidence references, rate limiting, incomplete responses, fabricated numeric
 facts, unsafe confirmation language, unresolved cases, and ungrounded
 individual claims. Every accepted claim requires an exact excerpt from each
-cited observation. In every failure mode, the complete deterministic
+cited observation, and its facts are checked only against those cited
+observations. Evidence gaps are restricted to exact server-owned options for
+the deterministic category. In every failure mode, the complete deterministic
 investigation remains available.
 
 No live request was performed because explicit authorization for possible API

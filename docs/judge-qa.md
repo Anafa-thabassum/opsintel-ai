@@ -35,8 +35,10 @@ content as untrusted data, and returns a strict claim schema. The confirmed
 root cause remains null even when the summary is generated. Every generated
 claim must cite one or more retrieved evidence IDs or the whole response is
 discarded. Each reference also needs an exact excerpt from its cited
-observation, and post-response checks reject new numeric facts, run/log IDs,
-confirmed-cause language, and repair claims. Unknown evidence
+observation. Facts are checked only against the cited observations, and
+evidence gaps must match server-owned options for the deterministic category.
+Post-response checks reject new numeric facts, run/log IDs, confirmed-cause
+language, and repair claims. Unknown evidence
 can remain unclassified, and model failure leaves the deterministic result
 available.
 
