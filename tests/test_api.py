@@ -113,3 +113,25 @@ def test_analytics_trend_endpoint():
     assert response.status_code == 200
     assert response.json()["trend"][0]["incident_count"] == 2
 
+
+def test_investigation_returns_503_when_database_fails():
+    with patch(
+        "app.main.investigate_pipeline",
+        side_effect=Exception("Simulated database failure"),
+    ):
+        response = client.get("/investigate/1")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Investigation failed"
+
+
+def test_analytics_trend_returns_503_when_database_fails():
+    with patch(
+        "app.main.get_pipeline_trend",
+        side_effect=Exception("Simulated database failure"),
+    ):
+        response = client.get("/analytics/trend")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Unable to retrieve pipeline analytics"
+

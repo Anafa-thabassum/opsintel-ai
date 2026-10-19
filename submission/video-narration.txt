@@ -14,6 +14,6 @@ Exasol is the analytical core. Window functions calculate previous run status, r
 
 The included benchmark imported one million deterministic synthetic runs in three point zero two five seconds. Across seven analytical queries, median latency was four hundred and seventy-three milliseconds and p ninety-five was five hundred and four milliseconds on this local single-user environment.
 
-The repository has fifty-seven passing automated tests, a sixteen-case regression challenge set, continuous integration, an independent holdout runner, an MIT licence, and an executable human-impact study protocol. These results are reproducible, but they are not presented as production accuracy or concurrency claims.
+The repository has sixty passing automated tests, a sixteen-case regression challenge set, continuous integration, an independent holdout runner, an MIT licence, and an executable human-impact study protocol. These results are reproducible, but they are not presented as production accuracy or concurrency claims.
 
 OpsIntel AI puts the failed run, its source-backed evidence, candidate explanations, and the next safe check in one investigation view. Follow the evidence. Investigate faster. Confirm carefully.

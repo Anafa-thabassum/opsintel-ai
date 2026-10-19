@@ -56,7 +56,7 @@ Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
 
 ## 2:20-2:45 - Evidence and close
 
-> The project has 57 automated tests, a 16-case regression challenge set,
+> The project has 60 automated tests, a 16-case regression challenge set,
 > continuous integration, a public MIT licence, and a separate protocol for a
 > reviewer-controlled holdout test. OpsIntel puts the failed run, its evidence,
 > candidate explanations, and the next safe check in one investigation view.

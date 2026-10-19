@@ -22,7 +22,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 57 automated tests and a 16-case synthetic challenge set.
+- 60 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -282,7 +282,7 @@ npm run build
 
 Latest verified results:
 
-- **57/57 automated tests passed**.
+- **60/60 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **1,000,000 synthetic Exasol runs queried in 473.209 ms median and
   503.947 ms p95** across seven local repetitions.

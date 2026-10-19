@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **57 passed**
+- Automated tests: **60 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
