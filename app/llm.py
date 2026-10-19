@@ -1,11 +1,34 @@
 import json
 import os
+import re
 
 import httpx
 
 
 SAFETY_NOTE = (
     "Narrative summary only. It cannot confirm a root cause or execute a repair."
+)
+
+_FACT_TOKEN_PATTERN = re.compile(
+    r"\b\d{4}-\d{2}-\d{2}(?:[T ][0-9:.+Z-]+)?\b|"
+    r"\b(?:LOG|RUN)-\d+\b|"
+    r"\b\d+(?:[.,:]\d+)*(?:%|ms|s|min|minutes?|hours?)?\b",
+    re.IGNORECASE,
+)
+_WORD_PATTERN = re.compile(r"[a-z][a-z0-9_-]*", re.IGNORECASE)
+_SAFE_NARRATIVE_WORDS = {
+    "a", "an", "and", "as", "at", "available", "be", "been", "by",
+    "cannot", "cause", "confirm", "confirmed", "does", "evidence", "for",
+    "from", "has", "have", "identify", "in", "indicates", "is", "it",
+    "not", "of", "on", "or", "remains", "reports", "suggests", "supports",
+    "that", "the", "this", "to", "unconfirmed", "was", "were", "with",
+    "without",
+}
+_UNSAFE_CONCLUSION_PATTERN = re.compile(
+    r"\b(?:root cause (?:is|was|has been)|confirmed (?:cause|that)|"
+    r"definitively caused|repair was executed|pipeline was repaired|"
+    r"fixed automatically)\b",
+    re.IGNORECASE,
 )
 
 
@@ -82,6 +105,56 @@ def _extract_output_text(payload):
     raise ValueError("The model response did not contain structured output")
 
 
+def _claim_is_grounded(statement, references, evidence_quotes, summary_input):
+    evidence_by_ref = {
+        item["reference"]: item["observation"]
+        for item in summary_input["evidence"]
+    }
+    quoted_refs = set()
+    for item in evidence_quotes:
+        reference = item["reference"].strip()
+        quote = item["quote"].strip()
+        observation = evidence_by_ref.get(reference, "")
+        if reference not in references or not quote or quote not in observation:
+            return False
+        quoted_refs.add(reference)
+
+    if quoted_refs != set(references):
+        return False
+
+    supplied_context = json.dumps(summary_input, sort_keys=True).lower()
+    supplied_fact_tokens = {
+        token.lower() for token in _FACT_TOKEN_PATTERN.findall(supplied_context)
+    }
+    statement_fact_tokens = {
+        token.lower() for token in _FACT_TOKEN_PATTERN.findall(statement)
+    }
+    if not statement_fact_tokens <= supplied_fact_tokens:
+        return False
+
+    supplied_words = set(_WORD_PATTERN.findall(supplied_context))
+    statement_words = {
+        word.lower() for word in _WORD_PATTERN.findall(statement)
+    }
+    if not statement_words <= supplied_words | _SAFE_NARRATIVE_WORDS:
+        return False
+
+    normalized = statement.lower()
+    preserves_uncertainty = any(
+        phrase in normalized
+        for phrase in (
+            "not confirmed",
+            "unconfirmed",
+            "cannot confirm",
+            "can't confirm",
+            "no confirmed root cause",
+        )
+    )
+    if _UNSAFE_CONCLUSION_PATTERN.search(statement) and not preserves_uncertainty:
+        return False
+    return True
+
+
 def summarize_investigation(incident, root_causes, http_client=None):
     """Optionally summarize existing evidence without changing its conclusions."""
     if not _enabled():
@@ -97,6 +170,7 @@ def summarize_investigation(incident, root_causes, http_client=None):
     except ValueError:
         timeout = 10.0
 
+    summary_input = _summary_input(incident, root_causes)
     request_body = {
         "model": model,
         "store": False,
@@ -108,13 +182,15 @@ def summarize_investigation(incident, root_causes, http_client=None):
             "explanations; do not invent database observations. Return each "
             "factual statement as a separate claim with one or more evidence "
             "references copied exactly from the input. Do not combine a supported "
-            "fact with an unsupported inference. Clearly preserve uncertainty. "
+            "fact with an unsupported inference. For every evidence reference, "
+            "include an exact supporting excerpt copied from that observation. "
+            "Clearly preserve uncertainty. "
             "Do not state or imply "
             "that a root cause is confirmed. Do not recommend or claim that any "
             "repair was executed. List the evidence still needed to confirm a "
             "cause."
         ),
-        "input": json.dumps(_summary_input(incident, root_causes)),
+        "input": json.dumps(summary_input),
         "text": {
             "format": {
                 "type": "json_schema",
@@ -135,8 +211,25 @@ def summarize_investigation(incident, root_causes, http_client=None):
                                         "minItems": 1,
                                         "items": {"type": "string"},
                                     },
+                                    "evidence_quotes": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "reference": {"type": "string"},
+                                                "quote": {"type": "string"},
+                                            },
+                                            "required": ["reference", "quote"],
+                                            "additionalProperties": False,
+                                        },
+                                    },
                                 },
-                                "required": ["statement", "evidence_refs"],
+                                "required": [
+                                    "statement",
+                                    "evidence_refs",
+                                    "evidence_quotes",
+                                ],
                                 "additionalProperties": False,
                             },
                         },
@@ -187,6 +280,14 @@ def summarize_investigation(incident, root_causes, http_client=None):
                 if isinstance(reference, str) and reference.strip()
             ))
             if not statement or not references or not set(references) <= valid_refs:
+                raise ValueError("The model returned an ungrounded claim")
+            evidence_quotes = claim["evidence_quotes"]
+            if not _claim_is_grounded(
+                statement,
+                references,
+                evidence_quotes,
+                summary_input,
+            ):
                 raise ValueError("The model returned an ungrounded claim")
             claims.append({
                 "statement": statement,

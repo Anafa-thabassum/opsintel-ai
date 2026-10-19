@@ -8,7 +8,7 @@
 | `video-narration.txt` | Final 11-scene narration with current test and evaluation claims |
 
 The deck and narration now reflect the expanded incident suite, dependency
-cascade, failed-run comparison, 126-test suite, and claim-level LLM grounding. The committed MP4 was
+cascade, failed-run comparison, 132-test suite, and claim-level LLM grounding. The committed MP4 was
 recorded before those final changes, so **do not submit it unchanged**. Reset
 Exasol, rehearse the live flow, and re-record `video-narration.txt` in the
 team's own voice. Keep the result below three minutes and then run:

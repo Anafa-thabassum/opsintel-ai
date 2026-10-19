@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **126 passed**
+- Automated tests: **132 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -59,12 +59,18 @@ an invented cause.
 The configured `gpt-6-luna` identifier is documented in the official OpenAI
 model catalog. The automated tests cover disabled configuration, missing
 credentials, connection errors, timeouts, malformed structured output, unknown
-evidence references, and ungrounded individual claims. In every failure mode,
-the complete deterministic investigation remains available.
+evidence references, rate limiting, incomplete responses, fabricated numeric
+facts, unsafe confirmation language, unresolved cases, and ungrounded
+individual claims. Every accepted claim requires an exact excerpt from each
+cited observation. In every failure mode, the complete deterministic
+investigation remains available.
 
-No live account-entitlement test was performed in the recorded environment
-because `OPENAI_API_KEY` was not set. Model access must therefore be checked
-with the API account used for the final demonstration.
+No live request was performed because explicit authorization for possible API
+cost was not supplied. Model entitlement, real-model grounding quality, usage,
+and cost therefore remain unverified. The 14/14 focused tests use mocked
+responses and are not evidence of live model access. See
+[`reports/llm-evaluation.md`](llm-evaluation.md) for the separate Batch 7
+record.
 
 ## Synthetic challenge set
 
@@ -196,7 +202,8 @@ layer: window analytics, live evidence retrieval, and a hierarchical
 - External-reviewer holdout status: **0 cases recorded by 0 external authors**.
   The project team authored the published 27-case versioned holdout.
 - Keyword rules do not establish semantic understanding.
-- The optional LLM summary has not received an independent quality evaluation.
+- The optional LLM boundary has 14/14 passing mocked tests, but no live or
+  independent quality evaluation has been performed.
 - Human-impact study status: **0/40 assigned trials recorded across 0/4
   participants**. The repository includes ten frozen cases, a counterbalanced
   assignment, a blank measurement template, and a deterministic result

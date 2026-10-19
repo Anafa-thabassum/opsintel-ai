@@ -22,7 +22,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 126 automated tests and a 16-case synthetic challenge set.
+- 132 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -99,10 +99,14 @@ The classifier and candidate generation remain deterministic and rule-based.
 An optional OpenAI Responses API step can turn the retrieved evidence and
 candidates into a concise narrative and a list of evidence gaps. Every factual
 claim must cite one or more retrieved run or log references; the integration
-rejects the entire model response when any claim uses an unknown reference. It
+requires exact supporting excerpts and rejects the entire model response when
+any claim uses an unknown reference, invents a numeric fact or identifier, or
+asserts a confirmed cause. It
 is disabled by default and does not replace or modify the deterministic
 assessment. The configured `gpt-6-luna` model ID is listed in the
 [official OpenAI model catalog](https://developers.openai.com/api/docs/models/gpt-6-luna).
+The [Batch 7 evaluation record](reports/llm-evaluation.md) separates 14 passing
+mocked boundary tests from the still-pending live-model evaluation.
 
 The deliberate safety boundary is:
 
@@ -308,7 +312,7 @@ npm run build
 
 Latest verified results:
 
-- **126/126 automated tests passed**.
+- **132/132 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
