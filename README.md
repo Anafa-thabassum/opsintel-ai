@@ -40,7 +40,7 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 | Public source repository | Available |
 | MIT licence | Available |
 | Reproducible run guide | Available below |
-| Pitch deck PDF and PPTX | Present in `submission/`; factual refresh required |
+| Pitch deck PDF and PPTX | Present in `submission/`; slides 7, 8 and 10 visually reviewed |
 | Three-minute demo script | Available in `docs/demo-script.md` |
 | Recorded demo video | Existing 2:34 draft must be re-recorded from the current build; use an authorized disposable Exasol deployment for any live database rehearsal |
 
