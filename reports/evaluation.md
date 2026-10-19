@@ -9,7 +9,8 @@ without converting unsupported possibilities into confirmed root causes.
 
 - Automated tests: **132 passed**
 - Frontend lint: **passed with no warnings**
-- Frontend production build: **passed**
+- Frontend production build: **passed**, with a non-failing 614.81 kB
+  main-chunk advisory
 - Database: Exasol Personal
 - API: FastAPI
 - Dashboard: React and Vite
@@ -47,6 +48,9 @@ Run the same database/API check with:
 ```bash
 make smoke
 ```
+
+This command resets the synthetic `OPSINTEL` schema and must run only against
+an explicitly authorized disposable Exasol deployment.
 
 The deterministic classifier covers missing evidence, conflicting completion
 signals, duplicate-row patterns, and unknown logs. Candidate explanations carry
@@ -148,9 +152,11 @@ status, rolling actual-row baselines, and rolling failure rates through
 `OPSINTEL.PIPELINE_HEALTH_FEATURES`.
 
 `OPSINTEL.PIPELINE_DEPENDENCY_CASCADE` uses Exasol's hierarchical `CONNECT BY`
-processing to correlate the latest failed `customer_sync` run with three failed
-downstream pipelines. The dashboard reads that result from
-`/analytics/cascades`.
+processing to traverse dependencies. The API retains failed downstream runs
+only when their latest failure occurs after the upstream failure and within a
+120-minute window, and returns both timestamps plus correlation lag. This is
+temporal correlation, not confirmed causation. The dashboard reads the result
+from `/analytics/cascades`.
 
 Run `make exasol-proof` with Exasol Personal active to print the exact history
 and log-evidence rows for the selected demonstration incident. This command is

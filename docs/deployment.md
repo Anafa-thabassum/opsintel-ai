@@ -71,7 +71,9 @@ orchestrator connections, multi-user concurrency validation, audited data
 retention, or an independent evaluation of LLM summary quality. Exported JSON
 adapter examples for Airflow and dbt are documented under
 `examples/integrations/`. Add production controls before using real operational
-data.
+data. The configured model identifier is documented, but account entitlement
+and live grounding remain unverified because no authorized live request has
+been recorded.
 
 ## Local verification shortcut
 

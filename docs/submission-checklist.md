@@ -11,10 +11,12 @@
 ## Required submission assets
 
 - [x] Clear problem statement and target user.
-- [x] Public repository updated with the final consistency changes.
+- [ ] Commit and push the Batch 8 consistency changes and refreshed artifacts.
 - [x] Clean README with setup, usage, deployment, and run guide.
 - [x] Reproducible tests and evaluation report.
-- [x] Final pitch deck PDF and PPTX generated in `submission/`.
+- [ ] Refresh the pitch deck PDF and PPTX: replace the 80-test claim with
+      132/132 and label the 120-minute cascade as temporal correlation, with
+      causation unconfirmed.
 - [ ] Re-record the demo from `submission/video-narration.txt`; the existing
       2:34 MP4 predates the final cascade, test count, and LLM grounding changes.
 - [ ] Upload the deck and video and add publicly accessible links.

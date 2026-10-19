@@ -10,6 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CURRENT_TEST_COUNT = 132
+CURRENT_TEST_COUNT_WORDS = "one hundred thirty-two"
 REQUIRED = {
     "README.md",
     "reports/evaluation.md",
@@ -137,15 +139,32 @@ def verify(allow_dirty=False):
             failures.append(f"Rounded {label} is inconsistent in the deck")
     if str(speed_ratio) not in deck_text:
         failures.append("Controlled benchmark ratio is inconsistent in the deck")
-    for artifact_name, content in (
-        ("README", readme),
-        ("evaluation report", evaluation),
-        ("deck", deck_text),
+    if f"{CURRENT_TEST_COUNT}/{CURRENT_TEST_COUNT} automated tests passed" not in readme:
+        failures.append("Current automated-test result is missing from the README")
+    if f"Automated tests: **{CURRENT_TEST_COUNT} passed**" not in evaluation:
+        failures.append(
+            "Current automated-test result is missing from the evaluation report"
+        )
+    if not re.search(
+        rf"\b{CURRENT_TEST_COUNT}\s*/\s*{CURRENT_TEST_COUNT}\b",
+        deck_text,
     ):
-        if "80" not in content:
-            failures.append(f"Current 80-test result is missing from the {artifact_name}")
-    if "eighty" not in narration:
-        failures.append("Narration does not state the current eighty-test result")
+        failures.append("Current automated-test result is missing from the deck")
+    if f"{CURRENT_TEST_COUNT_WORDS} passing automated tests" not in narration:
+        failures.append("Current automated-test result is missing from the narration")
+
+    deck_text_lower = deck_text.lower()
+    if "one upstream failure explains" in deck_text_lower:
+        failures.append("Deck presents temporal cascade correlation as causation")
+    if "causation not confirmed" not in deck_text_lower:
+        failures.append("Deck is missing the cascade causation caveat")
+    if not re.search(r"\b120[- ]minute\b", deck_text_lower):
+        failures.append("Deck is missing the 120-minute cascade window")
+    defined_start = deck_text_lower.find("defined, not completed")
+    production_start = deck_text_lower.find("production work", defined_start)
+    rehearsal = deck_text_lower.find("clean-machine rehearsal")
+    if defined_start < rehearsal < production_start:
+        failures.append("Deck still presents the clean-machine rehearsal as pending")
 
     return {
         "commit": _git("rev-parse", "HEAD").strip(),

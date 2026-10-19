@@ -40,7 +40,7 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 | Public source repository | Available |
 | MIT licence | Available |
 | Reproducible run guide | Available below |
-| Pitch deck PDF and PPTX | Available in `submission/` |
+| Pitch deck PDF and PPTX | Present in `submission/`; factual refresh required |
 | Three-minute demo script | Available in `docs/demo-script.md` |
 | Recorded demo video | Existing 2:34 draft must be re-recorded after the final Exasol reset |
 
@@ -101,9 +101,9 @@ candidates into a concise narrative and a list of evidence gaps. Every factual
 claim must cite one or more retrieved run or log references; the integration
 requires exact supporting excerpts and rejects the entire model response when
 any claim uses an unknown reference, invents a numeric fact or identifier, or
-asserts a confirmed cause. It
-is disabled by default and does not replace or modify the deterministic
-assessment. The configured `gpt-6-luna` model ID is listed in the
+asserts a confirmed cause. It is disabled by default and does not replace or
+modify the deterministic assessment. The configured `gpt-6-luna` model ID is
+listed in the
 [official OpenAI model catalog](https://developers.openai.com/api/docs/models/gpt-6-luna).
 The [Batch 7 evaluation record](reports/llm-evaluation.md) separates 14 passing
 mocked boundary tests from the still-pending live-model evaluation.
@@ -245,13 +245,14 @@ curl http://127.0.0.1:8000/analytics/trend
 Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
 
 To reset the synthetic schema and exercise the complete database/API path in
-one command:
+one command against a confirmed disposable Exasol deployment:
 
 ```bash
 make smoke
 ```
 
-The smoke test checks database health, seeded incidents, one evidence-grounded
+The smoke test resets the synthetic `OPSINTEL` schema, then checks database
+health, seeded incidents, one evidence-grounded
 investigation, the failed-run comparison, and the Exasol dependency cascade.
 
 ### 5. Start the dashboard
@@ -320,7 +321,8 @@ Latest verified results:
   engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
   this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.
 - **Frontend lint passed with no warnings**.
-- **Frontend production build passed**.
+- **Frontend production build passed**; Vite reported a non-failing 614.81 kB
+  main-chunk advisory.
 
 With Exasol Personal running, `make exasol-proof` prints the actual historical
 completeness rows and timestamped log evidence used by the demo investigation.
@@ -343,6 +345,10 @@ verified dependency installation, 126 tests, the 16-case evaluation, frontend
 lint/build, and API/frontend startup from revision `2a17d4f`. Live Exasol setup
 and the database-backed browser workflow remain unverified because no disposable
 database was authorized.
+
+The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
+records the current `132/132` suite and submission blockers without rewriting
+that historical rehearsal.
 
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published
@@ -438,6 +444,10 @@ connector.
 - Data and logs are synthetic.
 - The challenge set is small and predefined.
 - Classification uses transparent rules rather than semantic language models.
+- External-reviewer holdout status is 0 cases from 0 external reviewers; the
+  27/27 result is project-authored and not an independent accuracy estimate.
+- Live LLM access and real-model grounding remain unverified; only mocked
+  boundary tests have run.
 - Production concurrency and live orchestrator connectivity have not been
   established; the repository includes exported-JSON adapter samples only.
 - Human-impact study status: **0/40 assigned trials recorded across 0/4

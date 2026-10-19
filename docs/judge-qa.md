@@ -16,6 +16,10 @@ DuckDB was about 4.5× faster at 10M rows on this laptop. Exasol earns its role
 here by keeping shared operational evidence and cross-pipeline analysis in the
 database used by the live API, not by an unsupported benchmark claim.
 
+The cascade is temporal correlation, not confirmed causation. The API retains
+only downstream failures that occur after the upstream failure and within 120
+minutes, and reports the timestamps and lag for judge inspection.
+
 ## Is this really AI?
 
 The core classifier and candidate generation are transparent, deterministic

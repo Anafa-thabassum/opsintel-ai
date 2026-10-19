@@ -7,11 +7,14 @@
 | `opsintel-ai-demo.mp4` | Existing 2:34 narrated demo; re-record after the final Exasol reset |
 | `video-narration.txt` | Final 11-scene narration with current test and evaluation claims |
 
-The deck and narration now reflect the expanded incident suite, dependency
-cascade, failed-run comparison, 132-test suite, and claim-level LLM grounding. The committed MP4 was
-recorded before those final changes, so **do not submit it unchanged**. Reset
-Exasol, rehearse the live flow, and re-record `video-narration.txt` in the
-team's own voice. Keep the result below three minutes and then run:
+The narration reflects the expanded incident suite, failed-run comparison,
+132-test suite, and claim-level LLM grounding. The current PPTX and PDF still
+show the older 80-test count and describe the temporal cascade as causal. Update
+both artifacts before submission. The committed MP4 was also recorded before
+the final changes, so **do not submit it unchanged**. Against an explicitly
+authorized disposable Exasol database, reset the synthetic schema, rehearse the
+live flow, and re-record `video-narration.txt` in the team's own voice. Keep the
+result below three minutes and then run:
 
 ```bash
 make submission-check

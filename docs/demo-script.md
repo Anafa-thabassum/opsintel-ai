@@ -62,9 +62,9 @@ Select `product_catalog`.
 Show the failure-cascade panel.
 
 > Exasol follows the dependency graph with a hierarchical query. One failed
-> customer-sync run is correlated with three failed downstream pipelines, so
-> the engineer can investigate shared upstream evidence before treating each
-> downstream symptom separately.
+> customer-sync run is temporally correlated with three downstream failures
+> that occur within 120 minutes. The timestamps and lag help the engineer
+> investigate shared evidence; causation is not confirmed.
 
 ## 1:55-2:25 - Why Exasol
 
