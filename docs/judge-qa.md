@@ -39,7 +39,8 @@ Automated tests, a predefined 16-case synthetic regression set, a separate
 27-case frozen synthetic holdout, frontend quality checks, and a reproducible
 local Exasol scale benchmark. The holdout is project-authored, so these results
 are not presented as independent production accuracy or a human productivity
-study.
+study. A frozen, counterbalanced four-participant impact study is ready to run,
+but no participant result is claimed yet.
 
 ## What would productionization require?
 

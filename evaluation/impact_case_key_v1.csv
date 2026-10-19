@@ -1,0 +1,11 @@
+case_id,expected_category
+impact-01,timeout
+impact-02,timeout
+impact-03,schema_mismatch
+impact-04,schema_mismatch
+impact-05,dependency_failure
+impact-06,dependency_failure
+impact-07,early_termination
+impact-08,early_termination
+impact-09,incomplete_data
+impact-10,incomplete_data

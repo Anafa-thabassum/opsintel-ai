@@ -315,17 +315,20 @@ An external evaluator can still create genuinely unseen cases from
 them against a frozen commit with `python -m scripts.evaluate_holdout`. No
 independent score is claimed until that separate process is completed.
 
-For the human-impact study, copy
-[`evaluation/impact_template.csv`](evaluation/impact_template.csv), record
-manual and OpsIntel-assisted trials, then run:
+The [human-impact study protocol](reports/impact-study-protocol.md) now includes
+ten frozen cases and a counterbalanced 40-trial assignment for four
+pseudonymous participants. Load its cases into Exasol with
+`make impact-study-database`, keep the LLM disabled, record the assigned trials
+in [`evaluation/impact_template.csv`](evaluation/impact_template.csv), then run:
 
 ```bash
 make impact FILE=/path/to/impact-results.csv
 ```
 
-The summarizer reports median time, correct/incorrect/unresolved outcomes,
-evidence traceability, and unsafe-certainty events. No productivity result is
-claimed until real participant data is recorded.
+The summarizer verifies the frozen assignment, derives outcomes from the hidden
+case key, records hashes and the tested commit, and reports time, agreement,
+traceability, confidence, and unsafe-certainty events. No productivity result
+is claimed until four real participants complete the study.
 
 ## Demonstration scenarios
 
@@ -343,9 +346,9 @@ claimed until real participant data is recorded.
 - Classification uses transparent rules rather than semantic language models.
 - Production concurrency and real orchestrator integration have not been
   established.
-- Human productivity impact remains unmeasured; the preregistered protocol,
-  empty recording template, and result summarizer are included for a real
-  participant study.
+- Human productivity impact remains unmeasured; the frozen cases,
+  counterbalanced assignment, prefilled recording template, and result summarizer
+  are ready for a real four-participant study.
 - Recommendations are diagnostic suggestions, not executed repairs.
 
 ## Licence

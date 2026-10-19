@@ -109,7 +109,8 @@ single-user measurement, not a production throughput or concurrency claim.
 - Keyword rules do not establish semantic understanding.
 - The optional LLM summary has not received an independent quality evaluation.
 - Human investigation-time impact remains unmeasured; the repository includes
-  a protocol, recording template, and deterministic result summarizer.
+  ten frozen cases, a counterbalanced four-participant assignment, a recording
+  template, and a deterministic result summarizer ready for administration.
 - Candidate explanations remain unconfirmed until an engineer verifies them.
 - Concurrency, production infrastructure, and real orchestrator integrations
   have not been evaluated.

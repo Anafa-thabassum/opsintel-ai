@@ -42,3 +42,18 @@ classification without sharing cases with the project team in advance.
 
 OpsIntel AI does not claim an independent accuracy result until an external
 evaluator supplies and runs those unseen cases.
+
+## Human impact study
+
+The impact study is separate from both classifier evaluations. Its ten cases,
+hidden key, counterbalanced P1–P4 assignment, and prefilled results worksheet are
+versioned here. Follow `reports/impact-study-protocol.md`; load the cases with
+`make impact-study-database` and summarize all 40 completed trials with:
+
+```bash
+make impact FILE=/absolute/path/to/completed-impact-results.csv
+```
+
+No time-saving result is claimed until real participants complete the frozen
+assignment. Keep the key hidden during administration and run with the optional
+LLM disabled so this study measures the deterministic OpsIntel workflow.

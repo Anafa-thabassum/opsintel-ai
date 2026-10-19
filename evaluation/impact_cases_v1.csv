@@ -1,0 +1,11 @@
+case_id,run_id,pipeline_name,status,expected_rows,actual_rows,log_level,log_message
+impact-01,2001,invoice_export_deadline,FAILED,750,750,ERROR,Execution deadline exceeded after 25 minutes
+impact-02,2002,warehouse_slot_wait,FAILED,1200,1200,ERROR,Worker timed out while waiting for a warehouse slot
+impact-03,2003,customer_profile_load,FAILED,200,0,ERROR,Invalid cast from VARCHAR to DATE for birth_date
+impact-04,2004,product_price_import,FAILED,400,0,ERROR,Incoming column type does not match expected DECIMAL for unit_price
+impact-05,2005,finance_rollup,FAILED,1000,0,ERROR,Prerequisite task failed: ledger_extract
+impact-06,2006,inventory_publish,FAILED,300,0,ERROR,Upstream dependency failed before inventory publish began
+impact-07,2007,event_ingest,FAILED,5000,3400,ERROR,Processing stopped early after worker exited
+impact-08,2008,orders_load,FAILED,900,760,ERROR,Load aborted before completion after batch 19
+impact-09,2009,support_ticket_extract,FAILED,650,590,WARN,Source contained fewer rows than expected
+impact-10,2010,shipment_snapshot,FAILED,880,820,WARN,Row shortfall detected in source extract
