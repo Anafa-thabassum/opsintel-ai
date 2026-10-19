@@ -8,7 +8,8 @@ Does OpsIntel AI reduce the time required for a data engineer to reach a
 defensible first diagnosis while preserving evidence traceability?
 
 This study measures the deterministic investigation experience. Run it with
-`LLM_ENABLED=false`; independent LLM-summary quality is a separate evaluation.
+`OPSINTEL_LLM_ENABLED=false`; independent LLM-summary quality is a separate
+evaluation.
 
 ## Frozen materials
 
@@ -18,6 +19,7 @@ This study measures the deterministic investigation experience. Run it with
 | `evaluation/impact_case_key_v1.csv` | Facilitator-only expected categories |
 | `evaluation/impact_assignments_v1.csv` | Frozen order and condition for P1–P4 |
 | `evaluation/impact_template.csv` | Prefilled 40-trial results worksheet |
+| `evaluation/impact_recruitment_template.md` | Recruitment disclosure template |
 
 Do not change these v1 files after participant testing starts. Use pseudonymous
 participant IDs only and do not collect names, employers, email addresses, or
@@ -69,12 +71,15 @@ or faster before the trials.
 8. After all 40 trials, run:
 
    ```bash
-   make impact FILE=/absolute/path/to/completed-impact-results.csv
+   make impact \
+     FILE=/absolute/path/to/completed-impact-results.csv \
+     RECRUITMENT=/absolute/path/to/recruitment.md
    ```
 
 The command rejects incomplete, duplicate, reordered, or condition-swapped
 trials; derives correctness from the frozen key; records file hashes and the Git
-commit; and writes `reports/impact-study-v1.json`.
+commit; and writes `reports/impact-study-v1.json` plus a judge-readable
+`reports/impact-study-v1.md`.
 
 ## Measures
 

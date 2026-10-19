@@ -1,0 +1,63 @@
+{
+  "benchmark": "OpsIntel window analytics and daily aggregation",
+  "dataset": "identical deterministic synthetic pipeline history",
+  "row_counts": [
+    1000000,
+    10000000
+  ],
+  "repetitions": 7,
+  "execution": "sequential local single-user runs",
+  "environment": {
+    "python": "3.14.0",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+  },
+  "scope": "Single-engine baseline only; run both engines under the same conditions before claiming a database comparison.",
+  "results": [
+    {
+      "engine": "DuckDB",
+      "version": "1.5.6",
+      "rows": 1000000,
+      "result_days": 695,
+      "repetitions": 7,
+      "load_seconds": 0.242,
+      "query_latency_ms": {
+        "minimum": 92.04,
+        "median": 109.798,
+        "p95_nearest_rank": 118.866,
+        "maximum": 118.866,
+        "samples": [
+          92.04,
+          118.866,
+          106.192,
+          108.966,
+          110.105,
+          109.798,
+          110.683
+        ]
+      }
+    },
+    {
+      "engine": "DuckDB",
+      "version": "1.5.6",
+      "rows": 10000000,
+      "result_days": 6945,
+      "repetitions": 7,
+      "load_seconds": 2.386,
+      "query_latency_ms": {
+        "minimum": 925.552,
+        "median": 1035.691,
+        "p95_nearest_rank": 1174.729,
+        "maximum": 1174.729,
+        "samples": [
+          1174.729,
+          1073.285,
+          1030.103,
+          1072.028,
+          980.885,
+          925.552,
+          1035.691
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "dag_runs": [
+    {
+      "opsintel_run_id": 3001,
+      "dag_id": "airflow.orders_daily",
+      "state": "failed",
+      "expected_rows": 1000,
+      "actual_rows": 812,
+      "end_date": "2026-10-19T02:14:00Z",
+      "logs": [
+        "Source returned only 812 rows",
+        "Import ended before all expected rows were processed"
+      ]
+    }
+  ]
+}

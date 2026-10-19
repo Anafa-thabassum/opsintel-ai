@@ -3,7 +3,12 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db import check_connection, get_failed_pipelines, get_pipeline_trend
+from app.db import (
+    check_connection,
+    get_failed_pipelines,
+    get_failure_cascades,
+    get_pipeline_trend,
+)
 from app.investigator import assess_root_causes, investigate_pipeline
 from app.llm import summarize_investigation
 
@@ -69,6 +74,31 @@ def analytics_trend():
         raise HTTPException(
             status_code=503,
             detail="Unable to retrieve pipeline analytics",
+        ) from exc
+
+
+@app.get("/analytics/cascades")
+def analytics_cascades():
+    try:
+        rows = get_failure_cascades()
+        return {
+            "count": len(rows),
+            "cascades": [
+                {
+                    "root_pipeline": row[0],
+                    "root_run_id": int(row[1]),
+                    "downstream_pipeline": row[2],
+                    "downstream_run_id": int(row[3]),
+                    "dependency_depth": int(row[4]),
+                    "dependency_path": row[5],
+                }
+                for row in rows
+            ],
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to retrieve failure cascades",
         ) from exc
 
 

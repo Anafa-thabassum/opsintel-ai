@@ -30,6 +30,27 @@ VALUES (4, 'daily_reporting', 'FAILED', 1000, 0, CURRENT_TIMESTAMP);
 INSERT INTO OPSINTEL.PIPELINE_RUNS
 VALUES (5, 'inventory_snapshot', 'SUCCESS', 300, 300, CURRENT_TIMESTAMP);
 
+INSERT INTO OPSINTEL.PIPELINE_RUNS
+VALUES (6, 'late_file_ingest', 'FAILED', 600, 600, CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_RUNS
+VALUES (7, 'partial_orders_load', 'FAILED', 1200, 1030, CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_RUNS
+VALUES (8, 'billing_retry', 'FAILED', 900, 925, CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_RUNS
+VALUES (9, 'warehouse_publish', 'FAILED', 400, 400, CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_RUNS
+VALUES (10, 'partner_feed', 'FAILED', 300, 300, CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_RUNS
+VALUES (11, 'customer_orders_sync', 'FAILED', 300, 0, CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_RUNS
+VALUES (12, 'billing_customer_export', 'FAILED', 450, 0, CURRENT_TIMESTAMP);
+
 -- Pipeline logs
 INSERT INTO OPSINTEL.PIPELINE_LOGS
 VALUES (1, 1, 'INFO', 'Pipeline started; expected 100 source rows', CURRENT_TIMESTAMP);
@@ -52,8 +73,45 @@ VALUES (6, 4, 'ERROR', 'Dependency failure: upstream customer_sync task failed',
 INSERT INTO OPSINTEL.PIPELINE_LOGS
 VALUES (7, 5, 'INFO', 'Pipeline completed successfully; all expected rows processed', CURRENT_TIMESTAMP);
 
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (8, 6, 'WARN', 'File ingest started late after schedule delay of 42 minutes', CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (9, 7, 'WARN', 'Source returned only 1030 rows from the partial delivery', CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (10, 8, 'WARN', 'Duplicate rows detected after retry replayed the final batch', CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (11, 9, 'INFO', 'Pipeline completed successfully; all expected rows processed', CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (12, 9, 'ERROR', 'Worker failed after final write acknowledgement', CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (13, 10, 'WARN', 'Remote endpoint emitted code ZX-41 with opaque payload fragment', CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (14, 11, 'ERROR', 'Upstream dependency failed: customer_sync', CURRENT_TIMESTAMP);
+
+INSERT INTO OPSINTEL.PIPELINE_LOGS
+VALUES (15, 12, 'ERROR', 'Dependency failure: customer_sync did not complete', CURRENT_TIMESTAMP);
+
+-- Dependency graph used by the Exasol CONNECT BY cascade analysis.
+INSERT INTO OPSINTEL.PIPELINE_DEPENDENCIES
+VALUES ('customer_sync', 'daily_reporting');
+
+INSERT INTO OPSINTEL.PIPELINE_DEPENDENCIES
+VALUES ('customer_sync', 'customer_orders_sync');
+
+INSERT INTO OPSINTEL.PIPELINE_DEPENDENCIES
+VALUES ('customer_sync', 'billing_customer_export');
+
+INSERT INTO OPSINTEL.PIPELINE_DEPENDENCIES
+VALUES ('daily_reporting', 'executive_reporting');
+
 -- Historical successful runs used by the Exasol analytical view and dashboard.
--- These establish a healthy baseline before the four demonstration incidents.
+-- These establish a healthy baseline before the eleven demonstration incidents.
 INSERT INTO OPSINTEL.PIPELINE_RUNS
 VALUES (101, 'daily_sales_import', 'SUCCESS', 100, 100, CURRENT_TIMESTAMP - INTERVAL '4' DAY);
 INSERT INTO OPSINTEL.PIPELINE_RUNS

@@ -38,5 +38,6 @@ def test_reset_recreates_schema_seed_and_analytics(monkeypatch, capsys):
     assert "CREATE TABLE OPSINTEL.PIPELINE_RUNS" in all_sql
     assert "INSERT INTO OPSINTEL.PIPELINE_RUNS" in all_sql
     assert "CREATE OR REPLACE VIEW OPSINTEL.PIPELINE_HEALTH_FEATURES" in all_sql
+    assert "CREATE OR REPLACE VIEW OPSINTEL.PIPELINE_DEPENDENCY_CASCADE" in all_sql
     assert connection.closed is True
     assert "reset successfully" in capsys.readouterr().out

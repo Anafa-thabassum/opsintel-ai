@@ -6,7 +6,9 @@ Exasol stores the operational history and computes the features consumed by the
 dashboard. The analytical view uses window functions for previous-run status,
 rolling row-count baselines, completeness, and rolling failure rate. Moving
 those calculations into the database keeps the API thin and makes the evidence
-queryable and reproducible.
+queryable and reproducible. A second Exasol view uses hierarchical `CONNECT BY`
+processing to correlate one failed upstream pipeline with three failed
+downstream runs.
 
 ## Is this really AI?
 
@@ -19,8 +21,10 @@ root cause, or execute a repair.
 
 The system separates observations, candidates, the optional narrative, and
 human confirmation. The model receives a bounded JSON payload, treats record
-content as untrusted data, and returns a strict summary schema. The confirmed
-root cause remains null even when the summary is generated. Unknown evidence
+content as untrusted data, and returns a strict claim schema. The confirmed
+root cause remains null even when the summary is generated. Every generated
+claim must cite one or more retrieved evidence IDs or the whole response is
+discarded. Unknown evidence
 can remain unclassified, and model failure leaves the deterministic result
 available.
 
@@ -52,6 +56,7 @@ secret management.
 ## What does the LLM add?
 
 It makes a multi-record investigation easier to read by producing a concise
-narrative and identifying missing evidence. It does not add evidence, change
+narrative whose individual claims link to retrieved evidence, and identifies
+missing evidence. It does not add evidence, change
 the deterministic category, rank candidates, or bypass human confirmation.
 The integration is optional and disabled by default.

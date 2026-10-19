@@ -101,3 +101,43 @@ def get_pipeline_trend():
         return result.fetchall()
     finally:
         connection.close()
+
+
+def get_failure_cascades():
+    """Return latest failed upstream/downstream correlations from Exasol."""
+    connection = get_connection()
+
+    try:
+        result = connection.execute("""
+            WITH LATEST_FAILED AS (
+                SELECT
+                    RUN_ID,
+                    PIPELINE_NAME,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY PIPELINE_NAME
+                        ORDER BY RUN_TIME DESC, RUN_ID DESC
+                    ) AS RECENCY_RANK
+                FROM OPSINTEL.PIPELINE_RUNS
+                WHERE RUN_STATUS = 'FAILED'
+            )
+            SELECT
+                cascade.ROOT_PIPELINE,
+                upstream.RUN_ID AS ROOT_RUN_ID,
+                cascade.DOWNSTREAM_PIPELINE,
+                downstream.RUN_ID AS DOWNSTREAM_RUN_ID,
+                cascade.DEPENDENCY_DEPTH,
+                cascade.DEPENDENCY_PATH
+            FROM OPSINTEL.PIPELINE_DEPENDENCY_CASCADE cascade
+            JOIN LATEST_FAILED upstream
+              ON upstream.PIPELINE_NAME = cascade.ROOT_PIPELINE
+             AND upstream.RECENCY_RANK = 1
+            JOIN LATEST_FAILED downstream
+              ON downstream.PIPELINE_NAME = cascade.DOWNSTREAM_PIPELINE
+             AND downstream.RECENCY_RANK = 1
+            ORDER BY upstream.RUN_ID,
+                     cascade.DEPENDENCY_DEPTH,
+                     downstream.RUN_ID
+        """)
+        return result.fetchall()
+    finally:
+        connection.close()

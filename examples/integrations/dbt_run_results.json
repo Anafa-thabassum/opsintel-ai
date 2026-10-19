@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "generated_at": "2026-10-19T02:30:00Z"
+  },
+  "results": [
+    {
+      "unique_id": "model.analytics.customer_profile",
+      "status": "error",
+      "message": "Invalid cast from VARCHAR to DATE for birth_date",
+      "adapter_response": {
+        "rows_affected": 0
+      },
+      "opsintel": {
+        "run_id": 3002,
+        "expected_rows": 200
+      }
+    }
+  ]
+}

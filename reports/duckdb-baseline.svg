@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+<rect width="960" height="540" fill="#090c14"/>
+<text x="48" y="46" fill="#f0f3fa" font-family="Arial" font-size="27" font-weight="700">Median analytical-query latency</text>
+<text x="48" y="72" fill="#9aa5bd" font-family="Arial" font-size="14">Identical deterministic workload · local single-user · milliseconds on a logarithmic scale</text>
+<line x1="100" y1="390.1" x2="890" y2="390.1" stroke="#273149" stroke-width="1"/>
+<text x="86" y="395.1" text-anchor="end" fill="#74809a" font-family="Arial" font-size="13">100</text>
+<line x1="100" y1="132.5" x2="890" y2="132.5" stroke="#273149" stroke-width="1"/>
+<text x="86" y="137.5" text-anchor="end" fill="#74809a" font-family="Arial" font-size="13">1,000</text>
+<rect x="251.5" y="379.6" width="80.0" height="45.4" rx="8" fill="#9b8cff"/>
+<text x="291.5" y="369.6" text-anchor="middle" fill="#f0f3fa" font-family="Arial" font-size="13" font-weight="700">109.8 ms</text>
+<text x="297.5" y="456" text-anchor="middle" fill="#d7deef" font-family="Arial" font-size="15">1M rows</text>
+<rect x="646.5" y="128.6" width="80.0" height="296.4" rx="8" fill="#9b8cff"/>
+<text x="686.5" y="118.6" text-anchor="middle" fill="#f0f3fa" font-family="Arial" font-size="13" font-weight="700">1,035.7 ms</text>
+<text x="692.5" y="456" text-anchor="middle" fill="#d7deef" font-family="Arial" font-size="15">10M rows</text>
+<rect x="100" y="486" width="14" height="14" rx="3" fill="#9b8cff"/>
+<text x="122" y="498" fill="#9aa5bd" font-family="Arial" font-size="14">DuckDB</text>
+</svg>

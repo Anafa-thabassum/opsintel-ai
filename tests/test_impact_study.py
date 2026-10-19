@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from app.investigator import classify_evidence
-from scripts.summarize_impact_study import summarize
+from scripts.summarize_impact_study import render_markdown, summarize
 
 
 FIELDS = [
@@ -61,6 +61,7 @@ def test_impact_summary_validates_design_and_derives_outcomes(tmp_path):
     assert result["conditions"]["opsintel"]["evidence_traceability_pct"] == 100.0
     assert result["design_checks"]["balanced_conditions_per_case"] is True
     assert result["study_target_met"] is False
+    assert "not met" in render_markdown(result)
 
     root = Path(__file__).resolve().parents[1]
     with (root / "evaluation/impact_case_key_v1.csv").open(newline="") as source:

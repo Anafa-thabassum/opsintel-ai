@@ -108,7 +108,12 @@ def _git_state():
     return commit, not bool(dirty)
 
 
-def summarize(path, key_path=DEFAULT_KEY, assignment_path=DEFAULT_ASSIGNMENT):
+def summarize(
+    path,
+    key_path=DEFAULT_KEY,
+    assignment_path=DEFAULT_ASSIGNMENT,
+    recruitment_path=None,
+):
     rows = _read_csv(path, FIELDS)
     if not rows:
         raise ValueError("Impact study file contains no observations")
@@ -241,6 +246,11 @@ def summarize(path, key_path=DEFAULT_KEY, assignment_path=DEFAULT_ASSIGNMENT):
     }
     commit, clean = _git_state()
 
+    recruitment = (
+        Path(recruitment_path).read_text().strip()
+        if recruitment_path
+        else "Not recorded in this test run."
+    )
     return {
         "evaluation": "counterbalanced-human-impact-study-v1",
         "results_file": Path(path).name,
@@ -260,11 +270,55 @@ def summarize(path, key_path=DEFAULT_KEY, assignment_path=DEFAULT_ASSIGNMENT):
         "design_checks": design_checks,
         "success_thresholds": thresholds,
         "study_target_met": all(design_checks.values()) and all(thresholds.values()),
+        "recruitment_description": recruitment,
         "scope": (
             "Small counterbalanced study on synthetic incidents; results do "
             "not establish production impact or independent LLM quality."
         ),
     }
+
+
+def render_markdown(report):
+    manual = report["conditions"]["manual"]
+    opsintel = report["conditions"]["opsintel"]
+    verdict = (
+        "The predefined study target was met."
+        if report["study_target_met"]
+        else "The predefined study target was not met; report the mixed or negative result without a time-saving claim."
+    )
+    return "\n".join([
+        "# OpsIntel AI impact study v1",
+        "",
+        f"- Participants: **{report['participants']}**",
+        f"- Cases: **{report['cases']}**",
+        f"- Completed observations: **{report['observations']}**",
+        f"- Tested commit: `{report['tested_commit']}`",
+        "",
+        "## Results",
+        "",
+        "| Metric | Manual | OpsIntel AI |",
+        "|---|---:|---:|",
+        f"| Median diagnosis time | {manual['median_seconds']} s | {opsintel['median_seconds']} s |",
+        f"| Correct diagnoses | {manual['correct_pct']}% | {opsintel['correct_pct']}% |",
+        f"| Evidence traceability | {manual['evidence_traceability_pct']}% | {opsintel['evidence_traceability_pct']}% |",
+        f"| Unsafe confirmation events | {manual['unsafe_confirmation_events']} | {opsintel['unsafe_confirmation_events']} |",
+        "",
+        f"Median time difference: **{report['median_time_saved_pct']}%** (positive means OpsIntel was faster).",
+        f"Diagnosis agreement difference: **{report['diagnosis_agreement_delta_points']} percentage points**.",
+        "",
+        "## Interpretation",
+        "",
+        verdict,
+        "",
+        "## Recruitment",
+        "",
+        report["recruitment_description"],
+        "",
+        "## Scope",
+        "",
+        report["scope"],
+        "",
+    ])
 
 
 def main():
@@ -273,12 +327,21 @@ def main():
     parser.add_argument("--key", default=DEFAULT_KEY)
     parser.add_argument("--assignment", default=DEFAULT_ASSIGNMENT)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--markdown-output", type=Path)
+    parser.add_argument("--recruitment", type=Path, required=True)
     args = parser.parse_args()
-    result = summarize(args.path, args.key, args.assignment)
+    result = summarize(
+        args.path,
+        args.key,
+        args.assignment,
+        args.recruitment,
+    )
     rendered = json.dumps(result, indent=2)
     print(rendered)
     if args.output:
         args.output.write_text(rendered + "\n")
+    if args.markdown_output:
+        args.markdown_output.write_text(render_markdown(result))
 
 
 if __name__ == "__main__":

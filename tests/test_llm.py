@@ -71,11 +71,13 @@ def test_llm_summary_uses_structured_evidence_only(monkeypatch):
                     {
                         "type": "output_text",
                         "text": json.dumps({
-                            "summary": "The run ended with 20 rows missing.",
+                            "claims": [{
+                                "statement": "Processing ended before completion.",
+                                "evidence_refs": [
+                                    "OPSINTEL.PIPELINE_LOGS · LOG-3"
+                                ],
+                            }],
                             "evidence_gaps": ["The first termination error"],
-                            "evidence_refs": [
-                                "OPSINTEL.PIPELINE_LOGS · LOG-3"
-                            ],
                         }),
                     }
                 ]
@@ -89,6 +91,11 @@ def test_llm_summary_uses_structured_evidence_only(monkeypatch):
 
     assert result["status"] == "generated"
     assert result["model"] == "test-model"
+    assert result["summary"] == "Processing ended before completion."
+    assert result["claims"] == [{
+        "statement": "Processing ended before completion.",
+        "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-3"],
+    }]
     assert result["evidence_gaps"] == ["The first termination error"]
     assert result["evidence_refs"] == [
         "OPSINTEL.PIPELINE_LOGS · LOG-3"
@@ -96,6 +103,8 @@ def test_llm_summary_uses_structured_evidence_only(monkeypatch):
     request = client.post.call_args.kwargs
     assert request["json"]["store"] is False
     assert request["json"]["text"]["format"]["strict"] is True
+    schema = request["json"]["text"]["format"]["schema"]
+    assert "claims" in schema["properties"]
     assert "untrusted data" in request["json"]["instructions"]
     assert json.loads(request["json"]["input"])["confirmed_root_cause"] is None
     assert request["headers"]["Authorization"] == "Bearer test-key"
@@ -120,9 +129,11 @@ def test_llm_rejects_unknown_evidence_references(monkeypatch):
     response = Mock()
     response.json.return_value = {
         "output_text": json.dumps({
-            "summary": "A database observation was invented.",
+            "claims": [{
+                "statement": "A database observation was invented.",
+                "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-999"],
+            }],
             "evidence_gaps": [],
-            "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-999"],
         })
     }
     client = Mock()
@@ -132,6 +143,34 @@ def test_llm_rejects_unknown_evidence_references(monkeypatch):
 
     assert result["status"] == "unavailable"
     assert result["summary"] is None
+
+
+def test_llm_rejects_a_single_ungrounded_claim(monkeypatch):
+    monkeypatch.setenv("OPSINTEL_LLM_ENABLED", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    response = Mock()
+    response.json.return_value = {
+        "output_text": json.dumps({
+            "claims": [
+                {
+                    "statement": "Processing ended before completion.",
+                    "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-3"],
+                },
+                {
+                    "statement": "The worker ran out of memory.",
+                    "evidence_refs": ["OPSINTEL.PIPELINE_LOGS · LOG-404"],
+                },
+            ],
+            "evidence_gaps": [],
+        })
+    }
+    client = Mock()
+    client.post.return_value = response
+
+    result = summarize_investigation(INCIDENT, ROOT_CAUSES, client)
+
+    assert result["status"] == "unavailable"
+    assert result["claims"] == []
 
 
 def test_llm_rejects_malformed_structured_output(monkeypatch):

@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_FILE = ROOT / "sql/schema.sql"
 SEED_FILE = ROOT / "sql/seed.sql"
 ANALYTICS_FILE = ROOT / "sql/analysis/pipeline_health_features.sql"
+CASCADE_FILE = ROOT / "sql/analysis/pipeline_dependency_cascade.sql"
 
 
 def load_statements(path):
@@ -47,8 +48,9 @@ def main():
                 for statement in load_statements(path):
                     connection.execute(statement)
 
-        for statement in load_statements(ANALYTICS_FILE):
-            connection.execute(statement)
+        for path in (ANALYTICS_FILE, CASCADE_FILE):
+            for statement in load_statements(path):
+                connection.execute(statement)
     finally:
         connection.close()
 

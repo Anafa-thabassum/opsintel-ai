@@ -114,6 +114,17 @@ def test_analytics_trend_endpoint():
     assert response.json()["trend"][0]["incident_count"] == 2
 
 
+def test_failure_cascade_endpoint():
+    rows = [("customer_sync", 2, "daily_reporting", 4, 1, " -> daily_reporting")]
+
+    with patch("app.main.get_failure_cascades", return_value=rows):
+        response = client.get("/analytics/cascades")
+
+    assert response.status_code == 200
+    assert response.json()["cascades"][0]["root_run_id"] == 2
+    assert response.json()["cascades"][0]["downstream_pipeline"] == "daily_reporting"
+
+
 def test_investigation_returns_503_when_database_fails():
     with patch(
         "app.main.investigate_pipeline",
@@ -134,4 +145,15 @@ def test_analytics_trend_returns_503_when_database_fails():
 
     assert response.status_code == 503
     assert response.json()["detail"] == "Unable to retrieve pipeline analytics"
+
+
+def test_failure_cascades_return_503_when_database_fails():
+    with patch(
+        "app.main.get_failure_cascades",
+        side_effect=Exception("Simulated database failure"),
+    ):
+        response = client.get("/analytics/cascades")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Unable to retrieve failure cascades"
 

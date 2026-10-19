@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup database impact-study-database api frontend verify evaluate holdout impact exasol-proof benchmark
+.PHONY: setup database impact-study-database api frontend verify evaluate holdout independent-holdout impact exasol-proof benchmark benchmark-compare submission-check
 
 setup:
 	python3 -m venv .venv
@@ -31,12 +31,22 @@ evaluate:
 holdout:
 	$(PYTHON) -m scripts.evaluate_holdout evaluation/frozen_holdout_v1.csv
 
+independent-holdout:
+	@test -n "$(FILE)" -a -n "$(REF)" || (echo "Usage: make independent-holdout FILE=evaluation/independent_holdout_v1.csv REF=independent-holdout-v1" && exit 2)
+	$(PYTHON) -m scripts.evaluate_holdout "$(FILE)" --provenance independent --frozen-ref "$(REF)" --output reports/independent-holdout-v1.json --markdown-output reports/independent-holdout-v1.md
+
 impact:
-	@test -n "$(FILE)" || (echo "Usage: make impact FILE=/path/to/results.csv" && exit 2)
-	$(PYTHON) -m scripts.summarize_impact_study "$(FILE)" --output reports/impact-study-v1.json
+	@test -n "$(FILE)" -a -n "$(RECRUITMENT)" || (echo "Usage: make impact FILE=/path/to/results.csv RECRUITMENT=/path/to/recruitment.md" && exit 2)
+	$(PYTHON) -m scripts.summarize_impact_study "$(FILE)" --recruitment "$(RECRUITMENT)" --output reports/impact-study-v1.json --markdown-output reports/impact-study-v1.md
 
 exasol-proof:
 	$(PYTHON) -m scripts.exasol_proof
 
 benchmark:
 	$(PYTHON) -m scripts.benchmark_exasol
+
+benchmark-compare:
+	$(PYTHON) -m scripts.benchmark_databases --output reports/database-comparison.json --chart reports/database-comparison.svg
+
+submission-check:
+	$(PYTHON) -m scripts.verify_submission

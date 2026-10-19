@@ -22,7 +22,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 60 automated tests and a 16-case synthetic challenge set.
+- 71 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -42,7 +42,7 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 | Reproducible run guide | Available below |
 | Pitch deck PDF and PPTX | Available in `submission/` |
 | Three-minute demo script | Available in `docs/demo-script.md` |
-| Recorded demo video | Available in `submission/` (2:34) |
+| Recorded demo video | Existing 2:34 draft must be re-recorded after the final Exasol reset |
 
 ## What the prototype does
 
@@ -67,9 +67,11 @@ calculate:
 - rolling failure rates;
 - missing-row counts and completeness percentages;
 - daily incident telemetry consumed by the dashboard.
+- cross-pipeline failure cascades calculated with Exasol `CONNECT BY`.
 
-The sample history establishes a healthy baseline before the four demonstration
-incidents, allowing the UI to show an actual operational trend.
+The sample history establishes a healthy baseline before eleven representative
+incident scenarios, allowing the UI to show an operational trend and exercise
+every investigation outcome.
 
 ## Architecture
 
@@ -77,7 +79,9 @@ incidents, allowing the UI to show an actual operational trend.
 flowchart LR
     A[Pipeline runs and logs] --> B[(Exasol Personal)]
     B --> C[Analytical view]
+    B --> J[Dependency cascade query]
     C --> D[FastAPI]
+    J --> D
     D --> E[Evidence classifier]
     E --> F[Candidate causes]
     F --> G[Optional LLM summary]
@@ -90,8 +94,12 @@ flowchart LR
 
 The classifier and candidate generation remain deterministic and rule-based.
 An optional OpenAI Responses API step can turn the retrieved evidence and
-candidates into a concise narrative and a list of evidence gaps. It is disabled
-by default and does not replace or modify the deterministic assessment.
+candidates into a concise narrative and a list of evidence gaps. Every factual
+claim must cite one or more retrieved run or log references; the integration
+rejects the entire model response when any claim uses an unknown reference. It
+is disabled by default and does not replace or modify the deterministic
+assessment. The configured `gpt-6-luna` model ID is listed in the
+[official OpenAI model catalog](https://developers.openai.com/api/docs/models/gpt-6-luna).
 
 The deliberate safety boundary is:
 
@@ -109,6 +117,7 @@ The deliberate safety boundary is:
 | Backend | Python and FastAPI |
 | Database client | PyExasol |
 | Optional summarizer | OpenAI Responses API through HTTPX |
+| Local analytical baseline | DuckDB 1.5.6 |
 | Frontend | React, Vite and Recharts |
 | Verification | pytest, Oxlint and GitHub Actions |
 
@@ -124,6 +133,7 @@ opsintel-ai/
 │   ├── evaluation.md            # Reproducible evaluation summary
 │   └── exasol-benchmark.json    # Raw local scale measurement
 ├── scripts/setup_database.py    # Demo database setup command
+├── examples/integrations/       # Airflow and dbt exported-JSON samples
 ├── submission/                  # Pitch deck, PDF and demo video
 ├── sql/
 │   ├── schema.sql
@@ -252,6 +262,7 @@ For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
 | GET | `/health` | Lightweight database connectivity check |
 | GET | `/incidents` | Failed or incomplete runs |
 | GET | `/analytics/trend` | Exasol-calculated daily telemetry |
+| GET | `/analytics/cascades` | Upstream/downstream failure correlations |
 | GET | `/investigate/{run_id}` | Evidence, candidates and optional LLM summary |
 | GET | `/investigate/{run_id}/root-causes` | Candidate causes only |
 
@@ -282,7 +293,7 @@ npm run build
 
 Latest verified results:
 
-- **60/60 automated tests passed**.
+- **71/71 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 frozen synthetic holdout cases classified correctly** across all
   nine outcomes.
@@ -310,10 +321,20 @@ contains 27 versioned cases and a published
 `make holdout`. The project team authored this dataset, so its 27/27 result is
 not an independent or production accuracy claim.
 
-An external evaluator can still create genuinely unseen cases from
-[`evaluation/holdout_template.csv`](evaluation/holdout_template.csv) and run
-them against a frozen commit with `python -m scripts.evaluate_holdout`. No
-independent score is claimed until that separate process is completed.
+Two or three external reviewers can create 15–20 genuinely unseen cases from
+[`evaluation/holdout_template.csv`](evaluation/holdout_template.csv). After
+committing and tagging the completed data, run:
+
+```bash
+make independent-holdout \
+  FILE=evaluation/independent_holdout_v1.csv \
+  REF=independent-holdout-v1
+```
+
+The evaluator verifies the tagged dataset and classifier hashes, requires two
+or three pseudonymous case-author IDs, and publishes JSON plus Markdown error
+analysis. No independent score is claimed until external reviewers complete
+that process.
 
 The [human-impact study protocol](reports/impact-study-protocol.md) now includes
 ten frozen cases and a counterbalanced 40-trial assignment for four
@@ -322,13 +343,39 @@ pseudonymous participants. Load its cases into Exasol with
 in [`evaluation/impact_template.csv`](evaluation/impact_template.csv), then run:
 
 ```bash
-make impact FILE=/path/to/impact-results.csv
+make impact \
+  FILE=/path/to/impact-results.csv \
+  RECRUITMENT=/path/to/recruitment.md
 ```
 
 The summarizer verifies the frozen assignment, derives outcomes from the hidden
 case key, records hashes and the tested commit, and reports time, agreement,
 traceability, confidence, and unsafe-certainty events. No productivity result
 is claimed until four real participants complete the study.
+
+## Comparative database benchmark
+
+`make benchmark-compare` runs the same window-analytics and daily-aggregation
+workload on Exasol Personal and DuckDB at one million and ten million rows. The
+repository currently includes a measured
+[`DuckDB baseline`](reports/duckdb-baseline.json) and an
+[`editable SVG chart`](reports/duckdb-baseline.svg). A complete engine comparison
+is not claimed until the command records both engines in
+`reports/database-comparison.json` on the same machine.
+
+This comparison is local and single-user. It tests query latency, not
+concurrency, distributed scale, operational cost, or production reliability.
+Exasol remains central because shared pipeline history, window features, log
+evidence, and dependency cascades stay queryable inside the operational
+analytical database instead of being extracted into the API process.
+
+## Airflow and dbt import sample
+
+The [`exported-JSON adapter`](examples/integrations/README.md) normalizes sample
+Airflow DAG runs and dbt `run_results` records into OpsIntel's run and log
+schema. Previewing is read-only; `--apply` must be supplied before the adapter
+writes to Exasol. This is an integration example, not a live orchestrator
+connector.
 
 ## Demonstration scenarios
 
@@ -338,14 +385,20 @@ is claimed until four real participants complete the study.
 | Customer sync | Timeout |
 | Product catalog | Schema mismatch |
 | Daily reporting | Upstream dependency failure |
+| Late file ingest | Delayed run |
+| Partial orders load | Incomplete data |
+| Billing retry | Duplicate or excess data |
+| Warehouse publish | Conflicting evidence |
+| Partner feed | Unclassified messy log |
+| Customer orders and billing export | Downstream dependency cascade |
 
 ## Known limitations
 
 - Data and logs are synthetic.
 - The challenge set is small and predefined.
 - Classification uses transparent rules rather than semantic language models.
-- Production concurrency and real orchestrator integration have not been
-  established.
+- Production concurrency and live orchestrator connectivity have not been
+  established; the repository includes exported-JSON adapter samples only.
 - Human productivity impact remains unmeasured; the frozen cases,
   counterbalanced assignment, prefilled recording template, and result summarizer
   are ready for a real four-participant study.

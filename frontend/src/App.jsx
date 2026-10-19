@@ -152,6 +152,7 @@ function DemoAccess({ onEnter }) {
 function Dashboard({ onExit }) {
   const [incidents, setIncidents] = useState([]);
   const [trend, setTrend] = useState([]);
+  const [cascades, setCascades] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [investigation, setInvestigation] = useState(null);
   const [rootCauses, setRootCauses] = useState(null);
@@ -170,10 +171,11 @@ function Dashboard({ onExit }) {
     setError("");
 
     try {
-      const [healthResponse, incidentsResponse, trendResponse] = await Promise.all([
+      const [healthResponse, incidentsResponse, trendResponse, cascadeResponse] = await Promise.all([
         fetch(`${API}/health`),
         fetch(`${API}/incidents`),
         fetch(`${API}/analytics/trend`),
+        fetch(`${API}/analytics/cascades`),
       ]);
 
       setHealth(healthResponse.ok ? "connected" : "error");
@@ -191,6 +193,13 @@ function Dashboard({ onExit }) {
         setTrend(trendData.trend || []);
       } else {
         setTrend([]);
+      }
+
+      if (cascadeResponse.ok) {
+        const cascadeData = await cascadeResponse.json();
+        setCascades(cascadeData.cascades || []);
+      } else {
+        setCascades([]);
       }
 
       const nextId = rows.some((item) => item.run_id === selectedId)
@@ -440,9 +449,37 @@ function Dashboard({ onExit }) {
                 <ServiceRow name="FastAPI service" status={health === "connected"} />
                 <ServiceRow name="Exasol connection" status={health === "connected"} />
                 <ServiceRow name="Incident endpoint" status={!error && !loading} />
+                <ServiceRow name="Cascade analytics" status={!error && !loading} />
               </div>
             </div>
           </section>
+
+          {cascades.length > 0 && (
+            <section className="panel cascade-panel" aria-label="Cross-pipeline failure cascade">
+              <div className="panel-heading">
+                <div>
+                  <div className="panel-kicker">EXASOL CONNECT BY</div>
+                  <h2>Cross-pipeline failure cascade</h2>
+                  <p className="panel-description">The latest failed upstream run is correlated with failed downstream pipelines through the dependency graph.</p>
+                </div>
+                <span className="subtle-pill"><GitBranch size={12} /> {cascades.length} downstream failures</span>
+              </div>
+              <div className="cascade-root">
+                <span>ROOT FAILURE</span>
+                <strong>{cascades[0].root_pipeline}</strong>
+                <small>RUN-{String(cascades[0].root_run_id).padStart(4, "0")}</small>
+              </div>
+              <div className="cascade-list">
+                {cascades.map((cascade) => (
+                  <button key={`${cascade.root_run_id}-${cascade.downstream_run_id}`} onClick={() => setSelectedId(cascade.downstream_run_id)}>
+                    <span className="cascade-line" />
+                    <span><small>DEPTH {cascade.dependency_depth}</small><strong>{cascade.downstream_pipeline}</strong></span>
+                    <em>RUN-{String(cascade.downstream_run_id).padStart(4, "0")}</em>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="panel incidents-panel" id="incident-list">
             <div className="panel-heading incident-heading">
@@ -568,7 +605,14 @@ function Dashboard({ onExit }) {
                         <span><Sparkles size={14} /> Optional LLM summary</span>
                         <span>NARRATIVE ONLY</span>
                       </div>
-                      <p>{investigation.llm_summary.summary}</p>
+                      <div className="llm-claims">
+                        {(investigation.llm_summary.claims || []).map((claim, index) => (
+                          <div className="llm-claim" key={`${claim.statement}-${index}`}>
+                            <p>{claim.statement}</p>
+                            <div>{claim.evidence_refs.map((reference) => <span key={reference}>{reference}</span>)}</div>
+                          </div>
+                        ))}
+                      </div>
                       {investigation.llm_summary.evidence_gaps?.length > 0 && (
                         <div className="llm-evidence-gaps">
                           <strong>Evidence still needed</strong>
@@ -577,12 +621,6 @@ function Dashboard({ onExit }) {
                               <li key={`${gap}-${index}`}>{gap}</li>
                             ))}
                           </ul>
-                        </div>
-                      )}
-                      {investigation.llm_summary.evidence_refs?.length > 0 && (
-                        <div className="llm-evidence-refs">
-                          <strong>Evidence referenced</strong>
-                          <div>{investigation.llm_summary.evidence_refs.map((reference) => <span key={reference}>{reference}</span>)}</div>
                         </div>
                       )}
                       <div className="llm-safety-note">

@@ -25,5 +25,3 @@ secrets.json
 
 # Generated presentation validation workspaces
 .chart-data-*/
-.codex-finalizer/
-.codex-deck-output/

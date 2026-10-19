@@ -15,14 +15,15 @@
 - [x] Clean README with setup, usage, deployment, and run guide.
 - [x] Reproducible tests and evaluation report.
 - [x] Final pitch deck PDF and PPTX generated in `submission/`.
-- [x] Demo video generated at 2:34 in `submission/`.
+- [ ] Re-record the demo from `submission/video-narration.txt`; the existing
+      2:34 MP4 predates the final cascade, test count, and LLM grounding changes.
 - [ ] Upload the deck and video and add publicly accessible links.
 
 ## Before the deadline
 
-- [ ] Run backend tests, evaluation, frontend lint, and production build.
+- [x] Run backend tests, evaluation, frontend lint, and production build.
 - [ ] Run the Exasol benchmark and preserve its raw result.
-- [ ] Perform a clean-clone setup rehearsal on another machine if possible.
+- [ ] Commit the final changes, then perform a clean-clone setup rehearsal.
 - [ ] Check every repository, deck, and video link in a private browser window.
 - [ ] Remove secrets, personal tabs, and local paths from public artifacts.
 - [ ] Update the GitHub description so it does not claim automated recovery.

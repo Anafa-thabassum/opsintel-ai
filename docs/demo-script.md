@@ -10,15 +10,15 @@ Target duration: **2 minutes 45 seconds**, leaving 15 seconds of upload margin.
 
 Show the title slide, then move immediately to the live dashboard.
 
-## 0:20-0:45 - Operational overview
+## 0:20-0:42 - Operational overview
 
 > The dashboard is reading incident telemetry calculated in Exasol. The trend
 > is not hardcoded: Exasol computes completeness and rolling failure features
-> over pipeline history. Four current incidents are visible here.
+> over pipeline history. Eleven current incidents cover the main rule outcomes.
 
 Point to the Exasol connection indicator, trend, and incident table.
 
-## 0:45-1:45 - Investigation
+## 0:42-1:35 - Investigation
 
 Select `daily_sales_import`.
 
@@ -33,9 +33,9 @@ log observation includes its source ID and timestamp. Scroll to `Confirmed root
 cause: None`, set the engineer review to “Evidence reviewed”, and explain that
 this demo-session state does not confirm a cause or run a repair.
 
-If the optional summarizer is enabled, point to its narrative and evidence-gap
-list. Explain that it summarizes the displayed records but cannot change the
-classification or confirm the root cause.
+If the optional summarizer is enabled, point to each narrative claim and its
+evidence reference. Explain that an unknown reference rejects the whole model
+response, and the model cannot change the classification or confirm a cause.
 
 Select `product_catalog`.
 
@@ -44,7 +44,16 @@ Select `product_catalog`.
 > dependency, incomplete-data, and unknown evidence without forcing every case
 > into a confident answer.
 
-## 1:45-2:20 - Why Exasol
+## 1:35-1:55 - Failure cascade
+
+Show the failure-cascade panel.
+
+> Exasol follows the dependency graph with a hierarchical query. One failed
+> customer-sync run is correlated with three failed downstream pipelines, so
+> the engineer can investigate shared upstream evidence before treating each
+> downstream symptom separately.
+
+## 1:55-2:25 - Why Exasol
 
 Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
 
@@ -54,9 +63,9 @@ Show `sql/analysis/pipeline_health_features.sql` or the architecture slide.
 > million synthetic runs. The recorded median query was 473 milliseconds,
 > with the exact script and raw measurements included in the repository.
 
-## 2:20-2:45 - Evidence and close
+## 2:25-2:50 - Evidence and close
 
-> The project has 60 automated tests, a 16-case regression challenge set, and
+> The project has 71 automated tests, a 16-case regression challenge set, and
 > a separate frozen synthetic holdout with 27 of 27 correct classifications
 > across all nine outcomes. The project team authored that holdout, so an
 > independent reviewer result remains pending. OpsIntel puts the failed run,

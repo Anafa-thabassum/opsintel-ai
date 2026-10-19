@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **60 passed**
+- Automated tests: **71 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**
 - Database: Exasol Personal
@@ -22,7 +22,8 @@ make verify
 
 The automated suite also covers delayed runs, excess or duplicate rows,
 conflicting completion signals, timestamped history retrieval, malformed LLM
-output, unavailable model calls, and rejection of unknown evidence references.
+output, unavailable model calls, claim-level evidence references, dependency
+cascade responses, and Airflow/dbt JSON normalization.
 
 ## Synthetic challenge set
 
@@ -71,9 +72,14 @@ for a genuinely external evaluation.
 ## Exasol analytical validation
 
 The demo dataset contains four days of healthy pipeline history followed by
-four representative incidents. Exasol calculates completeness, previous-run
+eleven representative incidents. Exasol calculates completeness, previous-run
 status, rolling actual-row baselines, and rolling failure rates through
 `OPSINTEL.PIPELINE_HEALTH_FEATURES`.
+
+`OPSINTEL.PIPELINE_DEPENDENCY_CASCADE` uses Exasol's hierarchical `CONNECT BY`
+processing to correlate the latest failed `customer_sync` run with three failed
+downstream pipelines. The dashboard reads that result from
+`/analytics/cascades`.
 
 Run `make exasol-proof` with Exasol Personal active to print the exact history
 and log-evidence rows for the selected demonstration incident. This command is
@@ -99,6 +105,15 @@ The complete samples and environment are preserved in
 [`reports/exasol-benchmark.json`](exasol-benchmark.json). This is a local,
 single-user measurement, not a production throughput or concurrency claim.
 
+## Comparative benchmark status
+
+The benchmark runner can execute the same analytical workload on Exasol
+Personal and DuckDB at one million and ten million rows. A measured DuckDB-only
+baseline is recorded in `reports/duckdb-baseline.json`. The two-engine report
+remains pending because both engines must be measured sequentially on the same
+machine. The older Exasol result and the new DuckDB baseline must not be
+presented as a controlled engine comparison.
+
 ## Limitations
 
 - The scenarios and logs are synthetic.
@@ -112,5 +127,6 @@ single-user measurement, not a production throughput or concurrency claim.
   ten frozen cases, a counterbalanced four-participant assignment, a recording
   template, and a deterministic result summarizer ready for administration.
 - Candidate explanations remain unconfirmed until an engineer verifies them.
-- Concurrency, production infrastructure, and real orchestrator integrations
-  have not been evaluated.
+- Concurrency and production infrastructure have not been evaluated. Airflow
+  and dbt exported-JSON adapter samples are included, but they are not live
+  orchestrator connectors.

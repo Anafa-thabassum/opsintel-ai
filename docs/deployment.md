@@ -42,8 +42,8 @@ VITE_API_URL="https://your-api.example" npm run build
 ```
 
 Serve `frontend/dist/` from any static host. Verify `/health`, `/incidents`,
-`/analytics/trend`, and one `/investigate/{run_id}` request before sharing the
-deployment.
+`/analytics/trend`, `/analytics/cascades`, and one `/investigate/{run_id}`
+request before sharing the deployment.
 
 The frontend demo-access screen is a presentation boundary only. It stores a
 temporary flag in browser session storage and must not be treated as an
@@ -51,10 +51,12 @@ authentication or authorization control.
 
 ## Production gap
 
-The prototype does not include authentication, authorization, orchestrator
-connectors, multi-user concurrency validation, audited data retention, or an
-independent evaluation of LLM summary quality. Add those controls before using
-real operational data.
+The prototype does not include production authentication, authorization, live
+orchestrator connections, multi-user concurrency validation, audited data
+retention, or an independent evaluation of LLM summary quality. Exported JSON
+adapter examples for Airflow and dbt are documented under
+`examples/integrations/`. Add production controls before using real operational
+data.
 
 ## Local verification shortcut
 
