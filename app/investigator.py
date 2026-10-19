@@ -11,9 +11,17 @@ def _evidence_reference(item, index=0):
 
 
 def _completeness(expected_rows, actual_rows):
-    return 100.0 if int(expected_rows) == 0 else round(
-        int(actual_rows) * 100.0 / int(expected_rows), 2
-    )
+    if expected_rows is None or actual_rows is None:
+        return None
+    expected_rows = int(expected_rows)
+    actual_rows = int(actual_rows)
+    if expected_rows == 0:
+        return 100.0 if actual_rows == 0 else None
+    return round(actual_rows * 100.0 / expected_rows, 2)
+
+
+def _optional_int(value):
+    return int(value) if value is not None else None
 
 
 def _build_run_comparison(run_id, expected_rows, actual_rows, log_rows,
@@ -28,8 +36,10 @@ def _build_run_comparison(run_id, expected_rows, actual_rows, log_rows,
         }
 
     baseline_run_id = int(last_success[0])
-    baseline_expected = int(last_success[1])
-    baseline_actual = int(last_success[2])
+    current_expected = _optional_int(expected_rows)
+    current_actual = _optional_int(actual_rows)
+    baseline_expected = _optional_int(last_success[1])
+    baseline_actual = _optional_int(last_success[2])
     current_reference = f"OPSINTEL.PIPELINE_RUNS · RUN-{int(run_id)}"
     baseline_reference = f"OPSINTEL.PIPELINE_RUNS · RUN-{baseline_run_id}"
     baseline_messages = {str(row[2]).strip().lower() for row in baseline_logs}
@@ -47,20 +57,23 @@ def _build_run_comparison(run_id, expected_rows, actual_rows, log_rows,
     current_completeness = _completeness(expected_rows, actual_rows)
     baseline_completeness = _completeness(baseline_expected, baseline_actual)
 
+    def difference(current, previous):
+        return None if current is None or previous is None else current - previous
+
     differences = [
         {
             "metric": "Expected rows",
-            "current": int(expected_rows),
+            "current": current_expected,
             "baseline": baseline_expected,
-            "delta": int(expected_rows) - baseline_expected,
+            "delta": difference(current_expected, baseline_expected),
             "unit": "rows",
             "evidence_refs": [current_reference, baseline_reference],
         },
         {
             "metric": "Actual rows",
-            "current": int(actual_rows),
+            "current": current_actual,
             "baseline": baseline_actual,
-            "delta": int(actual_rows) - baseline_actual,
+            "delta": difference(current_actual, baseline_actual),
             "unit": "rows",
             "evidence_refs": [current_reference, baseline_reference],
         },
@@ -68,7 +81,12 @@ def _build_run_comparison(run_id, expected_rows, actual_rows, log_rows,
             "metric": "Completeness",
             "current": current_completeness,
             "baseline": baseline_completeness,
-            "delta": round(current_completeness - baseline_completeness, 2),
+            "delta": (
+                round(current_completeness - baseline_completeness, 2)
+                if current_completeness is not None
+                and baseline_completeness is not None
+                else None
+            ),
             "unit": "percentage points",
             "evidence_refs": [current_reference, baseline_reference],
         },
@@ -87,8 +105,8 @@ def _build_run_comparison(run_id, expected_rows, actual_rows, log_rows,
         "status": "available",
         "current_run": {
             "run_id": int(run_id),
-            "expected_rows": int(expected_rows),
-            "actual_rows": int(actual_rows),
+            "expected_rows": current_expected,
+            "actual_rows": current_actual,
             "completeness_pct": current_completeness,
         },
         "last_successful_run": {
@@ -252,7 +270,7 @@ def classify_evidence(
         "fewer rows than expected",
         "row shortfall",
         "missing rows",
-    )) or missing_rows > 0:
+    )) or (missing_rows is not None and missing_rows > 0):
         return (
             "incomplete_data",
             "The available data indicates that fewer rows were received "
@@ -305,10 +323,25 @@ def investigate_pipeline(run_id: int):
                 TO_CHAR(RUN_TIME, 'YYYY-MM-DD HH24:MI:SS')
             FROM OPSINTEL.PIPELINE_RUNS
             WHERE PIPELINE_NAME = {pipeline_name}
+              AND (
+                    RUN_TIME < (
+                        SELECT RUN_TIME
+                        FROM OPSINTEL.PIPELINE_RUNS
+                        WHERE RUN_ID = {run_id!d}
+                    )
+                    OR (
+                        RUN_TIME = (
+                            SELECT RUN_TIME
+                            FROM OPSINTEL.PIPELINE_RUNS
+                            WHERE RUN_ID = {run_id!d}
+                        )
+                        AND RUN_ID <= {run_id!d}
+                    )
+                  )
             ORDER BY RUN_TIME DESC, RUN_ID DESC
             LIMIT 5
             """,
-            {"pipeline_name": incident[1]},
+            {"pipeline_name": incident[1], "run_id": int(run_id)},
         ).fetchall()
 
         last_success = connection.execute(
@@ -321,11 +354,21 @@ def investigate_pipeline(run_id: int):
             FROM OPSINTEL.PIPELINE_RUNS
             WHERE PIPELINE_NAME = {pipeline_name}
               AND RUN_STATUS = 'SUCCESS'
-              AND RUN_TIME < (
-                  SELECT RUN_TIME
-                  FROM OPSINTEL.PIPELINE_RUNS
-                  WHERE RUN_ID = {run_id!d}
-              )
+              AND (
+                    RUN_TIME < (
+                        SELECT RUN_TIME
+                        FROM OPSINTEL.PIPELINE_RUNS
+                        WHERE RUN_ID = {run_id!d}
+                    )
+                    OR (
+                        RUN_TIME = (
+                            SELECT RUN_TIME
+                            FROM OPSINTEL.PIPELINE_RUNS
+                            WHERE RUN_ID = {run_id!d}
+                        )
+                        AND RUN_ID < {run_id!d}
+                    )
+                  )
             ORDER BY RUN_TIME DESC, RUN_ID DESC
             LIMIT 1
             """,
@@ -338,7 +381,10 @@ def investigate_pipeline(run_id: int):
                 ROUND(AVG(ACTUAL_ROWS), 2),
                 ROUND(AVG(
                     CASE
-                        WHEN EXPECTED_ROWS = 0 THEN 100
+                        WHEN EXPECTED_ROWS IS NULL OR ACTUAL_ROWS IS NULL
+                            THEN NULL
+                        WHEN EXPECTED_ROWS = 0 AND ACTUAL_ROWS = 0 THEN 100
+                        WHEN EXPECTED_ROWS = 0 THEN NULL
                         ELSE ACTUAL_ROWS * 100.0 / EXPECTED_ROWS
                     END
                 ), 2),
@@ -346,11 +392,21 @@ def investigate_pipeline(run_id: int):
             FROM OPSINTEL.PIPELINE_RUNS
             WHERE PIPELINE_NAME = {pipeline_name}
               AND RUN_STATUS = 'SUCCESS'
-              AND RUN_TIME < (
-                  SELECT RUN_TIME
-                  FROM OPSINTEL.PIPELINE_RUNS
-                  WHERE RUN_ID = {run_id!d}
-              )
+              AND (
+                    RUN_TIME < (
+                        SELECT RUN_TIME
+                        FROM OPSINTEL.PIPELINE_RUNS
+                        WHERE RUN_ID = {run_id!d}
+                    )
+                    OR (
+                        RUN_TIME = (
+                            SELECT RUN_TIME
+                            FROM OPSINTEL.PIPELINE_RUNS
+                            WHERE RUN_ID = {run_id!d}
+                        )
+                        AND RUN_ID < {run_id!d}
+                    )
+                  )
             """,
             {"pipeline_name": incident[1], "run_id": int(run_id)},
         ).fetchone()
@@ -369,15 +425,34 @@ def investigate_pipeline(run_id: int):
     finally:
         connection.close()
 
-    expected_rows = int(incident[2])
-    actual_rows = int(incident[3])
-    missing_rows = int(incident[4])
+    expected_rows = _optional_int(incident[2])
+    actual_rows = _optional_int(incident[3])
+    missing_rows = _optional_int(incident[4])
     excess_rows = (
-        int(incident[6])
+        _optional_int(incident[6])
         if len(incident) > 6
-        else max(actual_rows - expected_rows, 0)
+        else (
+            max(actual_rows - expected_rows, 0)
+            if expected_rows is not None and actual_rows is not None
+            else None
+        )
     )
     log_messages = [str(log[2]) for log in log_rows]
+
+    if expected_rows is None and actual_rows is None:
+        row_count_observation = "Expected and actual row-count metadata is unavailable"
+    elif expected_rows is None:
+        row_count_observation = (
+            f"Expected row-count metadata is unavailable; received {actual_rows} rows"
+        )
+    elif actual_rows is None:
+        row_count_observation = (
+            f"Expected {expected_rows} rows; actual row-count metadata is unavailable"
+        )
+    else:
+        row_count_observation = (
+            f"Expected {expected_rows} rows, but received {actual_rows}"
+        )
 
     evidence = [
         {
@@ -388,10 +463,7 @@ def investigate_pipeline(run_id: int):
         },
         {
             "type": "row_count",
-            "observation": (
-                f"Expected {expected_rows} rows, "
-                f"but received {actual_rows}"
-            ),
+            "observation": row_count_observation,
             "source": "OPSINTEL.PIPELINE_RUNS",
             "run_id": int(run_id),
         },
@@ -439,8 +511,8 @@ def investigate_pipeline(run_id: int):
             {
                 "run_id": int(row[0]),
                 "status": row[1],
-                "expected_rows": int(row[2]),
-                "actual_rows": int(row[3]),
+                "expected_rows": _optional_int(row[2]),
+                "actual_rows": _optional_int(row[3]),
                 "run_time": str(row[4]),
             }
             for row in history_rows

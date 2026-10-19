@@ -42,6 +42,20 @@ def test_incidents_endpoint():
     assert data["count"] == len(data["incidents"])
 
 
+def test_incidents_endpoint_preserves_unknown_row_counts():
+    rows = [(7, "metadata_pending", None, None, None, "FAILED", None)]
+
+    with patch("app.main.get_failed_pipelines", return_value=rows):
+        response = client.get("/incidents")
+
+    assert response.status_code == 200
+    incident = response.json()["incidents"][0]
+    assert incident["expected_rows"] is None
+    assert incident["actual_rows"] is None
+    assert incident["missing_rows"] is None
+    assert incident["excess_rows"] is None
+
+
 def test_unknown_incident_returns_not_found():
     with patch("app.main.investigate_pipeline", return_value=None):
         response = client.get("/investigate/999")
@@ -125,6 +139,38 @@ def test_investigation_remains_complete_when_llm_is_unavailable():
     assert data["llm_summary"]["status"] == "unavailable"
 
 
+def test_investigation_api_accepts_unknown_row_counts():
+    incident = {
+        **SAMPLE_INCIDENT,
+        "expected_rows": None,
+        "actual_rows": None,
+        "missing_rows": None,
+        "excess_rows": None,
+        "category": "timeout",
+        "evidence": [{
+            "type": "pipeline_log",
+            "observation": "Pipeline execution exceeded the time limit",
+            "source": "OPSINTEL.PIPELINE_LOGS",
+            "log_id": 8,
+        }],
+    }
+
+    with (
+        patch("app.main.investigate_pipeline", return_value=incident),
+        patch(
+            "app.main.summarize_investigation",
+            return_value={"status": "disabled"},
+        ),
+    ):
+        response = client.get("/investigate/1")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["expected_rows"] is None
+    assert data["actual_rows"] is None
+    assert data["root_causes"]["confirmed_root_cause"] is None
+
+
 def test_analytics_trend_endpoint():
     rows = [("2026-10-18", 4, 2, 82.5, 25.0)]
 
@@ -133,6 +179,16 @@ def test_analytics_trend_endpoint():
 
     assert response.status_code == 200
     assert response.json()["trend"][0]["incident_count"] == 2
+
+
+def test_analytics_trend_preserves_unknown_completeness():
+    rows = [("2026-10-18", 1, 1, None, 100.0)]
+
+    with patch("app.main.get_pipeline_trend", return_value=rows):
+        response = client.get("/analytics/trend")
+
+    assert response.status_code == 200
+    assert response.json()["trend"][0]["average_completeness_pct"] is None
 
 
 def test_failure_cascade_endpoint():

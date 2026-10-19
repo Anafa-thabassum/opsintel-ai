@@ -1,5 +1,11 @@
 
-from app.investigator import assess_root_causes
+import pytest
+
+from app.investigator import (
+    _build_run_comparison,
+    _completeness,
+    assess_root_causes,
+)
 
 
 def test_root_cause_is_not_claimed_as_confirmed():
@@ -130,7 +136,10 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
                 ])
 
             assert "PIPELINE_NAME =" in query
-            assert parameters == {"pipeline_name": "daily_sales_import"}
+            assert parameters == {
+                "pipeline_name": "daily_sales_import",
+                "run_id": 1,
+            }
             return FakeResult([
                 (1, "FAILED", 100, 80, "2026-10-18 01:02:00"),
                 (101, "SUCCESS", 100, 100, "2026-10-17 01:00:00"),
@@ -164,6 +173,150 @@ def test_investigation_deduplicates_pipeline_logs(monkeypatch):
         "successful_runs": 4,
     }
     assert len(result["comparison"]["new_or_changed_logs"]) == 2
+
+
+@pytest.mark.parametrize(("expected", "actual", "result"), [
+    (100, 80, 80.0),
+    (0, 0, 100.0),
+    (None, 10, None),
+    (10, None, None),
+    (None, None, None),
+    (0, 5, None),
+])
+def test_completeness_handles_nullable_counts(expected, actual, result):
+    assert _completeness(expected, actual) == result
+
+
+def test_comparison_preserves_unknown_counts():
+    comparison = _build_run_comparison(
+        10,
+        None,
+        80,
+        [],
+        (9, 100, None, "2026-10-19 01:00:00"),
+        (100, None, 1),
+        [],
+    )
+
+    assert comparison["status"] == "available"
+    assert comparison["current_run"]["expected_rows"] is None
+    assert comparison["last_successful_run"]["actual_rows"] is None
+    assert all(item["delta"] is None for item in comparison["differences"])
+
+
+def test_investigation_history_stops_at_selected_run(monkeypatch):
+    from app import investigator
+
+    monkeypatch.setattr(
+        investigator,
+        "get_failed_pipelines",
+        lambda: [(10, "orders", 100, 80, 20, "FAILED", 0)],
+    )
+
+    class Result:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def fetchall(self):
+            return self.rows
+
+        def fetchone(self):
+            return self.rows[0] if self.rows else None
+
+    class Connection:
+        def __init__(self):
+            self.queries = []
+
+        def execute(self, query, parameters=None):
+            self.queries.append((query, parameters))
+            if "SELECT DISTINCT" in query:
+                return Result([])
+            if "ROUND(AVG(ACTUAL_ROWS)" in query:
+                return Result([(100, 100, 1)])
+            if "RUN_STATUS = 'SUCCESS'" in query:
+                return Result([
+                    (9, 100, 100, "2026-10-19 01:00:00")
+                    if "AND RUN_ID < {run_id!d}" in query
+                    else (11, 100, 100, "2026-10-19 03:00:00")
+                ])
+            history = [
+                (11, "SUCCESS", 100, 100, "2026-10-19 03:00:00"),
+                (10, "FAILED", 100, 80, "2026-10-19 02:00:00"),
+                (9, "SUCCESS", 100, 100, "2026-10-19 01:00:00"),
+            ]
+            return Result(
+                history[1:] if "AND RUN_ID <= {run_id!d}" in query else history
+            )
+
+        def close(self):
+            pass
+
+    connection = Connection()
+    monkeypatch.setattr(investigator, "get_connection", lambda: connection)
+
+    result = investigator.investigate_pipeline(10)
+
+    assert [row["run_id"] for row in result["history"]] == [10, 9]
+    assert result["comparison"]["last_successful_run"]["run_id"] == 9
+    history_query = next(
+        query for query, _ in connection.queries
+        if "LIMIT 5" in query and "RUN_STATUS = 'SUCCESS'" not in query
+    )
+    success_queries = [
+        query for query, _ in connection.queries
+        if "RUN_STATUS = 'SUCCESS'" in query
+    ]
+    assert "AND RUN_ID <= {run_id!d}" in history_query
+    assert all("AND RUN_ID < {run_id!d}" in query for query in success_queries)
+
+
+def test_investigation_with_missing_counts_keeps_log_evidence(monkeypatch):
+    from app import investigator
+
+    monkeypatch.setattr(
+        investigator,
+        "get_failed_pipelines",
+        lambda: [(1, "unknown_counts", None, None, None, "FAILED", None)],
+    )
+
+    class Result:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def fetchall(self):
+            return self.rows
+
+        def fetchone(self):
+            return self.rows[0] if self.rows else None
+
+    class Connection:
+        def execute(self, query, parameters=None):
+            if "SELECT DISTINCT" in query:
+                return Result([(
+                    8,
+                    "ERROR",
+                    "Pipeline execution exceeded the 30 minute time limit",
+                    "2026-10-19 01:00:00",
+                )])
+            if "ROUND(AVG(ACTUAL_ROWS)" in query:
+                return Result([(None, None, 0)])
+            return Result([])
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(investigator, "get_connection", Connection)
+
+    result = investigator.investigate_pipeline(1)
+
+    assert result["expected_rows"] is None
+    assert result["actual_rows"] is None
+    assert result["missing_rows"] is None
+    assert result["excess_rows"] is None
+    assert result["category"] == "timeout"
+    assert result["history"] == []
+    assert result["comparison"]["status"] == "unavailable"
+    assert any(item["type"] == "pipeline_log" for item in result["evidence"])
 
 def test_early_termination_takes_priority_over_missing_rows():
     from app.investigator import classify_evidence

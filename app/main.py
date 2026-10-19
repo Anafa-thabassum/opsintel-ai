@@ -68,7 +68,9 @@ def analytics_trend():
                     "run_day": row[0],
                     "total_runs": int(row[1]),
                     "incident_count": int(row[2]),
-                    "average_completeness_pct": float(row[3]),
+                    "average_completeness_pct": (
+                        float(row[3]) if row[3] is not None else None
+                    ),
                     "average_rolling_failure_rate_pct": float(row[4]),
                 }
                 for row in rows
@@ -122,12 +124,19 @@ def list_incidents():
                     "pipeline_name": row[1],
                     "expected_rows": row[2],
                     "actual_rows": row[3],
-                    "missing_rows": int(row[4]),
+                    "missing_rows": (
+                        int(row[4]) if row[4] is not None else None
+                    ),
                     "status": row[5],
                     "excess_rows": (
-                        int(row[6])
-                        if len(row) > 6
-                        else max(int(row[3]) - int(row[2]), 0)
+                        int(row[6]) if len(row) > 6 and row[6] is not None
+                        else (
+                            max(int(row[3]) - int(row[2]), 0)
+                            if len(row) <= 6
+                            and row[2] is not None
+                            and row[3] is not None
+                            else None
+                        )
                     ),
                 }
                 for row in rows

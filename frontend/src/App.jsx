@@ -261,7 +261,7 @@ function Dashboard({ onExit }) {
   }, [incidents, search, filter]);
 
   const totalMissing = incidents.reduce(
-    (total, item) => total + Number(item.missing_rows || 0),
+    (total, item) => total + Number(item.missing_rows ?? 0),
     0
   );
 
@@ -273,14 +273,24 @@ function Dashboard({ onExit }) {
     [trend]
   );
 
-  const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
+  const formatNumber = (value) => value == null
+    ? "Unknown"
+    : Number(value).toLocaleString("en-IN");
+  const completeness = (expected, actual) => {
+    if (expected == null || actual == null) return null;
+    if (Number(expected) === 0) return Number(actual) === 0 ? 100 : null;
+    return Math.round((Number(actual) / Number(expected)) * 100);
+  };
   const formatComparisonValue = (difference, value) => (
-    difference.unit === "percentage points"
+    value == null
+      ? "Unknown"
+      : difference.unit === "percentage points"
       ? `${Number(value).toFixed(1)}%`
       : formatNumber(value)
   );
   const formatDelta = (difference) => {
-    const value = Number(difference.delta || 0);
+    if (difference.delta == null) return "Unknown";
+    const value = Number(difference.delta);
     const suffix = difference.unit === "percentage points" ? " pp" : "";
     return `${value > 0 ? "+" : ""}${value.toLocaleString("en-IN")}${suffix}`;
   };
@@ -371,7 +381,7 @@ function Dashboard({ onExit }) {
 
           <section className="metric-grid">
             <MetricCard
-              label="Failed pipelines"
+              label="Pipeline incidents"
               value={loading ? "—" : formatNumber(incidents.length)}
               detail="Requires investigation"
               icon={AlertTriangle}
@@ -379,9 +389,9 @@ function Dashboard({ onExit }) {
               trend="Live API data"
             />
             <MetricCard
-              label="Rows missing"
+              label="Known rows missing"
               value={loading ? "—" : formatNumber(totalMissing)}
-              detail="Across failed runs"
+              detail="Across runs with row counts"
               icon={Database}
               tone="purple"
               trend="Data quality signal"
@@ -415,7 +425,7 @@ function Dashboard({ onExit }) {
               </div>
               <div className="chart-summary">
                 <strong>{incidents.length}</strong>
-                <span>failed runs detected in sample data</span>
+                <span>incidents detected in sample data</span>
               </div>
               <div className="chart-wrap">
                 <ResponsiveContainer width="100%" height="100%">
@@ -517,9 +527,10 @@ function Dashboard({ onExit }) {
               ) : filteredIncidents.length === 0 ? (
                 <div className="empty-state">No matching incidents found.</div>
               ) : filteredIncidents.map((item) => {
-                const completeness = item.expected_rows > 0
-                  ? Math.round((item.actual_rows / item.expected_rows) * 100)
-                  : 0;
+                const completenessPct = completeness(
+                  item.expected_rows,
+                  item.actual_rows
+                );
                 const isSelected = item.run_id === selectedId;
 
                 return (
@@ -534,8 +545,8 @@ function Dashboard({ onExit }) {
                     </span>
                     <span><span className={`status-badge ${item.status === "FAILED" ? "failed" : "success"}`}><span />{item.status}</span></span>
                     <span className="completeness-cell">
-                      <span className="completeness-meta">{completeness}%<small>{formatNumber(item.actual_rows)} / {formatNumber(item.expected_rows)}</small></span>
-                      <span className="progress-track"><span style={{ width: `${Math.min(100, completeness)}%` }} /></span>
+                      <span className="completeness-meta">{completenessPct == null ? "Unknown" : `${completenessPct}%`}<small>{formatNumber(item.actual_rows)} / {formatNumber(item.expected_rows)}</small></span>
+                      <span className="progress-track"><span style={{ width: `${Math.min(100, completenessPct ?? 0)}%` }} /></span>
                     </span>
                     <span className={`missing-value ${item.missing_rows > 0 ? "has-missing" : ""}`}>{formatNumber(item.missing_rows)}</span>
                     <span className="row-chevron"><ChevronRight size={17} /></span>
@@ -597,7 +608,7 @@ function Dashboard({ onExit }) {
                         ))}
                       </div>
                       <div className="baseline-summary">
-                        Historical successful baseline: {formatNumber(investigation.comparison.historical_baseline.average_actual_rows)} average rows, {Number(investigation.comparison.historical_baseline.average_completeness_pct || 0).toFixed(1)}% completeness across {investigation.comparison.historical_baseline.successful_runs} runs.
+                        Historical successful baseline: {formatNumber(investigation.comparison.historical_baseline.average_actual_rows)} average rows, {investigation.comparison.historical_baseline.average_completeness_pct == null ? "unknown" : `${Number(investigation.comparison.historical_baseline.average_completeness_pct).toFixed(1)}%`} completeness across {investigation.comparison.historical_baseline.successful_runs} runs.
                       </div>
                       {investigation.comparison.new_or_changed_logs.length > 0 && (
                         <div className="log-diff-list">
@@ -724,8 +735,8 @@ function Dashboard({ onExit }) {
                   <div className="run-stat"><span>Missing rows</span><strong className={investigation.missing_rows > 0 ? "danger-text" : ""}>{formatNumber(investigation.missing_rows)}</strong></div>
 
                   <div className="row-comparison">
-                    <div className="comparison-head"><span>Data completeness</span><strong>{investigation.expected_rows ? Math.round(investigation.actual_rows / investigation.expected_rows * 100) : 0}%</strong></div>
-                    <div className="large-progress"><span style={{ width: `${investigation.expected_rows ? Math.min(100, investigation.actual_rows / investigation.expected_rows * 100) : 0}%` }} /></div>
+                    <div className="comparison-head"><span>Data completeness</span><strong>{completeness(investigation.expected_rows, investigation.actual_rows) == null ? "Unknown" : `${completeness(investigation.expected_rows, investigation.actual_rows)}%`}</strong></div>
+                    <div className="large-progress"><span style={{ width: `${Math.min(100, completeness(investigation.expected_rows, investigation.actual_rows) ?? 0)}%` }} /></div>
                     <div className="comparison-legend"><span>Received</span><span>Expected</span></div>
                   </div>
 
@@ -737,7 +748,7 @@ function Dashboard({ onExit }) {
                           <div className="history-item" key={run.run_id}>
                             <span className={`history-dot ${run.status === "SUCCESS" ? "success" : "failed"}`} />
                             <div><strong>RUN-{String(run.run_id).padStart(4, "0")}</strong><span>{run.run_time}</span></div>
-                            <small>{run.status} · {run.actual_rows}/{run.expected_rows}</small>
+                            <small>{run.status} · {formatNumber(run.actual_rows)}/{formatNumber(run.expected_rows)}</small>
                           </div>
                         ))}
                       </div>

@@ -62,12 +62,11 @@ def get_failed_pipelines():
                 PIPELINE_NAME,
                 EXPECTED_ROWS,
                 ACTUAL_ROWS,
-                GREATEST(EXPECTED_ROWS - ACTUAL_ROWS, 0) AS MISSING_ROWS,
+                MISSING_ROWS,
                 RUN_STATUS,
-                GREATEST(ACTUAL_ROWS - EXPECTED_ROWS, 0) AS EXCESS_ROWS
-            FROM OPSINTEL.PIPELINE_RUNS
-            WHERE EXPECTED_ROWS <> ACTUAL_ROWS
-               OR RUN_STATUS = 'FAILED'
+                EXCESS_ROWS
+            FROM OPSINTEL.PIPELINE_HEALTH_FEATURES
+            WHERE IS_INCIDENT = 1
             ORDER BY RUN_ID
         """)
 
@@ -86,12 +85,7 @@ def get_pipeline_trend():
                 TO_CHAR(RUN_TIME, 'YYYY-MM-DD') AS RUN_DAY,
                 COUNT(*) AS TOTAL_RUNS,
                 SUM(
-                    CASE
-                        WHEN RUN_STATUS = 'FAILED'
-                          OR EXPECTED_ROWS > ACTUAL_ROWS
-                        THEN 1
-                        ELSE 0
-                    END
+                    IS_INCIDENT
                 ) AS INCIDENT_COUNT,
                 ROUND(AVG(COMPLETENESS_PCT), 1) AS AVG_COMPLETENESS_PCT,
                 ROUND(AVG(ROLLING_FAILURE_RATE_PCT), 1)

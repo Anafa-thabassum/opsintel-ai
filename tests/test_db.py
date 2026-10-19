@@ -1,3 +1,7 @@
+from pathlib import Path
+
+import duckdb
+
 from app import db
 
 
@@ -52,3 +56,86 @@ def test_failure_cascade_query_filters_stale_and_reversed_failures(monkeypatch):
     assert ") > 0" in connection.query
     assert ") <= 120" in connection.query
     assert connection.closed is True
+
+
+def test_incident_list_and_trend_use_the_shared_incident_flag(monkeypatch):
+    class Result:
+        def fetchall(self):
+            return []
+
+    class Connection:
+        def __init__(self):
+            self.queries = []
+
+        def execute(self, query):
+            self.queries.append(query)
+            return Result()
+
+        def close(self):
+            pass
+
+    incident_connection = Connection()
+    trend_connection = Connection()
+    connections = iter([incident_connection, trend_connection])
+    monkeypatch.setattr(db, "get_connection", lambda: next(connections))
+
+    db.get_failed_pipelines()
+    db.get_pipeline_trend()
+
+    incident_query = incident_connection.queries[0]
+    trend_query = trend_connection.queries[0]
+    assert "FROM OPSINTEL.PIPELINE_HEALTH_FEATURES" in incident_query
+    assert "WHERE IS_INCIDENT = 1" in incident_query
+    assert "SUM( IS_INCIDENT ) AS INCIDENT_COUNT" in " ".join(
+        trend_query.split()
+    )
+
+
+def test_health_feature_incident_and_completeness_semantics():
+    connection = duckdb.connect(":memory:")
+    connection.execute("CREATE SCHEMA OPSINTEL")
+    connection.execute("""
+        CREATE TABLE OPSINTEL.PIPELINE_RUNS (
+            RUN_ID INTEGER,
+            PIPELINE_NAME VARCHAR,
+            RUN_STATUS VARCHAR,
+            EXPECTED_ROWS INTEGER,
+            ACTUAL_ROWS INTEGER,
+            RUN_TIME TIMESTAMP
+        )
+    """)
+    connection.execute("""
+        INSERT INTO OPSINTEL.PIPELINE_RUNS VALUES
+        (1, 'equal', 'SUCCESS', 10, 10, '2026-10-19 01:00:00'),
+        (2, 'lower', 'SUCCESS', 10, 8, '2026-10-19 01:01:00'),
+        (3, 'higher', 'SUCCESS', 10, 12, '2026-10-19 01:02:00'),
+        (4, 'expected-null', 'SUCCESS', NULL, 10, '2026-10-19 01:03:00'),
+        (5, 'actual-null', 'SUCCESS', 10, NULL, '2026-10-19 01:04:00'),
+        (6, 'both-null', 'SUCCESS', NULL, NULL, '2026-10-19 01:05:00'),
+        (7, 'failed-match', 'FAILED', 10, 10, '2026-10-19 01:06:00'),
+        (8, 'both-zero', 'SUCCESS', 0, 0, '2026-10-19 01:07:00'),
+        (9, 'zero-excess', 'SUCCESS', 0, 5, '2026-10-19 01:08:00'),
+        (10, 'failed-null', 'FAILED', NULL, NULL, '2026-10-19 01:09:00')
+    """)
+    view_sql = Path("sql/analysis/pipeline_health_features.sql").read_text()
+    connection.execute(view_sql)
+
+    rows = connection.execute("""
+        SELECT PIPELINE_NAME, IS_INCIDENT, MISSING_ROWS, EXCESS_ROWS,
+               COMPLETENESS_PCT
+        FROM OPSINTEL.PIPELINE_HEALTH_FEATURES
+        ORDER BY RUN_ID
+    """).fetchall()
+
+    assert rows == [
+        ("equal", 0, 0, 0, 100.0),
+        ("lower", 1, 2, 0, 80.0),
+        ("higher", 1, 0, 2, 120.0),
+        ("expected-null", 0, None, None, None),
+        ("actual-null", 0, None, None, None),
+        ("both-null", 0, None, None, None),
+        ("failed-match", 1, 0, 0, 100.0),
+        ("both-zero", 0, 0, 0, 100.0),
+        ("zero-excess", 1, 0, 5, None),
+        ("failed-null", 1, None, None, None),
+    ]
