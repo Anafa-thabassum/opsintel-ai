@@ -64,10 +64,16 @@ WITH LATEST_FAILED AS (
 SELECT
     dependency_path.ROOT_PIPELINE,
     upstream.RUN_ID AS ROOT_RUN_ID,
+    upstream.RUN_TIME AS ROOT_RUN_TIME,
     dependency_path.DOWNSTREAM_PIPELINE,
     downstream.RUN_ID AS DOWNSTREAM_RUN_ID,
+    downstream.RUN_TIME AS DOWNSTREAM_RUN_TIME,
     dependency_path.DEPENDENCY_DEPTH,
-    dependency_path.DEPENDENCY_PATH
+    dependency_path.DEPENDENCY_PATH,
+    ROUND(
+        MINUTES_BETWEEN(downstream.RUN_TIME, upstream.RUN_TIME),
+        2
+    ) AS CORRELATION_LAG_MINUTES
 FROM OPSINTEL.PIPELINE_DEPENDENCY_CASCADE dependency_path
 JOIN LATEST_FAILED upstream
     ON upstream.PIPELINE_NAME = dependency_path.ROOT_PIPELINE
@@ -75,4 +81,12 @@ JOIN LATEST_FAILED upstream
 JOIN LATEST_FAILED downstream
     ON downstream.PIPELINE_NAME = dependency_path.DOWNSTREAM_PIPELINE
    AND downstream.RECENCY_RANK = 1
+WHERE MINUTES_BETWEEN(
+          downstream.RUN_TIME,
+          upstream.RUN_TIME
+      ) > 0
+  AND MINUTES_BETWEEN(
+          downstream.RUN_TIME,
+          upstream.RUN_TIME
+      ) <= 120
 ORDER BY upstream.RUN_ID, dependency_path.DEPENDENCY_DEPTH, downstream.RUN_ID;

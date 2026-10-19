@@ -201,7 +201,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .cascade-line { width: 20px; height: 1px; background: linear-gradient(90deg, #ff7087, #9b8cff); }
 .cascade-list button > span:nth-child(2) { display: grid; gap: 4px; min-width: 0; }
 .cascade-list strong { font-size: 11px; overflow-wrap: anywhere; }
-.cascade-list em { color: #8b96ad; font: normal 9px 'DM Mono', monospace; }
+.cascade-list em { display: grid; gap: 3px; color: #8b96ad; font: normal 9px 'DM Mono', monospace; text-align: right; }
+.cascade-list em small { color: #657188; font: 8px 'DM Mono', monospace; letter-spacing: 0; }
 
 .incidents-panel { padding: 21px 0 0; margin-bottom: 17px; overflow: hidden; }
 .incident-heading { padding: 0 20px 19px; align-items: flex-end; }

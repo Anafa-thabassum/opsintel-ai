@@ -19,11 +19,17 @@ def main():
 
     result = investigation.json()
     comparison = result["comparison"]
+    cascade_rows = cascades.json()["cascades"]
     assert result["category"] == "early_termination"
     assert result["root_causes"]["confirmed_root_cause"] is None
     assert comparison["status"] == "available"
     assert comparison["last_successful_run"]["run_id"] == 113
     assert comparison["new_or_changed_logs"]
+    assert cascade_rows
+    assert all(
+        0 <= item["correlation_lag_minutes"] <= 120
+        for item in cascade_rows
+    )
 
     print(json.dumps({
         "health": health.json()["status"],
@@ -35,7 +41,7 @@ def main():
         "candidate_count": len(result["root_causes"]["candidates"]),
         "confirmed_root_cause": result["root_causes"]["confirmed_root_cause"],
         "llm_status": result["llm_summary"]["status"],
-        "cascade_count": cascades.json()["count"],
+        "cascade_count": len(cascade_rows),
     }, indent=2))
 
 

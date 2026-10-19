@@ -91,10 +91,13 @@ def analytics_cascades():
                 {
                     "root_pipeline": row[0],
                     "root_run_id": int(row[1]),
-                    "downstream_pipeline": row[2],
-                    "downstream_run_id": int(row[3]),
-                    "dependency_depth": int(row[4]),
-                    "dependency_path": row[5],
+                    "root_run_time": row[2],
+                    "downstream_pipeline": row[3],
+                    "downstream_run_id": int(row[4]),
+                    "downstream_run_time": row[5],
+                    "dependency_depth": int(row[6]),
+                    "dependency_path": row[7],
+                    "correlation_lag_minutes": float(row[8]),
                 }
                 for row in rows
             ],

@@ -136,14 +136,22 @@ def test_analytics_trend_endpoint():
 
 
 def test_failure_cascade_endpoint():
-    rows = [("customer_sync", 2, "daily_reporting", 4, 1, " -> daily_reporting")]
+    rows = [(
+        "customer_sync", 2, "2026-10-19 01:00:00",
+        "daily_reporting", 4, "2026-10-19 01:30:00",
+        1, " -> daily_reporting", 30,
+    )]
 
     with patch("app.main.get_failure_cascades", return_value=rows):
         response = client.get("/analytics/cascades")
 
     assert response.status_code == 200
-    assert response.json()["cascades"][0]["root_run_id"] == 2
-    assert response.json()["cascades"][0]["downstream_pipeline"] == "daily_reporting"
+    cascade = response.json()["cascades"][0]
+    assert cascade["root_run_id"] == 2
+    assert cascade["root_run_time"] == "2026-10-19 01:00:00"
+    assert cascade["downstream_pipeline"] == "daily_reporting"
+    assert cascade["downstream_run_time"] == "2026-10-19 01:30:00"
+    assert cascade["correlation_lag_minutes"] == 30
 
 
 def test_investigation_returns_503_when_database_fails():

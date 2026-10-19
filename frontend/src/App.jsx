@@ -470,21 +470,21 @@ function Dashboard({ onExit }) {
                 <div>
                   <div className="panel-kicker">EXASOL CONNECT BY</div>
                   <h2>Cross-pipeline failure cascade</h2>
-                  <p className="panel-description">The latest failed upstream run is correlated with failed downstream pipelines through the dependency graph.</p>
+                  <p className="panel-description">Failures occurred downstream within a 120-minute window. Temporal correlation — causation not confirmed.</p>
                 </div>
                 <span className="subtle-pill"><GitBranch size={12} /> {cascades.length} downstream failures</span>
               </div>
               <div className="cascade-root">
                 <span>ROOT FAILURE</span>
                 <strong>{cascades[0].root_pipeline}</strong>
-                <small>RUN-{String(cascades[0].root_run_id).padStart(4, "0")}</small>
+                <small>RUN-{String(cascades[0].root_run_id).padStart(4, "0")} · {cascades[0].root_run_time}</small>
               </div>
               <div className="cascade-list">
                 {cascades.map((cascade) => (
                   <button key={`${cascade.root_run_id}-${cascade.downstream_run_id}`} onClick={() => setSelectedId(cascade.downstream_run_id)}>
                     <span className="cascade-line" />
-                    <span><small>DEPTH {cascade.dependency_depth}</small><strong>{cascade.downstream_pipeline}</strong></span>
-                    <em>RUN-{String(cascade.downstream_run_id).padStart(4, "0")}</em>
+                    <span><small>DEPTH {cascade.dependency_depth} · +{Number(cascade.correlation_lag_minutes).toFixed(1)} MIN</small><strong>{cascade.downstream_pipeline}</strong></span>
+                    <em><span>RUN-{String(cascade.downstream_run_id).padStart(4, "0")}</span><small>{cascade.downstream_run_time}</small></em>
                   </button>
                 ))}
               </div>

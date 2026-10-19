@@ -7,6 +7,9 @@ from pathlib import Path
 import pyexasol
 
 
+CASCADE_WINDOW_MINUTES = 120
+
+
 def get_connection():
     """Create an Exasol connection from environment or local Personal secrets."""
     password = os.getenv("EXASOL_PASSWORD")
@@ -104,15 +107,16 @@ def get_pipeline_trend():
 
 
 def get_failure_cascades():
-    """Return latest failed upstream/downstream correlations from Exasol."""
+    """Return time-ordered upstream/downstream failure correlations."""
     connection = get_connection()
 
     try:
-        result = connection.execute("""
+        result = connection.execute(f"""
             WITH LATEST_FAILED AS (
                 SELECT
                     RUN_ID,
                     PIPELINE_NAME,
+                    RUN_TIME,
                     ROW_NUMBER() OVER (
                         PARTITION BY PIPELINE_NAME
                         ORDER BY RUN_TIME DESC, RUN_ID DESC
@@ -123,10 +127,18 @@ def get_failure_cascades():
             SELECT
                 dependency_path.ROOT_PIPELINE,
                 upstream.RUN_ID AS ROOT_RUN_ID,
+                TO_CHAR(upstream.RUN_TIME, 'YYYY-MM-DD HH24:MI:SS')
+                    AS ROOT_RUN_TIME,
                 dependency_path.DOWNSTREAM_PIPELINE,
                 downstream.RUN_ID AS DOWNSTREAM_RUN_ID,
+                TO_CHAR(downstream.RUN_TIME, 'YYYY-MM-DD HH24:MI:SS')
+                    AS DOWNSTREAM_RUN_TIME,
                 dependency_path.DEPENDENCY_DEPTH,
-                dependency_path.DEPENDENCY_PATH
+                dependency_path.DEPENDENCY_PATH,
+                ROUND(
+                    MINUTES_BETWEEN(downstream.RUN_TIME, upstream.RUN_TIME),
+                    2
+                ) AS CORRELATION_LAG_MINUTES
             FROM OPSINTEL.PIPELINE_DEPENDENCY_CASCADE dependency_path
             JOIN LATEST_FAILED upstream
               ON upstream.PIPELINE_NAME = dependency_path.ROOT_PIPELINE
@@ -134,10 +146,21 @@ def get_failure_cascades():
             JOIN LATEST_FAILED downstream
               ON downstream.PIPELINE_NAME = dependency_path.DOWNSTREAM_PIPELINE
              AND downstream.RECENCY_RANK = 1
+            WHERE MINUTES_BETWEEN(
+                      downstream.RUN_TIME,
+                      upstream.RUN_TIME
+                  ) > 0
+              AND MINUTES_BETWEEN(
+                      downstream.RUN_TIME,
+                      upstream.RUN_TIME
+                  ) <= {CASCADE_WINDOW_MINUTES}
             ORDER BY upstream.RUN_ID,
                      dependency_path.DEPENDENCY_DEPTH,
                      downstream.RUN_ID
         """)
-        return result.fetchall()
+        return [
+            row for row in result.fetchall()
+            if 0 < float(row[8]) <= CASCADE_WINDOW_MINUTES
+        ]
     finally:
         connection.close()
