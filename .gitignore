@@ -22,3 +22,8 @@ secrets.json
 .DS_Store
 .vscode/
 .idea/
+
+# Generated presentation validation workspaces
+.chart-data-*/
+.codex-finalizer/
+.codex-deck-output/
