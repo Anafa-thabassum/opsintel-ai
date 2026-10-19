@@ -48,14 +48,15 @@ Serve `frontend/dist/` from any static host. Verify `/health`, `/incidents`,
 `/analytics/trend`, `/analytics/cascades`, and one `/investigate/{run_id}`
 request before sharing the deployment.
 
-For a local end-to-end database/API rehearsal, reset the synthetic schema and
-run the smoke check from the repository root:
+For a local end-to-end database/API rehearsal against a confirmed disposable
+Exasol deployment, run the smoke check once from the repository root:
 
 ```bash
-make database
 make smoke
 ```
 
+`make smoke` already invokes the `database` target, which resets the synthetic
+`OPSINTEL` schema. Do not run it against an existing or unconfirmed database.
 The smoke check verifies database health, seeded incidents, a failed-run versus
 last-success comparison, the safe unconfirmed state, and the dependency cascade.
 
@@ -77,4 +78,4 @@ data.
 From the repository root, `make setup` installs Python and frontend
 dependencies, and `make verify` runs the complete automated verification. The
 Exasol service must already be reachable before `make database`, `make smoke`,
-or `make benchmark` is used.
+or `make benchmark` is used. `make verify` does not reset or require Exasol.

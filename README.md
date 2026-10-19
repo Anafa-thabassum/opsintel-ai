@@ -334,6 +334,12 @@ accuracy, throughput, or concurrency claims. See
 The [`judging evidence map`](reports/judging-scorecard.md) links each published
 criterion to a concrete file or demo moment.
 
+The [Batch 6 clean-clone rehearsal](reports/clean-rehearsal-2026-10-19.md)
+verified dependency installation, 126 tests, the 16-case evaluation, frontend
+lint/build, and API/frontend startup from revision `2a17d4f`. Live Exasol setup
+and the database-backed browser workflow remain unverified because no disposable
+database was authorized.
+
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published
 [`result report`](reports/frozen-holdout-v1.md). Reproduce it with
