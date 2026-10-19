@@ -2,7 +2,9 @@
 import json
 import os
 import ssl
+from ipaddress import ip_address
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pyexasol
 
@@ -10,8 +12,44 @@ import pyexasol
 CASCADE_WINDOW_MINUTES = 120
 
 
+def _is_loopback_dsn(dsn):
+    """Return whether every host in an Exasol DSN is explicitly loopback."""
+    for address in dsn.split(","):
+        try:
+            parsed = urlsplit(
+                address.strip()
+                if "://" in address
+                else f"//{address.strip()}"
+            )
+            host = parsed.hostname
+        except ValueError:
+            return False
+
+        if not host:
+            return False
+        if host.rstrip(".").lower() == "localhost":
+            continue
+        try:
+            parsed_ip = ip_address(host)
+        except ValueError:
+            return False
+        mapped_ip = getattr(parsed_ip, "ipv4_mapped", None)
+        if not parsed_ip.is_loopback and not (
+            mapped_ip is not None and mapped_ip.is_loopback
+        ):
+            return False
+    return True
+
+
 def get_connection():
     """Create an Exasol connection from environment or local Personal secrets."""
+    dsn = os.getenv("EXASOL_DSN", "127.0.0.1:8563")
+    verify_tls = os.getenv("EXASOL_TLS_VERIFY", "false").lower() == "true"
+    if not verify_tls and not _is_loopback_dsn(dsn):
+        raise ValueError(
+            "Remote EXASOL_DSN requires EXASOL_TLS_VERIFY=true."
+        )
+
     password = os.getenv("EXASOL_PASSWORD")
 
     if not password:
@@ -31,10 +69,8 @@ def get_connection():
 
         password = json.loads(secrets_path.read_text())["dbPassword"]
 
-    verify_tls = os.getenv("EXASOL_TLS_VERIFY", "false").lower() == "true"
-
     return pyexasol.connect(
-        dsn=os.getenv("EXASOL_DSN", "127.0.0.1:8563"),
+        dsn=dsn,
         user=os.getenv("EXASOL_USER", "sys"),
         password=password,
         websocket_sslopt={

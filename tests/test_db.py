@@ -1,8 +1,103 @@
 from pathlib import Path
+import ssl
 
 import duckdb
+import pytest
 
 from app import db
+
+
+def test_local_exasol_defaults_still_connect(monkeypatch):
+    captured = {}
+    connection = object()
+
+    monkeypatch.setenv("EXASOL_PASSWORD", "local-test-password")
+    monkeypatch.delenv("EXASOL_DSN", raising=False)
+    monkeypatch.delenv("EXASOL_USER", raising=False)
+    monkeypatch.delenv("EXASOL_TLS_VERIFY", raising=False)
+    monkeypatch.setattr(
+        db.pyexasol,
+        "connect",
+        lambda **kwargs: captured.update(kwargs) or connection,
+    )
+
+    assert db.get_connection() is connection
+    assert captured["dsn"] == "127.0.0.1:8563"
+    assert captured["user"] == "sys"
+    assert captured["websocket_sslopt"]["cert_reqs"] == ssl.CERT_NONE
+
+
+def test_remote_exasol_without_tls_verification_is_rejected(monkeypatch):
+    attempted = False
+
+    def connect(**kwargs):
+        nonlocal attempted
+        attempted = True
+
+    monkeypatch.setenv("EXASOL_DSN", "db.example.com:8563")
+    monkeypatch.setenv("EXASOL_PASSWORD", "remote-test-password")
+    monkeypatch.setenv("EXASOL_TLS_VERIFY", "false")
+    monkeypatch.setattr(db.pyexasol, "connect", connect)
+
+    with pytest.raises(ValueError, match="requires EXASOL_TLS_VERIFY=true"):
+        db.get_connection()
+
+    assert attempted is False
+
+
+def test_remote_exasol_with_tls_verification_reaches_connect(monkeypatch):
+    captured = {}
+    connection = object()
+
+    monkeypatch.setenv("EXASOL_DSN", "db.example.com:8563")
+    monkeypatch.setenv("EXASOL_PASSWORD", "remote-test-password")
+    monkeypatch.setenv("EXASOL_TLS_VERIFY", "true")
+    monkeypatch.setattr(
+        db.pyexasol,
+        "connect",
+        lambda **kwargs: captured.update(kwargs) or connection,
+    )
+
+    assert db.get_connection() is connection
+    assert captured["dsn"] == "db.example.com:8563"
+    assert captured["websocket_sslopt"]["cert_reqs"] == ssl.CERT_REQUIRED
+
+
+def test_remote_configuration_error_does_not_reveal_credentials(monkeypatch):
+    dsn = "dsn-user:dsn-secret@db.example.com:8563"
+    password = "password-secret"
+    monkeypatch.setenv("EXASOL_DSN", dsn)
+    monkeypatch.setenv("EXASOL_PASSWORD", password)
+    monkeypatch.setenv("EXASOL_TLS_VERIFY", "false")
+
+    with pytest.raises(ValueError) as error:
+        db.get_connection()
+
+    message = str(error.value)
+    assert dsn not in message
+    assert "dsn-secret" not in message
+    assert password not in message
+
+
+@pytest.mark.parametrize("dsn", [
+    "127.0.0.1:8563",
+    "localhost:8563",
+    "localhost.:8563",
+    "[::1]:8563",
+    "[::ffff:127.0.0.1]:8563",
+])
+def test_loopback_dsn_detection_accepts_local_hosts(dsn):
+    assert db._is_loopback_dsn(dsn) is True
+
+
+@pytest.mark.parametrize("dsn", [
+    "db.example.com:8563",
+    "127.0.0.1.attacker.example:8563",
+    "localhost.example:8563",
+    "10.0.0.4:8563",
+])
+def test_loopback_dsn_detection_rejects_remote_hosts(dsn):
+    assert db._is_loopback_dsn(dsn) is False
 
 
 def test_failure_cascade_query_filters_stale_and_reversed_failures(monkeypatch):
