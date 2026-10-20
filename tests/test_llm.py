@@ -414,3 +414,41 @@ def test_llm_preserves_an_unresolved_outcome(monkeypatch):
     assert result["status"] == "generated"
     assert "does not identify a cause" in result["summary"]
     assert unresolved_causes["confirmed_root_cause"] is None
+
+def test_llm_rejects_mixed_valid_and_invalid_evidence_references(monkeypatch):
+    monkeypatch.setenv("OPSINTEL_LLM_ENABLED", "true")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    response = Mock()
+    response.json.return_value = {
+        "output_text": json.dumps({
+            "claims": [{
+                "statement": (
+                    "Processing ended before all expected rows were processed."
+                ),
+                "evidence_refs": [
+                    "OPSINTEL.PIPELINE_LOGS · LOG-3",
+                    None,
+                ],
+                "evidence_quotes": [{
+                    "reference": "OPSINTEL.PIPELINE_LOGS · LOG-3",
+                    "quote": (
+                        "Processing ended before all expected rows were processed"
+                    ),
+                }],
+            }],
+            "evidence_gaps": [],
+        })
+    }
+
+    client = Mock()
+    client.post.return_value = response
+
+    result = summarize_investigation(INCIDENT, ROOT_CAUSES, client)
+
+    assert result["status"] == "unavailable"
+    assert result["summary"] is None
+    assert result["claims"] == []
+    assert result["evidence_refs"] == []
+
+

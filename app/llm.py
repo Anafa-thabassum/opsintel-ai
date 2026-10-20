@@ -1,3 +1,4 @@
+
 import json
 import os
 import re
@@ -114,10 +115,12 @@ def _summary_input(incident, root_causes):
         ],
         "candidate_explanations": root_causes.get("candidates", [])[:10],
         "confirmed_root_cause": root_causes.get("confirmed_root_cause"),
-        "allowed_evidence_gaps": list(_EVIDENCE_GAPS_BY_CATEGORY.get(
-            incident.get("category"),
-            _EVIDENCE_GAPS_BY_CATEGORY["unclassified"],
-        )),
+        "allowed_evidence_gaps": list(
+            _EVIDENCE_GAPS_BY_CATEGORY.get(
+                incident.get("category"),
+                _EVIDENCE_GAPS_BY_CATEGORY["unclassified"],
+            )
+        ),
     }
 
 
@@ -148,12 +151,24 @@ def _claim_is_grounded(statement, references, evidence_quotes, summary_input):
         for item in summary_input["evidence"]
     }
     quoted_refs = set()
+
     for item in evidence_quotes:
-        reference = item["reference"].strip()
-        quote = item["quote"].strip()
+        if not isinstance(item, dict):
+            return False
+
+        reference = item.get("reference")
+        quote = item.get("quote")
+
+        if not isinstance(reference, str) or not isinstance(quote, str):
+            return False
+
+        reference = reference.strip()
+        quote = quote.strip()
         observation = evidence_by_ref.get(reference, "")
+
         if reference not in references or not quote or quote not in observation:
             return False
+
         quoted_refs.add(reference)
 
     if quoted_refs != set(references):
@@ -163,12 +178,16 @@ def _claim_is_grounded(statement, references, evidence_quotes, summary_input):
         evidence_by_ref[reference]
         for reference in references
     ).lower()
+
     supplied_fact_tokens = {
-        token.lower() for token in _FACT_TOKEN_PATTERN.findall(supplied_context)
+        token.lower()
+        for token in _FACT_TOKEN_PATTERN.findall(supplied_context)
     }
     statement_fact_tokens = {
-        token.lower() for token in _FACT_TOKEN_PATTERN.findall(statement)
+        token.lower()
+        for token in _FACT_TOKEN_PATTERN.findall(statement)
     }
+
     if not statement_fact_tokens <= supplied_fact_tokens:
         return False
 
@@ -176,6 +195,7 @@ def _claim_is_grounded(statement, references, evidence_quotes, summary_input):
     statement_words = {
         word.lower() for word in _WORD_PATTERN.findall(statement)
     }
+
     if not statement_words <= supplied_words | _SAFE_NARRATIVE_WORDS:
         return False
 
@@ -190,8 +210,13 @@ def _claim_is_grounded(statement, references, evidence_quotes, summary_input):
             "no confirmed root cause",
         )
     )
-    if _UNSAFE_CONCLUSION_PATTERN.search(statement) and not preserves_uncertainty:
+
+    if (
+        _UNSAFE_CONCLUSION_PATTERN.search(statement)
+        and not preserves_uncertainty
+    ):
         return False
+
     return True
 
 
@@ -202,6 +227,7 @@ def summarize_investigation(incident, root_causes, http_client=None):
 
     model = os.getenv("OPSINTEL_LLM_MODEL", "gpt-6-luna").strip()
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
+
     if not api_key:
         return _base_result("unavailable", model)
 
@@ -212,6 +238,7 @@ def summarize_investigation(incident, root_causes, http_client=None):
 
     summary_input = _summary_input(incident, root_causes)
     allowed_evidence_gaps = summary_input["allowed_evidence_gaps"]
+
     request_body = {
         "model": model,
         "store": False,
@@ -307,28 +334,76 @@ def summarize_investigation(incident, root_causes, http_client=None):
         response.raise_for_status()
         parsed = json.loads(_extract_output_text(response.json()))
 
-        evidence_gaps = [
-            gap.strip()
-            for gap in parsed["evidence_gaps"]
-            if isinstance(gap, str) and gap.strip()
-        ]
-        if any(gap not in allowed_evidence_gaps for gap in evidence_gaps):
+        if not isinstance(parsed, dict):
+            raise ValueError("The model returned a malformed response")
+
+        raw_evidence_gaps = parsed.get("evidence_gaps")
+        if not isinstance(raw_evidence_gaps, list):
+            raise ValueError("The model returned malformed evidence gaps")
+
+        if any(
+            not isinstance(gap, str) or not gap.strip()
+            for gap in raw_evidence_gaps
+        ):
+            raise ValueError("The model returned malformed evidence gaps")
+
+        evidence_gaps = list(dict.fromkeys(
+            gap.strip() for gap in raw_evidence_gaps
+        ))
+
+        if any(
+            gap not in allowed_evidence_gaps
+            for gap in evidence_gaps
+        ):
             raise ValueError("The model returned an unsupported evidence gap")
+
+        raw_claims = parsed.get("claims")
+        if not isinstance(raw_claims, list) or not raw_claims:
+            raise ValueError("The model returned malformed claims")
+
         valid_refs = {
             _evidence_reference(item)
             for item in incident.get("evidence", [])[:25]
         }
+
         claims = []
-        for claim in parsed["claims"]:
-            statement = claim["statement"].strip()
+
+        for claim in raw_claims:
+            if not isinstance(claim, dict):
+                raise ValueError("The model returned a malformed claim")
+
+            statement = claim.get("statement")
+            raw_references = claim.get("evidence_refs")
+            evidence_quotes = claim.get("evidence_quotes")
+
+            if (
+                not isinstance(statement, str)
+                or not isinstance(raw_references, list)
+                or not raw_references
+                or any(
+                    not isinstance(reference, str) or not reference.strip()
+                    for reference in raw_references
+                )
+            ):
+                raise ValueError(
+                    "The model returned malformed evidence references"
+                )
+
+            if not isinstance(evidence_quotes, list) or not evidence_quotes:
+                raise ValueError("The model returned malformed evidence quotes")
+
+            statement = statement.strip()
             references = list(dict.fromkeys(
-                reference.strip()
-                for reference in claim["evidence_refs"]
-                if isinstance(reference, str) and reference.strip()
+                reference.strip() for reference in raw_references
             ))
-            if not statement or not references or not set(references) <= valid_refs:
+
+            if (
+                not statement
+                or not references
+                or not set(references) <= valid_refs
+            ):
                 raise ValueError("The model returned an ungrounded claim")
-            evidence_quotes = claim["evidence_quotes"]
+
             if not _claim_is_grounded(
                 statement,
                 references,
@@ -336,6 +411,7 @@ def summarize_investigation(incident, root_causes, http_client=None):
                 summary_input,
             ):
                 raise ValueError("The model returned an ungrounded claim")
+
             claims.append({
                 "statement": statement,
                 "evidence_refs": references,
@@ -360,5 +436,6 @@ def summarize_investigation(incident, root_causes, http_client=None):
             "evidence_refs": evidence_refs,
             "safety_note": SAFETY_NOTE,
         }
+
     except Exception:
         return _base_result("unavailable", model)
