@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowRight, Bot,
   ChevronDown, ChevronRight, CircleDot,
@@ -165,7 +165,8 @@ function Dashboard({ onExit }) {
   const [activeNav, setActiveNav] = useState("Overview");
   const [refreshKey, setRefreshKey] = useState(0);
   const [reviewByRun, setReviewByRun] = useState({});
-
+  const investigationRequest = useRef(0);
+  
   async function loadIncidents() {
     setLoading(true);
     setError("");
@@ -217,30 +218,43 @@ function Dashboard({ onExit }) {
     }
   }
 
-  async function loadInvestigation(runId) {
-    if (runId == null) return;
+  
+async function loadInvestigation(runId) {
+  if (runId == null) return;
 
-    setInvestigating(true);
-    setError("");
-    setInvestigation(null);
-    setRootCauses(null);
+  const requestId = ++investigationRequest.current;
 
-    try {
-      const investigationResponse = await fetch(`${API}/investigate/${runId}`);
+  setInvestigating(true);
+  setError("");
+  setInvestigation(null);
+  setRootCauses(null);
 
-      if (!investigationResponse.ok) {
-        throw new Error(`Investigation returned HTTP ${investigationResponse.status}`);
-      }
+  try {
+    const investigationResponse = await fetch(`${API}/investigate/${runId}`);
 
-      const data = await investigationResponse.json();
-      setInvestigation(data);
-      setRootCauses(data.root_causes || null);
-    } catch (err) {
-      setError(err.message || "Unable to load this investigation.");
-    } finally {
+    if (!investigationResponse.ok) {
+      throw new Error(
+        `Investigation returned HTTP ${investigationResponse.status}`
+      );
+    }
+
+    const data = await investigationResponse.json();
+
+    if (requestId !== investigationRequest.current) return;
+
+    setInvestigation(data);
+    setRootCauses(data.root_causes || null);
+  } catch (err) {
+    if (requestId !== investigationRequest.current) return;
+
+    setError(err.message || "Unable to load this investigation.");
+  } finally {
+    if (requestId === investigationRequest.current) {
       setInvestigating(false);
     }
   }
+}
+
 
   useEffect(() => {
     loadIncidents();
