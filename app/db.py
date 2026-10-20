@@ -176,10 +176,8 @@ def get_failure_cascades():
                     AS DOWNSTREAM_RUN_TIME,
                 dependency_path.DEPENDENCY_DEPTH,
                 dependency_path.DEPENDENCY_PATH,
-                ROUND(
-                    MINUTES_BETWEEN(downstream.RUN_TIME, upstream.RUN_TIME),
-                    2
-                ) AS CORRELATION_LAG_MINUTES
+                MINUTES_BETWEEN(downstream.RUN_TIME, upstream.RUN_TIME)
+                AS CORRELATION_LAG_MINUTES
             FROM OPSINTEL.PIPELINE_DEPENDENCY_CASCADE dependency_path
             JOIN LATEST_FAILED upstream
               ON upstream.PIPELINE_NAME = dependency_path.ROOT_PIPELINE
