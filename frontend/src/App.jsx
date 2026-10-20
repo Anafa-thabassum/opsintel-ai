@@ -166,39 +166,69 @@ function Dashboard({ onExit }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [reviewByRun, setReviewByRun] = useState({});
   const investigationRequest = useRef(0);
+  const [trendError, setTrendError] = useState("");
   
   async function loadIncidents() {
     setLoading(true);
     setError("");
+    setTrendError("");
 
     try {
-      const [healthResponse, incidentsResponse, trendResponse, cascadeResponse] = await Promise.all([
+      const [healthResult, incidentsResult, trendResult, cascadeResult] = await Promise.allSettled([
         fetch(`${API}/health`),
         fetch(`${API}/incidents`),
         fetch(`${API}/analytics/trend`),
         fetch(`${API}/analytics/cascades`),
       ]);
 
-      setHealth(healthResponse.ok ? "connected" : "error");
+      const healthResponse = healthResult.status === "fulfilled" ? healthResult.value : null;
+      const incidentsResponse = incidentsResult.status === "fulfilled" ? incidentsResult.value : null;
+      const trendResponse = trendResult.status === "fulfilled" ? trendResult.value : null;
+      const cascadeResponse = cascadeResult.status === "fulfilled" ? cascadeResult.value : null;
 
-      if (!incidentsResponse.ok) {
-        throw new Error(`Incident API returned HTTP ${incidentsResponse.status}`);
+      setHealth(healthResponse?.ok ? "connected" : "error");
+
+      if (!incidentsResponse?.ok) {
+        const detail = incidentsResponse
+          ? `Incident API returned HTTP ${incidentsResponse.status}`
+          : "Unable to connect to the incident API";
+        throw new Error(detail);
       }
 
       const data = await incidentsResponse.json();
-      const rows = data.incidents || [];
+      const rows = Array.isArray(data.incidents) ? data.incidents : [];
       setIncidents(rows);
 
-      if (trendResponse.ok) {
-        const trendData = await trendResponse.json();
-        setTrend(trendData.trend || []);
+      if (trendResponse?.ok) {
+        try {
+          const trendData = await trendResponse.json();
+          if (Array.isArray(trendData.trend)) {
+            setTrend(trendData.trend);
+            setTrendError("");
+          } else {
+            setTrend([]);
+            setTrendError("Trend API returned an invalid data format.");
+          }
+        } catch {
+          setTrend([]);
+          setTrendError("Unable to read trend analytics data.");
+        }
       } else {
         setTrend([]);
+        setTrendError(
+          trendResponse
+            ? `Trend analytics returned HTTP ${trendResponse.status}.`
+            : "Unable to connect to the trend analytics endpoint."
+        );
       }
 
-      if (cascadeResponse.ok) {
-        const cascadeData = await cascadeResponse.json();
-        setCascades(cascadeData.cascades || []);
+      if (cascadeResponse?.ok) {
+        try {
+          const cascadeData = await cascadeResponse.json();
+          setCascades(Array.isArray(cascadeData.cascades) ? cascadeData.cascades : []);
+        } catch {
+          setCascades([]);
+        }
       } else {
         setCascades([]);
       }
@@ -208,11 +238,15 @@ function Dashboard({ onExit }) {
         : rows[0]?.run_id ?? null;
 
       setSelectedId(nextId);
-    } catch {
+    } catch (err) {
       setHealth("error");
       setError(
-        "Unable to connect to the OpsIntel API. Make sure your FastAPI server is running at 127.0.0.1:8000."
+        err?.message || "Unable to connect to the OpsIntel API. Make sure your FastAPI server is running at 127.0.0.1:8000."
       );
+      setIncidents([]);
+      setTrend([]);
+      setCascades([]);
+      setSelectedId(null);
     } finally {
       setLoading(false);
     }
@@ -281,8 +315,12 @@ async function loadInvestigation(runId) {
 
   const chartData = useMemo(
     () => trend.map((item) => ({
-      time: item.run_day.slice(5),
-      incidents: item.incident_count,
+      time: item.run_day?.slice(5) ?? "Unknown",
+      incidents: Number(item.incident_count ?? 0),
+      dailyFailureRate:
+        item.daily_failure_rate_pct == null
+          ? null
+          : Number(item.daily_failure_rate_pct),
     })),
     [trend]
   );
@@ -437,31 +475,113 @@ async function loadInvestigation(runId) {
                 </div>
                 <span className="subtle-pill"><span className="mini-dot" /> Exasol analytics</span>
               </div>
+
               <div className="chart-summary">
-                <strong>{incidents.length}</strong>
-                <span>incidents detected in sample data</span>
+                <strong>{loading ? "—" : incidents.length}</strong>
+                <span>Incidents across pipeline history</span>
               </div>
+
               <div className="chart-wrap">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="incidentFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#8b7cff" stopOpacity={0.32} />
-                        <stop offset="100%" stopColor="#8b7cff" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="#20273a" strokeDasharray="3 5" vertical={false} />
-                    <XAxis dataKey="time" tick={{ fill: "#7f8ba5", fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fill: "#7f8ba5", fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: "#121827", border: "1px solid #303951", borderRadius: 10, color: "#f1f4ff" }}
-                      labelStyle={{ color: "#aab4cc" }}
-                    />
-                    <Area type="monotone" dataKey="incidents" stroke="#9c8cff" strokeWidth={2.5} fill="url(#incidentFill)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {loading ? (
+                  <div className="empty-state">
+                    <LoaderCircle className="spin" size={22} />
+                    Loading trend analytics…
+                  </div>
+                ) : trendError ? (
+                  <div className="empty-state" role="status">
+                    <AlertTriangle size={20} />
+                    <span>{trendError}</span>
+                  </div>
+                ) : chartData.length === 0 ? (
+                  <div className="empty-state">No trend data available yet.</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chartData}
+                      margin={{ top: 8, right: 8, left: -22, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="incidentFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#8b7cff" stopOpacity={0.32} />
+                          <stop offset="100%" stopColor="#8b7cff" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+
+                      <CartesianGrid stroke="#20273a" strokeDasharray="3 5" vertical={false} />
+
+                      <XAxis
+                        dataKey="time"
+                        tick={{ fill: "#7f8ba5", fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+
+                      <YAxis
+                        yAxisId="count"
+                        allowDecimals={false}
+                        tick={{ fill: "#7f8ba5", fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+
+                      <YAxis
+                        yAxisId="rate"
+                        orientation="right"
+                        domain={[0, 100]}
+                        tickFormatter={(value) => `${value}%`}
+                        tick={{ fill: "#f59e0b", fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+
+                      <Tooltip
+                        contentStyle={{
+                          background: "#121827",
+                          border: "1px solid #303951",
+                          borderRadius: 10,
+                          color: "#f1f4ff",
+                        }}
+                        labelStyle={{ color: "#aab4cc" }}
+                        formatter={(value, name) => [
+                          value == null
+                            ? "Unavailable"
+                            : name === "Daily failure rate"
+                              ? `${Number(value).toFixed(1)}%`
+                              : Number(value).toLocaleString("en-IN"),
+                          name,
+                        ]}
+                      />
+
+                      <Area
+                        type="monotone"
+                        dataKey="incidents"
+                        name="Daily incidents"
+                        yAxisId="count"
+                        stroke="#9c8cff"
+                        strokeWidth={2.5}
+                        fill="url(#incidentFill)"
+                      />
+
+                      <Area
+                        type="monotone"
+                        dataKey="dailyFailureRate"
+                        name="Daily failure rate"
+                        yAxisId="rate"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        fill="none"
+                        connectNulls={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
-              <div className="chart-footer"><span><i className="legend-dot" />Daily incidents</span><span>Calculated from pipeline history in Exasol</span></div>
+
+              <div className="chart-footer">
+                <span><i className="legend-dot" /> Daily incidents</span>
+                <span><i className="legend-dot" style={{ background: "#f59e0b" }} /> Daily failure rate (%)</span>
+                <span>Calculated from pipeline history in Exasol</span>
+              </div>
             </div>
 
             <div className="panel signal-panel">
