@@ -111,6 +111,7 @@ def get_failed_pipelines():
         connection.close()
 
 
+
 def get_pipeline_trend():
     """Return daily incident telemetry calculated by Exasol."""
     connection = get_connection()
@@ -121,11 +122,21 @@ def get_pipeline_trend():
                 TO_CHAR(RUN_TIME, 'YYYY-MM-DD') AS RUN_DAY,
                 COUNT(*) AS TOTAL_RUNS,
                 SUM(
-                    IS_INCIDENT
+                IS_INCIDENT
                 ) AS INCIDENT_COUNT,
-                ROUND(AVG(COMPLETENESS_PCT), 1) AS AVG_COMPLETENESS_PCT,
+                ROUND(AVG(COMPLETENESS_PCT), 1)
+                    AS AVG_COMPLETENESS_PCT,
                 ROUND(AVG(ROLLING_FAILURE_RATE_PCT), 1)
-                    AS AVG_ROLLING_FAILURE_RATE_PCT
+                    AS AVG_ROLLING_FAILURE_RATE_PCT,
+                ROUND(
+                    100.0 * SUM(
+                        CASE
+                            WHEN RUN_STATUS = 'FAILED' THEN 1
+                            ELSE 0
+                        END
+                    ) / NULLIF(COUNT(*), 0),
+                    1
+                ) AS DAILY_FAILURE_RATE_PCT
             FROM OPSINTEL.PIPELINE_HEALTH_FEATURES
             GROUP BY TO_CHAR(RUN_TIME, 'YYYY-MM-DD')
             ORDER BY RUN_DAY

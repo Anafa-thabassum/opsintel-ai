@@ -57,6 +57,7 @@ def health():
         ) from exc
 
 
+
 @app.get("/analytics/trend")
 def analytics_trend():
     try:
@@ -72,6 +73,11 @@ def analytics_trend():
                         float(row[3]) if row[3] is not None else None
                     ),
                     "average_rolling_failure_rate_pct": float(row[4]),
+                    "daily_failure_rate_pct": (
+                        float(row[5])
+                        if len(row) > 5 and row[5] is not None
+                        else None
+                    ),
                 }
                 for row in rows
             ]
@@ -81,6 +87,8 @@ def analytics_trend():
             status_code=503,
             detail="Unable to retrieve pipeline analytics",
         ) from exc
+
+
 
 
 @app.get("/analytics/cascades")
