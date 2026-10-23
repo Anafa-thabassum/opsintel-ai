@@ -61,6 +61,12 @@ accuracy estimate.
 reviewers have been recorded. It is separate from both
 `frozen_holdout_v1.csv` and the 16-case regression suite.
 
+The supplied reviewer files have been normalized into
+`independent_holdout_v1.csv`: 19 cases from three pseudonymous authors across
+all nine supported categories. The file is ready for the freeze check, but it
+is not yet reported as independent validation because the dataset, classifier,
+and evaluator must be committed and tagged together before scoring.
+
 Each independent case uses this schema:
 
 | Field | Requirement |
