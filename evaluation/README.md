@@ -16,6 +16,21 @@ This corpus tests unfamiliar upstream vocabulary; it is not production log data
 and its labels were assigned by the OpsIntel project. It therefore does not
 replace the external-reviewer holdout below or establish independent accuracy.
 
+For the planned 30–50-case expansion, collect only messages whose source page
+is publicly reachable and whose repository licence is recorded. Keep one row
+per incident message with the exact excerpt, source URL, licence URL, expected
+category, and a short labelling rationale. Before tuning the classifier, copy
+10–15 rows into a separately versioned holdout file, record the collection
+commit, and do not use those rows to change the rules. The current repository
+contains the nine-case v1 compatibility corpus; no larger issue/CI collection
+is claimed until those provenance checks and labels have been completed.
+
+The supplied issue-linked starter is preserved as
+`public_failure_corpus_v2.csv`. It contains 10 Airflow/dbt cases, preserves
+each source-specific label, and documents the mapping into OpsIntel's taxonomy.
+Its project-labelled score is 7/10; reproduce it with `make public-evaluate-v2`.
+This remains compatibility evidence, not an independent accuracy estimate.
+
 ## Published versioned holdout
 
 `frozen_holdout_v1.csv` contains 27 project-authored synthetic cases that are

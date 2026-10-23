@@ -144,6 +144,13 @@ Run `make public-evaluate` to reproduce the report. This small corpus uses
 project-assigned labels and is a compatibility check, not an independent or
 production accuracy estimate.
 
+The supplied issue-linked starter is preserved separately as
+[`evaluation/public_failure_corpus_v2.csv`](../evaluation/public_failure_corpus_v2.csv).
+It contains 10 Airflow/dbt cases and scores **7/10** after mapping its richer
+source labels into the supported OpsIntel taxonomy. Reproduce it with
+`make public-evaluate-v2`. The mapping is explicit in the CSV; it does not
+convert this project-labelled check into independent accuracy.
+
 ## Independent reviewer workflow
 
 The external-reviewer template remains intentionally header-only: **0 cases

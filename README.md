@@ -354,6 +354,10 @@ Latest verified results:
   nine outcomes.
 - **6/9 licensed public framework messages matched** in a separate
   project-labelled compatibility corpus; all three misses are published.
+- A second issue-linked starter corpus contains **10 Airflow/dbt cases** and
+  scores **7/10** after preserving source labels and documenting their mapping
+  into OpsIntel's taxonomy. This is also project-labelled compatibility
+  evidence, not independent accuracy.
 - **Controlled 1M/10M Exasol–DuckDB comparison recorded** with seven runs per
   engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
   this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.

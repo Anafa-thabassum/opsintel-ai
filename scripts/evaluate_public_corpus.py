@@ -12,7 +12,7 @@ from app.investigator import _classify_evidence_details
 
 REQUIRED = {
     "id", "project", "source_url", "license", "license_url",
-    "excerpt", "expected", "labelling_note",
+    "excerpt", "expected",
 }
 
 
@@ -21,6 +21,15 @@ def evaluate(path):
         reader = csv.DictReader(handle)
         if not reader.fieldnames or REQUIRED - set(reader.fieldnames):
             raise ValueError("Public corpus is missing required provenance fields")
+        rationale_field = (
+            "labelling_rationale"
+            if "labelling_rationale" in reader.fieldnames
+            else "labelling_note"
+        )
+        if rationale_field not in reader.fieldnames:
+            raise ValueError(
+                "Public corpus requires labelling_rationale or labelling_note"
+            )
         rows = list(reader)
 
     ids = [row["id"] for row in rows]
@@ -29,8 +38,9 @@ def evaluate(path):
 
     results = []
     for row in rows:
-        if not all(row[field].strip() for field in REQUIRED):
+        if not all(row[field].strip() for field in REQUIRED) or not row[rationale_field].strip():
             raise ValueError(f"Case {row.get('id') or '<unknown>'} has an empty field")
+        row["labelling_note"] = row[rationale_field]
         details = _classify_evidence_details([row["excerpt"]], 0)
         predicted = details["result"][0]
         results.append({
