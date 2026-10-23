@@ -5,13 +5,12 @@ import json
 import re
 import struct
 import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CURRENT_TEST_COUNT = 132
-CURRENT_TEST_COUNT_WORDS = "one hundred thirty-two"
 REQUIRED = {
     "README.md",
     "reports/evaluation.md",
@@ -34,6 +33,20 @@ def _git(*args):
         text=True,
     )
     return result.stdout
+
+
+def _current_test_count():
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    match = re.search(r"(\d+) tests collected", result.stdout)
+    if not match:
+        raise ValueError("Could not determine the current pytest test count")
+    return int(match.group(1))
 
 
 def mp4_duration_seconds(path):
@@ -73,6 +86,7 @@ def pptx_text_and_slide_count(path):
 
 def verify(allow_dirty=False):
     failures = []
+    current_test_count = _current_test_count()
     tracked = set(_git("ls-tree", "-r", "--name-only", "HEAD").splitlines())
     missing = sorted(REQUIRED - tracked)
     if missing:
@@ -139,18 +153,18 @@ def verify(allow_dirty=False):
             failures.append(f"Rounded {label} is inconsistent in the deck")
     if str(speed_ratio) not in deck_text:
         failures.append("Controlled benchmark ratio is inconsistent in the deck")
-    if f"{CURRENT_TEST_COUNT}/{CURRENT_TEST_COUNT} automated tests passed" not in readme:
+    if f"{current_test_count}/{current_test_count} automated tests passed" not in readme:
         failures.append("Current automated-test result is missing from the README")
-    if f"Automated tests: **{CURRENT_TEST_COUNT} passed**" not in evaluation:
+    if f"Automated tests: **{current_test_count} passed**" not in evaluation:
         failures.append(
             "Current automated-test result is missing from the evaluation report"
         )
     if not re.search(
-        rf"\b{CURRENT_TEST_COUNT}\s*/\s*{CURRENT_TEST_COUNT}\b",
+        rf"\b{current_test_count}\s*/\s*{current_test_count}\b",
         deck_text,
     ):
         failures.append("Current automated-test result is missing from the deck")
-    if f"{CURRENT_TEST_COUNT_WORDS} passing automated tests" not in narration:
+    if f"{current_test_count} passing automated tests" not in narration:
         failures.append("Current automated-test result is missing from the narration")
 
     deck_text_lower = deck_text.lower()
@@ -168,6 +182,7 @@ def verify(allow_dirty=False):
 
     return {
         "commit": _git("rev-parse", "HEAD").strip(),
+        "test_count": current_test_count,
         "video_seconds": round(video_seconds, 3),
         "slides": slide_count,
         "pdf_pages": pdf_pages,

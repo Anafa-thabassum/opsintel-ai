@@ -8,8 +8,8 @@
 | `video-narration.txt` | Final 11-scene narration with current test and evaluation claims |
 
 The narration reflects the expanded incident suite, failed-run comparison,
-132-test suite, and claim-level LLM grounding. The current PPTX and PDF include
-the 132/132 result and describe the 120-minute cascade as temporal correlation
+133-test suite, and claim-level LLM grounding. The current PPTX and PDF include
+the 133/133 result and describe the 120-minute cascade as temporal correlation
 with causation unconfirmed. The committed MP4 was recorded before those final
 changes, so **do not submit it unchanged**. Re-record
 `video-narration.txt` in the team's own voice from the current build. If the

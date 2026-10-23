@@ -24,7 +24,7 @@ Working hackathon prototype:
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard with real Exasol telemetry.
-- 132 automated tests and a 16-case synthetic challenge set.
+- 133 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -319,7 +319,7 @@ npm run build
 
 Latest verified results:
 
-- **132/132 automated tests passed**.
+- **133/133 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -327,7 +327,7 @@ Latest verified results:
   engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
   this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.
 - **Frontend lint passed with no warnings**.
-- **Frontend production build passed**; Vite reported a non-failing 614.81 kB
+- **Frontend production build passed**; Vite reported a non-failing 616.60 kB
   main-chunk advisory.
 
 With Exasol Personal running, `make exasol-proof` prints the actual historical
@@ -353,8 +353,8 @@ and the database-backed browser workflow remain unverified because no disposable
 database was authorized.
 
 The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
-records the current `132/132` suite and submission blockers without rewriting
-that historical rehearsal.
+records the historical `132/132` suite at that revision. The current verified
+result is `133/133`; the earlier report remains unchanged as dated evidence.
 
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published

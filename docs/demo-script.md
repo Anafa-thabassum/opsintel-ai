@@ -61,7 +61,7 @@ evaluation slide.
 
 > Exasol is the shared analytical evidence layer. Window functions calculate
 > previous status, rolling row-count baselines, completeness, and failure rate;
-> CONNECT BY traverses dependencies. The repository has 132 passing automated
+> CONNECT BY traverses dependencies. The repository has 133 passing automated
 > tests and 16 of 16 predefined synthetic regression cases. The separate 27 of
 > 27 holdout is project-authored, not independent validation. In the published
 > cache-off comparison, DuckDB was faster on this laptop, so no Exasol speed

@@ -25,3 +25,6 @@ secrets.json
 
 # Generated presentation validation workspaces
 .chart-data-*/
+
+# Local scratch file; not part of the Python/React test suite
+/tests/java/CrossBrowserTesting.java.java
