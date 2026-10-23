@@ -49,17 +49,17 @@ The engineer can inspect every source observation. Regression cases include
 paraphrases and benign timeout configuration. A separate 27-case versioned
 synthetic holdout scored 27/27 across all nine outcomes. Its dataset and result
 entered Git history together, so it does not independently prove freeze order.
-An external evaluator must use the reviewer template, which currently contains
-0 cases from 0 external authors.
+The frozen independent reviewer holdout contains 19 cases from three
+pseudonymous authors and scored 4/19; its error analysis is published.
 
 ## What has been measured?
 
 One hundred thirty-seven automated tests, a predefined 16-case synthetic
-regression set, a separate 27-case versioned project-authored holdout, frontend
-quality checks, and a
-reproducible local Exasol scale benchmark. The holdout is project-authored. The
-external holdout has 0 cases from 0 authors, while the frozen four-participant
-impact study has 0/40 recorded trials from 0/4 participants.
+regression set, a separate 27-case versioned project-authored holdout, a frozen
+19-case reviewer holdout, frontend quality checks, and a reproducible local
+Exasol scale benchmark. The reviewer holdout scored 4/19 and is not a
+production accuracy estimate. The frozen four-participant impact study still
+has 0/40 recorded trials from 0/4 participants.
 
 A separate licensed public-message corpus covers nine short messages from
 Apache Spark, Apache Airflow, and dbt-common. It scores 6/9 with every source,

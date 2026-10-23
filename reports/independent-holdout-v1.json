@@ -1,0 +1,572 @@
+{
+  "evaluation": "independent-reviewer-holdout",
+  "provenance": "independent",
+  "author_ids": [
+    "reviewer_a",
+    "reviewer_b",
+    "reviewer_c"
+  ],
+  "independent_validation_status": "complete",
+  "dataset_version": "opsintel-review-v1",
+  "dataset_file": "independent_holdout_v1.csv",
+  "dataset_sha256": "64d766d4782ee94223796e91d79c35fb359d3dcd9de414b1b8ebed41afacf71b",
+  "evaluated_at": "2026-10-23T07:04:45+00:00",
+  "evaluator_version": "2.0",
+  "classifier_configuration_version": "deterministic-default-v1",
+  "scoring_rules_version": "exact-category-v1",
+  "scoring_rules": "Exact category match receives credit; partial category matches receive no credit. Unclassified predictions remain unresolved. Missing labels are reported and excluded from accuracy.",
+  "classifier_file": "app/investigator.py",
+  "classifier_sha256": "bc274d54f8f161a2f56388118742ae4dee44a0717687b5caab246fa7467d1c10",
+  "classifier_commit": "47a0831500b9cd0c725c73d2fbdf3603d8f1d234",
+  "correct": 4,
+  "total": 19,
+  "total_cases": 19,
+  "completed_cases": 19,
+  "correct_findings": 4,
+  "incorrect_findings": 15,
+  "unresolved_cases": 16,
+  "missing_labels": 0,
+  "accuracy_pct": 21.1,
+  "traceable_cases": 19,
+  "causation_safe_cases": 19,
+  "category_results": {
+    "conflicting_evidence": {
+      "correct": 0,
+      "total": 2
+    },
+    "delayed_run": {
+      "correct": 0,
+      "total": 1
+    },
+    "dependency_failure": {
+      "correct": 0,
+      "total": 3
+    },
+    "duplicate_data": {
+      "correct": 0,
+      "total": 1
+    },
+    "early_termination": {
+      "correct": 0,
+      "total": 2
+    },
+    "incomplete_data": {
+      "correct": 0,
+      "total": 3
+    },
+    "schema_mismatch": {
+      "correct": 1,
+      "total": 3
+    },
+    "timeout": {
+      "correct": 2,
+      "total": 3
+    },
+    "unclassified": {
+      "correct": 1,
+      "total": 1
+    }
+  },
+  "scope": "Unseen synthetic cases authored by external reviewers and frozen with the tested classifier and evaluator; not a production accuracy estimate.",
+  "frozen_ref": "independent-holdout-v1",
+  "frozen_commit": "47a0831500b9cd0c725c73d2fbdf3603d8f1d234",
+  "dataset_frozen_sha256": "64d766d4782ee94223796e91d79c35fb359d3dcd9de414b1b8ebed41afacf71b",
+  "classifier_frozen_sha256": "bc274d54f8f161a2f56388118742ae4dee44a0717687b5caab246fa7467d1c10",
+  "evaluator_frozen_sha256": "c07b1f2ddcc3b5e1f11447bf8f7aa98501c2f99c5d8f3657106945254d9feb75",
+  "results": [
+    {
+      "id": "REV-A-001",
+      "expected": "incomplete_data",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The pipeline run log reports that 850 of 1000 expected records were processed. The job exits successfully, but the downstream completeness check fails because 150 records are missing. No upstream extraction logs are available."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The pipeline run log reports that 850 of 1000 expected records were processed. The job exits successfully, but the downstream completeness check fails because 150 records are missing. No upstream extraction logs are available."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-001"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-002",
+      "expected": "early_termination",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The execution log records that the worker process terminated with exit code 137 before the final output was committed. No container memory metrics or orchestrator termination events are available."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The execution log records that the worker process terminated with exit code 137 before the final output was committed. No container memory metrics or orchestrator termination events are available."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-002"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-003",
+      "expected": "timeout",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The task log shows a database query started at 10:00 and was cancelled at 10:30 after reaching the configured 30-minute execution limit. The query plan and database performance metrics are unavailable."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The task log shows a database query started at 10:00 and was cancelled at 10:30 after reaching the configured 30-minute execution limit. The query plan and database performance metrics are unavailable."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-003"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-004",
+      "expected": "schema_mismatch",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The ingestion job fails when inserting a string value into a destination column configured as an integer. The error log identifies the affected column and rejected value. No upstream schema-change record is available."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The ingestion job fails when inserting a string value into a destination column configured as an integer. The error log identifies the affected column and rejected value. No upstream schema-change record is available."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-004"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-005",
+      "expected": "dependency_failure",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "A transformation task fails because its required upstream table is unavailable. The database reports that the relation does not exist. Deployment history and upstream task execution logs are unavailable."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "A transformation task fails because its required upstream table is unavailable. The database reports that the relation does not exist. Deployment history and upstream task execution logs are unavailable."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-005"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-006",
+      "expected": "delayed_run",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The scheduled pipeline was configured to start at 08:00 but began at 08:47. The available scheduler log confirms the late start. Scheduler queue metrics and upstream resource availability are missing."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The scheduled pipeline was configured to start at 08:00 but began at 08:47. The available scheduler log confirms the late start. Scheduler queue metrics and upstream resource availability are missing."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-006"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-007",
+      "expected": "duplicate_data",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The destination table contains two records with the same business key and ingestion date. The available query confirms the duplicate keys, but source records, retry logs, and idempotency records are unavailable."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The destination table contains two records with the same business key and ingestion date. The available query confirms the duplicate keys, but source records, retry logs, and idempotency records are unavailable."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-007"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-008",
+      "expected": "conflicting_evidence",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The pipeline summary reports a successful run with 12000 records written, while the validation report for the same run reports 11800 records written. The reports have not been reconciled against execution IDs or timestamps."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "unresolved",
+      "uncertainty_correct": true,
+      "expected_findings": [
+        "The pipeline summary reports a successful run with 12000 records written, while the validation report for the same run reports 11800 records written. The reports have not been reconciled against execution IDs or timestamps."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-008"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-A-009",
+      "expected": "unclassified",
+      "predicted": "unclassified",
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "The pipeline is marked failed, but the available evidence contains only a generic failure status. No task logs, error messages, timestamps, input statistics, or dependency states are available."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "correct",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "unresolved",
+      "uncertainty_correct": true,
+      "expected_findings": [
+        "The pipeline is marked failed, but the available evidence contains only a generic failure status. No task logs, error messages, timestamps, input statistics, or dependency states are available."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-A-009"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-C-001",
+      "expected": "incomplete_data",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "A data quality check expects 5000 records but finds 4720 after the pipeline completes. The check output is available, but source counts, filter conditions, and rejected-record logs are missing."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "A data quality check expects 5000 records but finds 4720 after the pipeline completes. The check output is available, but source counts, filter conditions, and rejected-record logs are missing."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-C-001"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-C-002",
+      "expected": "early_termination",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The container orchestration event reports that the task's container was terminated before the completion marker was written. The event does not include a termination reason, and resource metrics are unavailable."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The container orchestration event reports that the task's container was terminated before the completion marker was written. The event does not include a termination reason, and resource metrics are unavailable."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-C-002"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-C-003",
+      "expected": "timeout",
+      "predicted": "timeout",
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "A database driver records that a query exceeded its configured 10-minute statement timeout and was cancelled. No query plan, lock-wait history, or database load metrics are available."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "correct",
+      "resolution_status": "candidate_only",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": true,
+      "expected_findings": [
+        "A database driver records that a query exceeded its configured 10-minute statement timeout and was cancelled. No query plan, lock-wait history, or database load metrics are available."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-C-003"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-C-004",
+      "expected": "schema_mismatch",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "A downstream validator rejects a timestamp value because it does not match the configured ISO date-time format. The rejected value and validation error are recorded, but the upstream schema contract is unavailable."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "A downstream validator rejects a timestamp value because it does not match the configured ISO date-time format. The rejected value and validation error are recorded, but the upstream schema contract is unavailable."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-C-004"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "REV-C-005",
+      "expected": "dependency_failure",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "A transformation reports that a required upstream task has not produced its expected artifact. The orchestration dependency graph is available, but the upstream task's logs and artifact-storage status are missing."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "A transformation reports that a required upstream task has not produced its expected artifact. The orchestration dependency graph is available, but the upstream task's logs and artifact-storage status are missing."
+      ],
+      "evidence_refs": [
+        "synthetic_reviewer_case:REV-C-005"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "CASE001",
+      "expected": "incomplete_data",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "Pipeline stopped before all expected records were processed; no explicit termination reason is available."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "Pipeline stopped before all expected records were processed; no explicit termination reason is available."
+      ],
+      "evidence_refs": [
+        "pipeline_log_001"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "CASE002",
+      "expected": "timeout",
+      "predicted": "timeout",
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "Execution exceeded the configured time limit, and the timeout event is recorded in the logs."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "correct",
+      "resolution_status": "candidate_only",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": true,
+      "expected_findings": [
+        "Execution exceeded the configured time limit, and the timeout event is recorded in the logs."
+      ],
+      "evidence_refs": [
+        "pipeline_log_002"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "CASE003",
+      "expected": "dependency_failure",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "The pipeline failed after the upstream service returned connection errors; independent confirmation is unavailable."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": false,
+      "expected_findings": [
+        "The pipeline failed after the upstream service returned connection errors; independent confirmation is unavailable."
+      ],
+      "evidence_refs": [
+        "pipeline_log_003"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "CASE004",
+      "expected": "schema_mismatch",
+      "predicted": "schema_mismatch",
+      "correct": true,
+      "inputs": {
+        "logs": [
+          "The output contains a field with a data type that differs from the required schema."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "correct",
+      "resolution_status": "candidate_only",
+      "expected_uncertainty": "candidate_only",
+      "uncertainty_correct": true,
+      "expected_findings": [
+        "The output contains a field with a data type that differs from the required schema."
+      ],
+      "evidence_refs": [
+        "pipeline_log_004"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    },
+    {
+      "id": "CASE005",
+      "expected": "conflicting_evidence",
+      "predicted": "unclassified",
+      "correct": false,
+      "inputs": {
+        "logs": [
+          "Two log sources report different failure reasons, and neither reason is independently verified."
+        ],
+        "missing_rows": null,
+        "expected_rows": null,
+        "actual_rows": null
+      },
+      "outcome": "incorrect",
+      "resolution_status": "unresolved",
+      "expected_uncertainty": "unresolved",
+      "uncertainty_correct": true,
+      "expected_findings": [
+        "Two log sources report different failure reasons, and neither reason is independently verified."
+      ],
+      "evidence_refs": [
+        "pipeline_log_005;pipeline_log_006"
+      ],
+      "evidence_traceable": true,
+      "causation_claimed": false
+    }
+  ]
+}

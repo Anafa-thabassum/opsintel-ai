@@ -57,15 +57,15 @@ accuracy estimate.
 
 ## External reviewer holdout
 
-`holdout_template.csv` is intentionally header-only. No external cases or
-reviewers have been recorded. It is separate from both
-`frozen_holdout_v1.csv` and the 16-case regression suite.
+`holdout_template.csv` remains available for future rounds. The current
+independent file is separate from both `frozen_holdout_v1.csv` and the 16-case
+regression suite.
 
-The supplied reviewer files have been normalized into
+The supplied reviewer files were normalized into
 `independent_holdout_v1.csv`: 19 cases from three pseudonymous authors across
-all nine supported categories. The file is ready for the freeze check, but it
-is not yet reported as independent validation because the dataset, classifier,
-and evaluator must be committed and tagged together before scoring.
+all nine supported categories. It was frozen at tag `independent-holdout-v1`
+before scoring. The published result is **4/19 (21.1%)**; all 19 cases had
+traceable evidence and 16 predictions remained unresolved.
 
 Each independent case uses this schema:
 
@@ -115,8 +115,9 @@ cause.
    incorrect findings; unresolved predictions; input-evidence traceability; and
    the no-causation-claim contract.
 
-OpsIntel AI does not claim an independent accuracy result until an external
-evaluator supplies and runs those unseen cases.
+The current report is an independent reviewer result for the supplied
+pseudonymous cases; it is not a production accuracy estimate. Future rounds
+must use a new dataset version and freeze tag.
 
 ## Human impact study
 

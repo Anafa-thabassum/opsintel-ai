@@ -407,9 +407,14 @@ contains 27 versioned cases and a published
 `make holdout`. The project team authored this dataset, so its 27/27 result is
 not an independent or production accuracy claim.
 
-Two or three external reviewers can create 15–20 genuinely unseen cases from
-[`evaluation/holdout_template.csv`](evaluation/holdout_template.csv). After
-committing and tagging the completed data, run:
+The current independent reviewer holdout contains 19 genuinely unseen cases
+from three pseudonymous authors. It is frozen at the
+`independent-holdout-v1` tag and scored **4/19 (21.1%)**; all misses and
+unresolved predictions are published in
+[`reports/independent-holdout-v1.md`](reports/independent-holdout-v1.md).
+For a future round, two or three external reviewers can create 15–20 new cases
+from [`evaluation/holdout_template.csv`](evaluation/holdout_template.csv).
+After committing and tagging the new dataset, run:
 
 ```bash
 make independent-holdout \
@@ -495,8 +500,9 @@ connector.
 - Data and logs are synthetic.
 - The challenge set is small and predefined.
 - Classification uses transparent rules rather than semantic language models.
-- External-reviewer holdout status is 0 cases from 0 external reviewers; the
-  27/27 result is project-authored and not an independent accuracy estimate.
+- Independent reviewer holdout status: **4/19 (21.1%)** on the frozen
+  `independent-holdout-v1` dataset. This is not a production accuracy estimate;
+  the 27/27 result remains project-authored.
 - Live LLM access and real-model grounding remain unverified; only mocked
   boundary tests have run.
 - Production concurrency and live orchestrator connectivity have not been

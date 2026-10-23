@@ -125,8 +125,25 @@ to reproduce the evaluation.
 
 The project team authored this synthetic holdout. It is stronger evidence than
 rerunning the implementation's regression cases, but it is not an independent
-or production accuracy estimate. The empty reviewer template remains available
-for a genuinely external evaluation.
+or production accuracy estimate.
+
+## Independent reviewer holdout
+
+The supplied reviewer cases were normalized into a separate 19-case dataset
+from three pseudonymous authors and frozen before scoring at
+`independent-holdout-v1`. The evaluator recorded **4/19 correct (21.1%)**, with
+15 incorrect category predictions, 16 unresolved predictions, zero missing
+labels, 19/19 traceable evidence references, and 19/19 outputs avoiding a
+causation claim. The complete error analysis, hashes, category breakdown, and
+frozen commit are published in
+[`reports/independent-holdout-v1.md`](independent-holdout-v1.md) and
+[`reports/independent-holdout-v1.json`](independent-holdout-v1.json).
+
+This is an independent synthetic reviewer result, not a production accuracy
+estimate. The low score is retained as a genuine diagnostic: reviewer wording
+often fell outside the deterministic vocabulary, so the system abstained rather
+than inventing a cause. Future classifier changes must be evaluated as a new
+version rather than rewriting this frozen result.
 
 ## Licensed public-message compatibility corpus
 
@@ -153,9 +170,9 @@ convert this project-labelled check into independent accuracy.
 
 ## Independent reviewer workflow
 
-The external-reviewer template remains intentionally header-only: **0 cases
-from 0 external reviewers have been recorded**, so independent validation is
-still pending and no accuracy result is claimed.
+The current independent reviewer result is complete for dataset version
+`opsintel-review-v1`. A new round should use a new dataset version and freeze
+tag; do not overwrite this result.
 
 The Batch 4 evaluator now requires 15–20 cases from two or three pseudonymous
 external reviewers. Each case carries a dataset version, referenced evidence,
