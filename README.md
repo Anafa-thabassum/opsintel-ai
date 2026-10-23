@@ -2,6 +2,8 @@
 
 **Evidence-based data pipeline incident investigation using Exasol Personal, FastAPI, and React.**
 
+> **Problem statement:** Data engineers lose time diagnosing failed pipelines because run metadata, row counts, and logs are fragmented; they need one traceable investigation that identifies the next diagnostic action without treating an unverified cause as fact.
+
 > ExaThon India 2026 · Track 04: The Work Behind the Work
 
 [![CI](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml)
@@ -43,6 +45,23 @@ candidate explanations, limitations, and the next diagnostic action.
 
 The investigation view keeps database observations separate from candidate
 causes and leaves the confirmed root cause unset until a person verifies it.
+
+## Data provenance
+
+- **Synthetic project data:** the Exasol schema, seeded incidents, regression
+  cases, versioned 27-case holdout, and benchmark workloads are generated for
+  this hackathon. They are reproducible, but they are not production telemetry.
+- **Public compatibility data:**
+  `evaluation/public_failure_corpus_v1.csv` contains nine short messages taken
+  from official Apache Spark, Apache Airflow, and dbt-common source or
+  documentation. Every row records its source URL, Apache-2.0 licence URL, and
+  project-authored expected category. The current score is 6/9, with all three
+  misses published in `reports/public-corpus-v1.md`.
+- **Independent validation status:** this public corpus is not an external
+  reviewer holdout, and no real user-impact trials have been recorded yet.
+  The external holdout and 30–50-case public issue/CI expansion remain
+  follow-up work requiring additional provenance review rather than labels
+  invented by the project team.
 
 ## Submission assets
 

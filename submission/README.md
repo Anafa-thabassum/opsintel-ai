@@ -1,5 +1,12 @@
 # Submission package
 
+> **Problem statement:** Data engineers lose time diagnosing failed pipelines because run metadata, row counts, and logs are fragmented; they need one traceable investigation that identifies the next diagnostic action without treating an unverified cause as fact.
+
+The repository separates reproducible synthetic demonstration data from a
+small, licensed public-message compatibility corpus. The latter contains nine
+project-labelled Spark, Airflow, and dbt-common messages with source and
+licence URLs; it scored 6/9 and is not presented as independent accuracy.
+
 | File | Purpose |
 |---|---|
 | `opsintel-ai-pitch-deck.pdf` | Primary pitch deck for upload |
