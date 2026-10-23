@@ -1,5 +1,21 @@
 # Holdout evaluation
 
+## Licensed public failure-message corpus
+
+`public_failure_corpus_v1.csv` contains nine short framework-generated messages
+from Apache Spark, Apache Airflow, and dbt-common. Every row records its exact
+source URL, Apache-2.0 licence URL, expected OpsIntel category, and the project's
+labelling rationale. Reproduce the compatibility score and published failures
+with:
+
+```bash
+make public-evaluate
+```
+
+This corpus tests unfamiliar upstream vocabulary; it is not production log data
+and its labels were assigned by the OpsIntel project. It therefore does not
+replace the external-reviewer holdout below or establish independent accuracy.
+
 ## Published versioned holdout
 
 `frozen_holdout_v1.csv` contains 27 project-authored synthetic cases that are

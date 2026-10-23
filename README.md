@@ -9,11 +9,19 @@
 
 exasol, data-engineering, pipeline-monitoring, root-cause-analysis, fastapi, react, observability
 
-On-call data engineers cannot quickly determine why overnight pipelines failed
-because run metadata, row-count discrepancies, and logs are scattered across
-systems. OpsIntel AI brings this evidence together in Exasol and presents
-traceable candidate explanations, giving engineers a focused starting point
-without claiming an unverified root cause.
+On-call data engineers cannot quickly explain overnight pipeline failures
+because run history, row counts, and logs live in separate places; OpsIntel AI
+gives them a traceable starting point while leaving root-cause confirmation to
+a person.
+
+The primary users are on-call data engineers and data-platform teams. Their
+investigations affect every team that depends on timely, trusted data, including
+analytics, finance, and business operations. As broader industry context rather
+than a project-specific impact claim, Uptime Institute's 2024 survey reports
+that 54% of respondents said their most recent significant outage cost more
+than $100,000. OpsIntel has not measured an equivalent financial effect for
+pipeline incidents. See the
+[Uptime Institute Global Data Center Survey 2024](https://datacenter.uptimeinstitute.com/rs/711-RIA-145/images/2024.GlobalDataCenterSurvey.Report.pdf?version=0).
 
 ## Project status
 
@@ -23,14 +31,15 @@ Working hackathon prototype:
 - FastAPI investigation API.
 - Rule-based, evidence-first failure classification.
 - Optional LLM narrative summary grounded in the retrieved evidence.
-- React landing page and dashboard with real Exasol telemetry.
-- 133 automated tests and a 16-case synthetic challenge set.
+- React landing page and dashboard backed by live Exasol queries over synthetic
+  telemetry.
+- 137 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
 candidate explanations, limitations, and the next diagnostic action.
 
-![OpsIntel AI dashboard showing live Exasol incident telemetry](docs/images/dashboard-overview.png)
+![OpsIntel AI dashboard showing live Exasol queries over synthetic incident telemetry](docs/images/dashboard-overview.png)
 
 The investigation view keeps database observations separate from candidate
 causes and leaves the confirmed root cause unset until a person verifies it.
@@ -305,6 +314,7 @@ Backend:
 ```bash
 python -m pytest -q
 python -m tests.run_evaluation
+python -m scripts.evaluate_public_corpus
 python -m scripts.exasol_proof
 python -m scripts.benchmark_exasol
 ```
@@ -319,10 +329,12 @@ npm run build
 
 Latest verified results:
 
-- **133/133 automated tests passed**.
+- **137/137 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
+- **6/9 licensed public framework messages matched** in a separate
+  project-labelled compatibility corpus; all three misses are published.
 - **Controlled 1M/10M Exasol–DuckDB comparison recorded** with seven runs per
   engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
   this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.
@@ -343,8 +355,18 @@ accuracy, throughput, or concurrency claims. See
 [`Exasol benchmark`](reports/exasol-benchmark.json), and the controlled
 [`database comparison`](reports/database-comparison.json).
 
+The separate [public-message report](reports/public-corpus-v1.md) evaluates
+short Apache Spark, Apache Airflow, and dbt-common failure messages with a source
+and Apache-2.0 licence URL on every row. Its 6/9 score is intentionally not
+presented as independent accuracy. `make public-evaluate` regenerates both the
+JSON and Markdown reports, including every mismatch.
+
 The [`judging evidence map`](reports/judging-scorecard.md) links each published
 criterion to a concrete file or demo moment.
+
+The [`project roadmap`](docs/roadmap.md) separates contribution-sized work from
+validation that requires external reviewers, participants, or authorized live
+services.
 
 The [Batch 6 clean-clone rehearsal](reports/clean-rehearsal-2026-10-19.md)
 verified dependency installation, 126 tests, the 16-case evaluation, frontend
@@ -354,7 +376,7 @@ database was authorized.
 
 The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
 records the historical `132/132` suite at that revision. The current verified
-result is `133/133`; the earlier report remains unchanged as dated evidence.
+result is `137/137`; the earlier report remains unchanged as dated evidence.
 
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published

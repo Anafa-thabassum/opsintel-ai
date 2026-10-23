@@ -7,6 +7,11 @@ build. Keep Exasol credentials only in the backend environment.
 
 ### Backend
 
+> [!WARNING]
+> Remote Exasol connections must use `EXASOL_TLS_VERIFY=true`. The application
+> rejects a non-loopback DSN before connection creation when certificate
+> verification is disabled.
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate

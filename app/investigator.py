@@ -147,9 +147,138 @@ _BENIGN_EVIDENCE_PHRASES = (
 )
 
 
+_CLASSIFICATION_RULES = (
+    (
+        "delayed_run",
+        ("started late", "schedule delay", "delayed by", "missed sla", "missed its sla"),
+        "Logs report a delayed start or missed schedule. The source of the delay is not confirmed.",
+        "Compare scheduled and actual start times, then inspect upstream queue and dependency timing.",
+    ),
+    (
+        "duplicate_data",
+        ("duplicate rows", "duplicate records", "more rows than expected"),
+        "The available evidence indicates more rows than expected or possible duplicate records. The duplication point is unknown.",
+        "Compare source keys with target keys and inspect retry or deduplication logs.",
+    ),
+    (
+        "timeout",
+        ("timeout", "timed out", "time limit", "deadline exceeded", "execution exceeded"),
+        "Logs report a timeout or execution time limit. The reason the pipeline exceeded the limit is not confirmed.",
+        "Inspect execution duration, query plans, resource usage, and recent workload changes.",
+    ),
+    (
+        "schema_mismatch",
+        ("schema mismatch", "incompatible type", "data type", "does not match expected", "column type", "invalid cast", "type conversion"),
+        "Logs indicate a possible schema or data-type mismatch. The exact incompatible field should be verified.",
+        "Compare the incoming schema with the target table definition and inspect the failing field.",
+    ),
+    (
+        "dependency_failure",
+        ("dependency failure", "upstream task failed", "upstream dependency", "dependency failed", "prerequisite task failed"),
+        "Logs indicate an upstream dependency failure. The upstream task's failure should be investigated.",
+        "Inspect the upstream task status, its logs, and dependency execution order.",
+    ),
+    (
+        "early_termination",
+        ("ended before all expected rows were processed", "aborted before completion", "processing stopped early", "terminated before completion"),
+        "Logs report that processing ended before all expected rows were processed. The underlying reason is not confirmed.",
+        "Inspect the execution logs around termination and identify the first reported error.",
+    ),
+    (
+        "incomplete_data",
+        ("source returned only", "fewer rows than expected", "row shortfall", "missing rows"),
+        "The available data indicates that fewer rows were received than expected. The reason for the discrepancy is not confirmed.",
+        "Compare source and target row counts, inspect source extracts, and check filtering or rejected-row logs.",
+    ),
+)
+
+
+_UNCLASSIFIED_RESULT = (
+    "unclassified",
+    "The available evidence does not support a specific failure category.",
+    "Inspect the complete pipeline logs and relevant source and target metrics.",
+)
+
+
 def _is_actionable_evidence(observation):
     text = str(observation).lower()
     return not any(phrase in text for phrase in _BENIGN_EVIDENCE_PHRASES)
+
+
+def _classify_evidence_details(
+    log_messages,
+    missing_rows,
+    expected_rows=None,
+    actual_rows=None,
+):
+    text = " ".join(
+        message.lower()
+        for message in log_messages
+        if _is_actionable_evidence(message)
+    )
+    has_success_signal = any(phrase in text for phrase in (
+        "completed successfully", "finished successfully", "all expected rows processed",
+    ))
+    has_failure_signal = any(phrase in text for phrase in (
+        "error", "failed", "timeout", "aborted", "terminated",
+    ))
+
+    if has_success_signal and has_failure_signal:
+        result = (
+            "conflicting_evidence",
+            "The retrieved logs contain both success and failure signals. The run state cannot be resolved from this evidence alone.",
+            "Verify the final orchestrator state and inspect the latest log record before assigning a cause.",
+        )
+        return {
+            "result": result,
+            "confidence": "low",
+            "matched_categories": ["conflicting_evidence"],
+            "tie_break_reason": "Conflicting completion signals force an unresolved result.",
+        }
+
+    matches = []
+    for category, phrases, hypothesis, action in _CLASSIFICATION_RULES:
+        if any(phrase in text for phrase in phrases):
+            matches.append((category, hypothesis, action, "log phrase"))
+
+    if (
+        expected_rows is not None
+        and actual_rows is not None
+        and int(actual_rows) > int(expected_rows)
+        and not any(match[0] == "duplicate_data" for match in matches)
+    ):
+        rule = next(rule for rule in _CLASSIFICATION_RULES if rule[0] == "duplicate_data")
+        matches.append((*rule[0:1], *rule[2:4], "row-count excess"))
+
+    if (
+        missing_rows is not None
+        and missing_rows > 0
+        and not any(match[0] == "incomplete_data" for match in matches)
+    ):
+        rule = next(rule for rule in _CLASSIFICATION_RULES if rule[0] == "incomplete_data")
+        matches.append((*rule[0:1], *rule[2:4], "row-count shortfall"))
+
+    if not matches:
+        return {
+            "result": _UNCLASSIFIED_RESULT,
+            "confidence": "low",
+            "matched_categories": [],
+            "tie_break_reason": "No supported classifier signal matched.",
+        }
+
+    selected = matches[0]
+    categories = [match[0] for match in matches]
+    return {
+        "result": selected[:3],
+        "confidence": "low" if len(matches) > 1 or selected[3] != "log phrase" else "medium",
+        "matched_categories": categories,
+        "tie_break_reason": (
+            f"Selected {selected[0]} by documented precedence over: "
+            + ", ".join(categories[1:])
+            if len(matches) > 1
+            else f"Only {selected[0]} matched ({selected[3]})."
+        ),
+    }
 
 
 def classify_evidence(
@@ -159,148 +288,9 @@ def classify_evidence(
     actual_rows=None,
 ):
     """Classify evidence without claiming an unverified root cause."""
-    text = " ".join(
-        message.lower()
-        for message in log_messages
-        if _is_actionable_evidence(message)
-    )
-
-    has_success_signal = any(phrase in text for phrase in (
-        "completed successfully",
-        "finished successfully",
-        "all expected rows processed",
-    ))
-    has_failure_signal = any(phrase in text for phrase in (
-        "error",
-        "failed",
-        "timeout",
-        "aborted",
-        "terminated",
-    ))
-
-    if has_success_signal and has_failure_signal:
-        return (
-            "conflicting_evidence",
-            "The retrieved logs contain both success and failure signals. "
-            "The run state cannot be resolved from this evidence alone.",
-            "Verify the final orchestrator state and inspect the latest log "
-            "record before assigning a cause.",
-        )
-
-    if any(phrase in text for phrase in (
-        "started late",
-        "schedule delay",
-        "delayed by",
-        "missed sla",
-        "missed its sla",
-    )):
-        return (
-            "delayed_run",
-            "Logs report a delayed start or missed schedule. The source of "
-            "the delay is not confirmed.",
-            "Compare scheduled and actual start times, then inspect upstream "
-            "queue and dependency timing.",
-        )
-
-    if any(phrase in text for phrase in (
-        "duplicate rows",
-        "duplicate records",
-        "more rows than expected",
-    )) or (
-        expected_rows is not None
-        and actual_rows is not None
-        and int(actual_rows) > int(expected_rows)
-    ):
-        return (
-            "duplicate_data",
-            "The available evidence indicates more rows than expected or "
-            "possible duplicate records. The duplication point is unknown.",
-            "Compare source keys with target keys and inspect retry or "
-            "deduplication logs.",
-        )
-
-    if any(word in text for word in (
-        "timeout",
-        "timed out",
-        "time limit",
-        "deadline exceeded",
-        "execution exceeded",
-    )):
-        return (
-            "timeout",
-            "Logs report a timeout or execution time limit. "
-            "The reason the pipeline exceeded the limit is not confirmed.",
-            "Inspect execution duration, query plans, resource usage, "
-            "and recent workload changes.",
-        )
-
-    if any(word in text for word in (
-        "schema mismatch",
-        "incompatible type",
-        "data type",
-        "does not match expected",
-        "column type",
-        "invalid cast",
-        "type conversion",
-    )):
-        return (
-            "schema_mismatch",
-            "Logs indicate a possible schema or data-type mismatch. "
-            "The exact incompatible field should be verified.",
-            "Compare the incoming schema with the target table definition "
-            "and inspect the failing field.",
-        )
-
-    if any(word in text for word in (
-        "dependency failure",
-        "upstream task failed",
-        "upstream dependency",
-        "dependency failed",
-        "prerequisite task failed",
-    )):
-        return (
-            "dependency_failure",
-            "Logs indicate an upstream dependency failure. "
-            "The upstream task's failure should be investigated.",
-            "Inspect the upstream task status, its logs, and dependency "
-            "execution order.",
-        )
-
-    # Prefer a specific early-termination signal over a generic row-count issue.
-    if any(phrase in text for phrase in (
-        "ended before all expected rows were processed",
-        "aborted before completion",
-        "processing stopped early",
-        "terminated before completion",
-    )):
-        return (
-            "early_termination",
-            "Logs report that processing ended before all expected rows "
-            "were processed. The underlying reason is not confirmed.",
-            "Inspect the execution logs around termination and identify "
-            "the first reported error.",
-        )
-
-    if any(phrase in text for phrase in (
-        "source returned only",
-        "fewer rows than expected",
-        "row shortfall",
-        "missing rows",
-    )) or (missing_rows is not None and missing_rows > 0):
-        return (
-            "incomplete_data",
-            "The available data indicates that fewer rows were received "
-            "than expected. The reason for the discrepancy is not confirmed.",
-            "Compare source and target row counts, inspect source extracts, "
-            "and check filtering or rejected-row logs.",
-        )
-
-    return (
-        "unclassified",
-        "The available evidence does not support a specific failure category.",
-        "Inspect the complete pipeline logs and relevant source and target "
-        "metrics.",
-    )
+    return _classify_evidence_details(
+        log_messages, missing_rows, expected_rows, actual_rows,
+    )["result"]
 
 
 def investigate_pipeline(run_id: int):
@@ -494,12 +484,13 @@ def investigate_pipeline(run_id: int):
             "timestamp": str(log[3]),
         })
 
-    category, hypothesis, recommended_action = classify_evidence(
+    classification = _classify_evidence_details(
         log_messages,
         missing_rows,
         expected_rows,
         actual_rows,
     )
+    category, hypothesis, recommended_action = classification["result"]
     comparison = _build_run_comparison(
         run_id,
         expected_rows,
@@ -520,7 +511,9 @@ def investigate_pipeline(run_id: int):
         "excess_rows": excess_rows,
         "category": category,
         "hypothesis": hypothesis,
-        "confidence": "low",
+        "confidence": classification["confidence"],
+        "matched_categories": classification["matched_categories"],
+        "tie_break_reason": classification["tie_break_reason"],
         "recommended_action": recommended_action,
         "evidence": evidence,
         "history": [

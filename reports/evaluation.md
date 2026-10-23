@@ -7,7 +7,7 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **133 passed**
+- Automated tests: **137 passed**
 - Frontend lint: **passed with no warnings**
 - Frontend production build: **passed**, with a non-failing 616.60 kB
   main-chunk advisory
@@ -56,7 +56,11 @@ The deterministic classifier covers missing evidence, conflicting completion
 signals, duplicate-row patterns, and unknown logs. Candidate explanations carry
 exact run or log references. An unfamiliar log without sufficient support
 returns `resolution_status: unresolved` and a diagnostic next step instead of
-an invented cause.
+an invented cause. Its qualitative confidence is `medium` only for one explicit
+log-phrase match and `low` for row-count-only, competing, conflicting, or
+unclassified evidence. It does not emit uncalibrated probability percentages.
+When several categories match, the API returns every match and the documented
+precedence reason used to select the displayed category.
 
 ## Optional LLM validation
 
@@ -123,6 +127,22 @@ The project team authored this synthetic holdout. It is stronger evidence than
 rerunning the implementation's regression cases, but it is not an independent
 or production accuracy estimate. The empty reviewer template remains available
 for a genuinely external evaluation.
+
+## Licensed public-message compatibility corpus
+
+Nine short framework-generated failure messages from Apache Spark, Apache
+Airflow, and dbt-common were evaluated with per-case source and Apache-2.0
+licence URLs. The current classifier matched **6/9 (66.7%)**. All three misses
+are published: Spark executor shutdown, Spark shuffle fetch failure, and
+Airflow upstream failure vocabulary currently resolve to `unclassified` rather
+than the project-labelled category. No root cause is confirmed for those misses.
+
+See [`reports/public-corpus-v1.md`](public-corpus-v1.md), the machine-readable
+[`reports/public-corpus-v1.json`](public-corpus-v1.json), and
+[`evaluation/public_failure_corpus_v1.csv`](../evaluation/public_failure_corpus_v1.csv).
+Run `make public-evaluate` to reproduce the report. This small corpus uses
+project-assigned labels and is a compatibility check, not an independent or
+production accuracy estimate.
 
 ## Independent reviewer workflow
 
@@ -205,6 +225,8 @@ layer: window analytics, live evidence retrieval, and a hierarchical
 ## Limitations
 
 - The scenarios and logs are synthetic.
+- The public-message corpus contains nine short licensed framework messages,
+  not representative production log streams; its labels are project-authored.
 - The regression and project-authored holdout sets are small and are stored with the
   implementation.
 - External-reviewer holdout status: **0 cases recorded by 0 external authors**.

@@ -5,17 +5,18 @@ Use the current application with synthetic data. Do not show a database reset,
 claim a repair, or enable the optional LLM unless a separate live request has
 been authorized.
 
-## 0:00-0:20 — Problem and introduction
+## 0:00-0:25 — Problem and introduction
 
 Show the title, then move directly to the dashboard.
 
 > At 3:07 a.m., a pipeline alert says failed, but the on-call engineer still
 > has to explain why a run expected 100 rows and received 80. Run metadata,
 > counts, and logs are scattered. OpsIntel brings that evidence together while
-> refusing to name an unverified root cause. The impact study is still pending,
-> so no time saving is claimed.
+> refusing to name an unverified root cause. Uptime Institute reports that 54%
+> of surveyed significant outages cost more than $100,000, but OpsIntel's impact
+> study is pending, so no project-specific saving is claimed.
 
-## 0:20-0:50 — Reproducible incident
+## 0:25-0:50 — Reproducible incident
 
 Point to the synthetic-data label, Exasol connection indicator, trend, and
 incident table. Select `daily_sales_import`.
@@ -61,9 +62,10 @@ evaluation slide.
 
 > Exasol is the shared analytical evidence layer. Window functions calculate
 > previous status, rolling row-count baselines, completeness, and failure rate;
-> CONNECT BY traverses dependencies. The repository has 133 passing automated
-> tests and 16 of 16 predefined synthetic regression cases. The separate 27 of
-> 27 holdout is project-authored, not independent validation. In the published
+> CONNECT BY traverses dependencies. The repository has 137 passing automated
+> tests and 16 of 16 predefined synthetic regression cases. A licensed public
+> message corpus matched 6 of 9 project-labelled cases, and every miss is
+> published. In the
 > cache-off comparison, DuckDB was faster on this laptop, so no Exasol speed
 > advantage is claimed.
 

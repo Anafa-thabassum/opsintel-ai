@@ -8,3 +8,13 @@
 Do not convert candidate explanations into confirmed root causes without a
 separate verification source. New classification rules should include at least
 one positive and one false-positive regression case.
+
+## Good first contributions
+
+- Add a new synthetic unknown or conflicting-evidence regression case.
+- Improve an empty, loading, or database-disconnected dashboard message.
+- Add another exported-JSON orchestrator sample without introducing a live
+  service dependency.
+- Clarify a setup step that failed in a clean clone.
+
+Larger validation work is tracked in [`docs/roadmap.md`](docs/roadmap.md).

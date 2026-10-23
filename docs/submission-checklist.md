@@ -14,7 +14,7 @@
 - [ ] Review, commit, and push the final working-tree changes.
 - [x] Clean README with setup, usage, deployment, and run guide.
 - [x] Reproducible tests and evaluation report.
-- [x] Pitch deck PDF and PPTX show 133/133 and label the 120-minute cascade as
+- [x] Pitch deck PDF and PPTX show 137/137 and label the 120-minute cascade as
       temporal correlation, with causation unconfirmed.
 - [ ] Re-record the demo from `submission/video-narration.txt`; the existing
       2:34 MP4 predates the final cascade, test count, and LLM grounding changes.

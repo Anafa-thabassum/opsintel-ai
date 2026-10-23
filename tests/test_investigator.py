@@ -3,6 +3,7 @@ import pytest
 
 from app.investigator import (
     _build_run_comparison,
+    _classify_evidence_details,
     _completeness,
     assess_root_causes,
 )
@@ -418,6 +419,41 @@ def test_conflicting_completion_logs_are_not_forced_to_a_cause():
 
     assert category == "conflicting_evidence"
     assert "cannot be resolved" in hypothesis
+
+
+def test_classification_reports_confidence_and_deterministic_tie_break():
+    result = _classify_evidence_details(
+        ["Execution timed out after invalid cast in the final batch"],
+        0,
+    )
+
+    assert result["result"][0] == "timeout"
+    assert result["confidence"] == "low"
+    assert result["matched_categories"] == ["timeout", "schema_mismatch"]
+    assert "documented precedence" in result["tie_break_reason"]
+
+
+def test_single_explicit_signal_has_medium_qualitative_confidence():
+    result = _classify_evidence_details(
+        ["Execution exceeded the configured time limit"],
+        0,
+    )
+
+    assert result["result"][0] == "timeout"
+    assert result["confidence"] == "medium"
+    assert result["matched_categories"] == ["timeout"]
+
+
+def test_unknown_signal_explains_why_confidence_is_low():
+    result = _classify_evidence_details(
+        ["Worker exited with opaque code ZX-41"],
+        0,
+    )
+
+    assert result["result"][0] == "unclassified"
+    assert result["confidence"] == "low"
+    assert result["matched_categories"] == []
+    assert result["tie_break_reason"] == "No supported classifier signal matched."
 
 
 def test_candidates_include_traceable_supporting_evidence():

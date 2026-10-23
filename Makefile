@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup database smoke impact-study-database api frontend verify evaluate holdout independent-holdout impact exasol-proof benchmark benchmark-compare submission-check
+.PHONY: setup database smoke impact-study-database api frontend verify evaluate public-evaluate holdout independent-holdout impact exasol-proof benchmark benchmark-compare submission-check
 
 setup:
 	python3 -m venv .venv
@@ -30,6 +30,9 @@ verify:
 
 evaluate:
 	$(PYTHON) -m tests.run_evaluation
+
+public-evaluate:
+	$(PYTHON) -m scripts.evaluate_public_corpus
 
 holdout:
 	$(PYTHON) -m scripts.evaluate_holdout evaluation/frozen_holdout_v1.csv

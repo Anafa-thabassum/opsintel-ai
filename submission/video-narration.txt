@@ -1,7 +1,7 @@
-[0:00-0:20 — Problem]
-At 3:07 a.m., a pipeline alert says failed, but the on-call engineer still has to explain why a run expected one hundred rows and received eighty. Run metadata, counts, and logs are scattered. OpsIntel AI brings that evidence together while refusing to name an unverified root cause. The impact study is pending, so no time saving is claimed.
+[0:00-0:25 — Problem]
+At 3:07 a.m., a pipeline alert says failed, but the on-call engineer still has to explain why a run expected one hundred rows and received eighty. Run metadata, counts, and logs are scattered. OpsIntel AI brings that evidence together while refusing to name an unverified root cause. Uptime Institute reports that 54 percent of surveyed significant outages cost more than one hundred thousand dollars, but OpsIntel's impact study is pending, so no project-specific saving is claimed.
 
-[0:20-0:50 — Reproducible incident]
+[0:25-0:50 — Reproducible incident]
 These are synthetic incidents stored and analysed in Exasol. The dashboard is not hardcoded: SQL calculates completeness and historical features. I am selecting the reproducible daily-sales failure, where one hundred rows were expected and eighty arrived.
 
 [0:50-1:40 — Evidence, candidates, and cascade]
@@ -11,7 +11,7 @@ OpsIntel retrieves the run and logs, then applies deterministic rules. Each obse
 The next action is diagnostic: inspect the first termination error and source counts before deciding whether to rerun anything. Optional model text cannot alter the deterministic category or confirm a cause. External-reviewer validation remains at zero cases from zero reviewers. The human study remains at zero of forty trials from zero of four participants, and live-model grounding has not been verified.
 
 [2:10-2:40 — Exasol and measured results]
-Exasol is the shared analytical evidence layer. Window functions calculate previous status, rolling row-count baselines, completeness, and failure rate, while CONNECT BY traverses dependencies. The repository has 133 passing automated tests and sixteen of sixteen predefined synthetic regression cases. The separate twenty-seven of twenty-seven holdout is project-authored, not independent validation. In the published cache-off comparison, DuckDB was faster on this laptop, so no Exasol speed advantage is claimed.
+Exasol is the shared analytical evidence layer. Window functions calculate previous status, rolling row-count baselines, completeness, and failure rate, while CONNECT BY traverses dependencies. The repository has 137 passing automated tests and sixteen of sixteen predefined synthetic regression cases. A licensed public-message corpus matched six of nine project-labelled cases, and all three misses are published. In the cache-off comparison, DuckDB was faster on this laptop, so no Exasol speed advantage is claimed.
 
 [2:40-3:00 — Close]
 OpsIntel places the failed run, source-backed observations, candidate explanations, and next safe check in one view. It does not claim production accuracy, measured time savings, causal cascade detection, or automatic recovery. Follow the evidence. Investigate faster. Confirm carefully.

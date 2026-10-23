@@ -54,11 +54,53 @@ An external evaluator must use the reviewer template, which currently contains
 
 ## What has been measured?
 
-One hundred thirty-two automated tests, a predefined 16-case synthetic regression set, a separate
-27-case versioned project-authored holdout, frontend quality checks, and a
+One hundred thirty-seven automated tests, a predefined 16-case synthetic
+regression set, a separate 27-case versioned project-authored holdout, frontend
+quality checks, and a
 reproducible local Exasol scale benchmark. The holdout is project-authored. The
 external holdout has 0 cases from 0 authors, while the frozen four-participant
 impact study has 0/40 recorded trials from 0/4 participants.
+
+A separate licensed public-message corpus covers nine short messages from
+Apache Spark, Apache Airflow, and dbt-common. It scores 6/9 with every source,
+licence, prediction, and mismatch published. Its labels are project-authored,
+so it measures vocabulary compatibility rather than independent accuracy.
+
+## How does the system handle an unseen failure?
+
+It does not force the closest known label. If no deterministic rule has
+traceable support, the result is `unclassified`, the confirmed root cause stays
+unset, and the dashboard asks for the missing logs or metrics. The regression
+and project-authored holdout sets include unknown log patterns, but an
+independent external holdout remains pending.
+
+## What happens when the evidence conflicts?
+
+Success and failure signals in the same incident produce
+`conflicting_evidence`. The system recommends checking the final orchestrator
+state and latest log record rather than choosing one signal or confirming a
+cause.
+
+## Does the browser demo gate protect the API?
+
+No. The gate is presentation-only session state. Every API endpoint is served
+independently by FastAPI and must be protected by real authentication and
+authorization before production use.
+
+## How does this scale?
+
+The repository demonstrates a sequential local 1M/10M analytical workload and
+does not claim concurrent or production throughput. Production validation
+would need representative concurrency, workload isolation, connection-pool
+limits, retention sizing, and monitored service-level objectives.
+
+## How do you know it works?
+
+The evidence is layered: automated tests verify software behavior, the 16-case
+suite verifies predefined classifier regressions, the 27-case project-authored
+holdout exercises all outcomes, and recorded database benchmarks verify the
+documented SQL workload. None of those substitutes for external-reviewer cases
+or participant impact measurements, which remain explicitly at zero.
 
 ## What would productionization require?
 
