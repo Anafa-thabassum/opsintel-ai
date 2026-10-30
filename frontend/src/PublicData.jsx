@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, ArrowLeft, ArrowUpRight, Database, FileSearch, Filter, Search, ShieldCheck } from "lucide-react";
+import { Activity, ArrowLeft, ArrowUpRight, Database, FileSearch, Filter, Moon, Search, ShieldCheck, Sun } from "lucide-react";
 import "./PublicData.css";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
@@ -13,6 +13,7 @@ function date(value) {
 }
 
 export default function PublicData() {
+  const [theme, setTheme] = useState(() => localStorage.getItem("opsintel-theme") || "dark");
   const [sources, setSources] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
@@ -27,6 +28,11 @@ export default function PublicData() {
   const [similar, setSimilar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("opsintel-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,7 +110,7 @@ export default function PublicData() {
   return <div className="public-investigation-shell">
     <header className="public-data-header">
       <a href="#/home" className="public-data-brand"><Activity size={22} /><span>opsintel<strong>AI</strong></span></a>
-      <nav aria-label="Public data navigation"><a href="#/dashboard"><ArrowLeft size={15} /> Synthetic workspace</a><a href="#/scorecard">Historical scorecard <ArrowUpRight size={14} /></a></nav>
+      <nav aria-label="Public data navigation"><a href="#/dashboard"><ArrowLeft size={15} /> Synthetic workspace</a><a href="#/scorecard">Historical scorecard <ArrowUpRight size={14} /></a><button className="public-theme-toggle" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>{theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}</button></nav>
     </header>
     <main className="public-data-main">
       <div className="public-data-eyebrow"><Database size={14} /> EXASOL · PUBLIC ISSUE RECORDS</div>

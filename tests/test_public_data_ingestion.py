@@ -5,6 +5,7 @@ from urllib.error import HTTPError
 
 from app import public_data
 from scripts.migrate_database import MIGRATIONS
+from scripts.export_public_development_manifest import build_manifest
 from scripts.setup_database import load_statements
 
 
@@ -107,3 +108,15 @@ def test_issue_title_screens_obvious_credentials():
                                         "body": ""}, SOURCE)
     assert "sample-secret" not in item["title"]
     assert "credential redacted" in item["title"]
+
+
+def test_public_validation_manifest_keeps_provenance_but_not_issue_text():
+    record = public_data.normalize_issue(ISSUE, SOURCE, collected_at="2026-10-31T00:00:00Z",
+                                         project_label="timeout")
+    label = {"id": "PUB-AF-001", "source_url": ISSUE["html_url"],
+             "source_category": "dag_parse_or_import_timeout", "expected": "timeout",
+             "labelling_rationale": "Source explicitly reports a timeout."}
+    manifest = build_manifest([record], [label])
+    assert manifest[0]["role"] == "development_only"
+    assert manifest[0]["source_body_sha256"] == record["body_sha256"]
+    assert "excerpt" not in manifest[0] and "title" not in manifest[0]

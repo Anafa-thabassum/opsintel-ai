@@ -1,6 +1,7 @@
 """Exasol-backed verified incident memory. Retrieval never confirms a cause."""
 
 import json
+import os
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -25,7 +26,18 @@ CLASS_CRITERIA = {
     "incomplete_data": ("same_scope_shortfall", "missing_row_reconciliation", "causal_link"),
 }
 COMMON_CRITERIA = ("alternatives_reviewed", "contradictions_resolved")
-MIN_SIMILARITY = 0.42
+DEFAULT_MIN_SIMILARITY = 0.42
+
+
+def min_similarity_threshold():
+    """Return the configured retrieval cutoff, rejecting unsafe/invalid values."""
+    try:
+        threshold = float(os.getenv("OPSINTEL_MEMORY_MIN_SIMILARITY", DEFAULT_MIN_SIMILARITY))
+    except ValueError as exc:
+        raise ValueError("OPSINTEL_MEMORY_MIN_SIMILARITY must be a number from 0 to 1") from exc
+    if not 0 <= threshold <= 1:
+        raise ValueError("OPSINTEL_MEMORY_MIN_SIMILARITY must be a number from 0 to 1")
+    return threshold
 
 
 class MemoryConflict(ValueError):
@@ -167,12 +179,13 @@ def get_submission(submission_id):
     return _read(read)
 
 
-def list_submissions():
+def list_submissions(*, actor_id=None, reviewer=False):
     def read(connection):
+        where = "" if reviewer else "WHERE SUBMITTED_BY = {actor_id}"
         rows = connection.execute(f"""
             SELECT {_SUBMISSION_COLUMNS} FROM OPSINTEL.INCIDENT_SUBMISSIONS
-            ORDER BY SUBMITTED_AT DESC LIMIT 200
-        """).fetchall()
+            {where} ORDER BY SUBMITTED_AT DESC LIMIT 200
+        """, {} if reviewer else {"actor_id": actor_id}).fetchall()
         return [item for row in rows if (item := _submission_from_row(row))]
     return _read(read)
 
@@ -438,6 +451,7 @@ def incident_history(run_id):
 
 def similar_incidents(incident, *, record=True):
     current = fingerprint_incident(incident)
+    threshold = min_similarity_threshold()
 
     def read(connection):
         rows = connection.execute(f"""
@@ -460,13 +474,15 @@ def similar_incidents(incident, *, record=True):
         if existing and existing[1] == "rejected":
             continue
         comparison = compare_fingerprints(current, historical["fingerprint"])
-        if not comparison["eligible"] or comparison["score"] < MIN_SIMILARITY:
+        if not comparison["eligible"] or comparison["score"] < threshold:
             continue
         matches.append({
             "match_id": existing[0] if existing else str(uuid4()), "matched_incident_id": historical["incident_id"],
             "source_run_id": int(incident["run_id"]), "historical_run_id": historical["run_id"],
             "historical_confirmed_cause": historical["confirmed_description"],
             "historical_category": historical["confirmed_category"],
+            "historical_evidence": historical["evidence"],
+            "reviewed_by": historical["confirmed_by"],
             "similarity_score": comparison["score"],
             "matching_features": comparison["matching_features"],
             "differing_features": comparison["differing_features"],

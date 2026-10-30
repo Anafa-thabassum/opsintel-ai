@@ -30,6 +30,12 @@ The supplied issue-linked starter is preserved as
 each source-specific label, and documents the mapping into OpsIntel's taxonomy.
 Its project-labelled score is 7/10; reproduce it with `make public-evaluate-v2`.
 This remains compatibility evidence, not an independent accuracy estimate.
+`public_development_evaluation_v1.jsonl` is a metadata-only, ten-record
+development manifest exported from the Exasol cache. It points to the original
+GitHub records and records retrieval time, source-body hash, licence status,
+label provenance and rationale. It contains no issue text and does not create a
+new independent evaluation split. Recreate it from the existing cache with
+`python -m scripts.export_public_development_manifest`.
 
 ## Published versioned holdout
 

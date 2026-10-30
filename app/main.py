@@ -321,7 +321,7 @@ def root_cause_assessment(run_id: int):
         ) from exc
 
 
-def _memory_actor(authorization, *, reviewer=False):
+def _memory_actor(authorization, *, reviewer=False, include_role=False):
     """Explicit token grants; absent configuration disables memory access."""
     try:
         grants = json.loads(os.getenv("OPSINTEL_AUTH_TOKENS_JSON", "{}"))
@@ -336,7 +336,7 @@ def _memory_actor(authorization, *, reviewer=False):
         raise HTTPException(401, "Valid engineer authorization required")
     if reviewer and actor["role"] != "reviewer":
         raise HTTPException(403, "Authorized root-cause reviewer required")
-    return actor["actor_id"]
+    return actor if include_role else actor["actor_id"]
 
 
 def _memory_error(exc):
@@ -444,9 +444,11 @@ def memory_history(run_id: int, authorization: str | None = Header(default=None)
 
 @app.get("/memory/submissions")
 def memory_submissions(authorization: str | None = Header(default=None)):
-    _memory_actor(authorization)
+    actor = _memory_actor(authorization, include_role=True)
     try:
-        return {"submissions": memory.list_submissions()}
+        return {"submissions": memory.list_submissions(actor_id=actor["actor_id"],
+                                                        reviewer=actor["role"] == "reviewer"),
+                "role": actor["role"]}
     except Exception as exc:
         _memory_error(exc)
 

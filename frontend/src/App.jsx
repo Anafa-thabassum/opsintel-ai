@@ -4,7 +4,7 @@ import {
   Activity, AlertTriangle, ArrowDownRight, ArrowRight, Bot,
   ChevronDown, ChevronRight, CircleDot,
   Database, FileSearch, GitBranch, LayoutDashboard, LoaderCircle, LockKeyhole,
-  RefreshCw, Search, ShieldCheck, Sparkles, Terminal, Zap,
+  RefreshCw, Search, ShieldCheck, Sparkles, Sun, Moon, Terminal, Zap,
 } from "lucide-react";
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip,
@@ -203,6 +203,7 @@ function DemoAccess({ onEnter }) {
 }
 
 function Dashboard({ onExit }) {
+  const [theme, setTheme] = useState(() => localStorage.getItem("opsintel-theme") || "dark");
   const [incidents, setIncidents] = useState([]);
   const [trend, setTrend] = useState([]);
   const [cascades, setCascades] = useState([]);
@@ -222,6 +223,11 @@ function Dashboard({ onExit }) {
   const [trendError, setTrendError] = useState("");
   const [confirmedCount, setConfirmedCount] = useState(null);
   const [confirmedRecord, setConfirmedRecord] = useState(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("opsintel-theme", theme);
+  }, [theme]);
   
   async function loadIncidents() {
     setLoading(true);
@@ -380,6 +386,21 @@ async function loadInvestigation(runId) {
     [trend]
   );
 
+  const cascadeGroups = useMemo(() => {
+    const groups = new Map();
+    for (const cascade of cascades) {
+      const key = `${cascade.root_run_id}`;
+      if (!groups.has(key)) groups.set(key, {
+        root_pipeline: cascade.root_pipeline,
+        root_run_id: cascade.root_run_id,
+        root_run_time: cascade.root_run_time,
+        edges: [],
+      });
+      groups.get(key).edges.push(cascade);
+    }
+    return [...groups.values()];
+  }, [cascades]);
+
   const formatNumber = (value) => value == null
     ? "Unknown"
     : Number(value).toLocaleString("en-IN");
@@ -473,6 +494,7 @@ async function loadInvestigation(runId) {
           </div>
           <div className="topbar-actions">
             <div className="live-indicator"><span /> SYSTEM {health === "connected" ? "OPERATIONAL" : health === "checking" ? "CHECKING" : "DEGRADED"}</div>
+            <button className="icon-button" title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}</button>
             <button className="icon-button" title="Refresh data" onClick={() => setRefreshKey((n) => n + 1)}><RefreshCw size={17} /></button>
             <button className="top-avatar" title="Exit demo workspace" aria-label="Exit demo workspace" onClick={onExit}>A</button>
           </div>
@@ -679,19 +701,18 @@ async function loadInvestigation(runId) {
                 </div>
                 <span className="subtle-pill"><GitBranch size={12} /> {cascades.length} downstream failures</span>
               </div>
-              <div className="cascade-root">
-                <span>ROOT FAILURE</span>
-                <strong>{cascades[0].root_pipeline}</strong>
-                <small>RUN-{String(cascades[0].root_run_id).padStart(4, "0")} · {cascades[0].root_run_time}</small>
-              </div>
-              <div className="cascade-list">
-                {cascades.map((cascade) => (
-                  <button key={`${cascade.root_run_id}-${cascade.downstream_run_id}`} onClick={() => setSelectedId(cascade.downstream_run_id)}>
-                    <span className="cascade-line" />
-                    <span><small>DEPTH {cascade.dependency_depth} · +{Number(cascade.correlation_lag_minutes).toFixed(1)} MIN</small><strong>{cascade.downstream_pipeline}</strong></span>
-                    <em><span>RUN-{String(cascade.downstream_run_id).padStart(4, "0")}</span><small>{cascade.downstream_run_time}</small></em>
+              <div className="dependency-graph" aria-label="Interactive dependency failure graph">
+                {cascadeGroups.map((group) => <div className="dependency-graph-row" key={group.root_run_id}>
+                  <button className="dependency-node root" onClick={() => setSelectedId(group.root_run_id)} aria-label={`Investigate root ${group.root_pipeline}, run ${group.root_run_id}`}>
+                    <small>ROOT FAILURE</small><strong>{group.root_pipeline}</strong><span>RUN-{String(group.root_run_id).padStart(4, "0")} · {group.root_run_time}</span>
                   </button>
-                ))}
+                  <div className="dependency-edges" aria-label={`Downstream pipelines from ${group.root_pipeline}`}>
+                    {group.edges.map((cascade) => <button className="dependency-edge" key={`${cascade.root_run_id}-${cascade.downstream_run_id}`} onClick={() => setSelectedId(cascade.downstream_run_id)} aria-label={`Investigate downstream ${cascade.downstream_pipeline}, run ${cascade.downstream_run_id}`}>
+                      <span className="dependency-edge-line" aria-hidden="true">→</span>
+                      <span className="dependency-node downstream"><small>DEPTH {cascade.dependency_depth} · +{Number(cascade.correlation_lag_minutes).toFixed(1)} MIN</small><strong>{cascade.downstream_pipeline}</strong><span>RUN-{String(cascade.downstream_run_id).padStart(4, "0")} · {cascade.downstream_run_time}</span><em>{cascade.dependency_path}</em></span>
+                    </button>)}
+                  </div>
+                </div>)}
               </div>
             </section>
           )}

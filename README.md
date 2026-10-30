@@ -479,7 +479,7 @@ failed-run comparison, safe unconfirmed state, and cascade response.
 
 Latest verified results:
 
-- **193/193 automated tests passed** in the current local verification.
+- **197/197 automated tests passed** in the current local verification.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -524,7 +524,9 @@ database was authorized.
 
 The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
 records the historical `132/132` suite at that revision. The current verified
-result is `193/193`; the earlier report remains unchanged as dated evidence.
+result was `193/193`; that earlier report remains unchanged as dated evidence.
+The later priority work is summarized in
+[`reports/final-priorities-2026-10-31.md`](reports/final-priorities-2026-10-31.md).
 
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published

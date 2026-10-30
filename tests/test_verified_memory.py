@@ -37,6 +37,17 @@ def test_fingerprint_removes_volatile_values_but_keeps_diagnostic_tokens():
     assert fingerprint_incident(INCIDENT)["version"] == FINGERPRINT_VERSION
 
 
+def test_similarity_threshold_is_configurable_and_bounded(monkeypatch):
+    monkeypatch.delenv("OPSINTEL_MEMORY_MIN_SIMILARITY", raising=False)
+    assert memory.min_similarity_threshold() == 0.42
+    monkeypatch.setenv("OPSINTEL_MEMORY_MIN_SIMILARITY", "0.73")
+    assert memory.min_similarity_threshold() == 0.73
+    for invalid in ("1.1", "abc"):
+        monkeypatch.setenv("OPSINTEL_MEMORY_MIN_SIMILARITY", invalid)
+        with pytest.raises(ValueError, match="from 0 to 1"):
+            memory.min_similarity_threshold()
+
+
 def test_similarity_explains_matches_and_rejects_contradictions():
     first = fingerprint_incident(INCIDENT)
     equivalent = fingerprint_incident({**INCIDENT, "run_id": 2})
@@ -215,12 +226,14 @@ def test_failed_transaction_rolls_back(monkeypatch):
 def test_similar_retrieval_skips_revoked_and_self_and_returns_candidate(monkeypatch):
     historical = {"incident_id": "confirmed-2", "run_id": 2, "confirmed_description": "Verified lock wait",
                   "confirmed_category": "timeout", "fingerprint": fingerprint_incident(INCIDENT),
+                  "evidence": [], "confirmed_by": "reviewer-b",
                   "confirmed_at": "2026-10-30", "status": "active"}
     monkeypatch.setattr(memory, "_read", lambda operation: ([historical], {}))
     result = memory.similar_incidents(INCIDENT, record=False)
     assert result["status"] == "candidates_available"
     assert result["matches"][0]["status"] == "candidate"
     assert "engineer verification required" in result["matches"][0]["label"]
+    assert result["matches"][0]["historical_evidence"] == []
     assert "probability" in result["score_notice"]
     monkeypatch.setattr(memory, "_read", lambda operation: ([], {}))
     assert memory.similar_incidents(INCIDENT, record=False)["status"] == "unresolved"
@@ -240,6 +253,20 @@ def test_memory_api_requires_explicit_role_grants(monkeypatch):
                "checklist": {"version": memory.CHECKLIST_VERSION, "criteria": [], "unresolved_conflicts": []}}
     assert client.post("/memory/submissions/s1/review", json=payload,
                        headers={"Authorization": "Bearer investigator-secret"}).status_code == 403
+
+
+def test_submissions_endpoint_scopes_investigator_and_exposes_reviewer_role(monkeypatch):
+    monkeypatch.setenv("OPSINTEL_AUTH_TOKENS_JSON", json.dumps({
+        "investigator-secret": {"actor_id": "alice", "role": "investigator"},
+        "reviewer-secret": {"actor_id": "bob", "role": "reviewer"},
+    }))
+    with patch("app.main.memory.list_submissions", return_value=[]) as list_items:
+        investigator = client.get("/memory/submissions", headers={"Authorization": "Bearer investigator-secret"})
+        assert investigator.json()["role"] == "investigator"
+        list_items.assert_called_with(actor_id="alice", reviewer=False)
+        reviewer = client.get("/memory/submissions", headers={"Authorization": "Bearer reviewer-secret"})
+        assert reviewer.json()["role"] == "reviewer"
+        list_items.assert_called_with(actor_id="bob", reviewer=True)
 
 
 def test_migration_is_additive_and_has_no_drop():

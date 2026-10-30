@@ -12,6 +12,7 @@ schema. Apply additive migrations, then fetch the source registry:
 python -m scripts.migrate_database --apply
 python -m scripts.ingest_public_issues
 python -m scripts.evaluate_public_data --json-output reports/public-data-evaluation.json --markdown-output reports/public-data-evaluation.md
+python -m scripts.export_public_development_manifest
 ```
 
 Open `http://127.0.0.1:5173/#/public` after starting the API and frontend.
@@ -56,3 +57,8 @@ dump. The API does not depend on GitHub during normal operation.
 LogHub was inspected but excluded: its repository licence restricts use to
 research/academic purposes, and raw logs may require further privacy review.
 Do not label unlabeled LogHub records or ingest them without that review.
+
+The optional development manifest exports only source metadata and provenance;
+it omits issue text. It is development-only, inherits project-assigned labels,
+and is not an independently reviewed evaluation set. See
+`reports/new-independent-validation.md` for its hash and limitations.
