@@ -37,7 +37,7 @@ Working hackathon prototype:
   telemetry.
 - A separate read-only public-data scorecard at `#/scorecard`, using cited
   Apache Airflow and dbt issue excerpts; it does not mix in synthetic telemetry.
-- 137 automated tests and a 16-case synthetic challenge set.
+- 159 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
@@ -414,7 +414,7 @@ failed-run comparison, safe unconfirmed state, and cascade response.
 
 Latest verified results:
 
-- **137/137 automated tests passed**.
+- **159/159 automated tests passed**.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -459,7 +459,7 @@ database was authorized.
 
 The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
 records the historical `132/132` suite at that revision. The current verified
-result is `137/137`; the earlier report remains unchanged as dated evidence.
+result is `159/159`; the earlier report remains unchanged as dated evidence.
 
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published

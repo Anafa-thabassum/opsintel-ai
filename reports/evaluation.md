@@ -7,9 +7,9 @@ without converting unsupported possibilities into confirmed root causes.
 
 ## Automated verification
 
-- Automated tests: **137 passed**
+- Automated tests: **159 passed**
 - Frontend lint: **passed with no warnings**
-- Frontend production build: **passed**, with a non-failing 616.60 kB
+- Frontend production build: **passed**, with a non-failing 619.92 kB
   main-chunk advisory
 - Database: Exasol Personal
 - API: FastAPI
