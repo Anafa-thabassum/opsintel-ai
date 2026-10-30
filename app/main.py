@@ -192,6 +192,15 @@ def investigate(run_id: int):
         root_causes = assess_root_causes(result)
         attach_comparison_support(result, root_causes)
         result["root_causes"] = root_causes
+        result["causal_assessment"] = {
+            "status": (
+                "confirmed" if root_causes.get("confirmed_root_cause")
+                else "candidates_available" if root_causes.get("candidates")
+                else "not_assessed"
+            ),
+            "candidates": root_causes.get("candidates", []),
+            "confirmed_root_cause": root_causes.get("confirmed_root_cause"),
+        }
         result["llm_summary"] = summarize_investigation(result, root_causes)
         return result
 

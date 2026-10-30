@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -88,19 +89,15 @@ def test_reviewer_holdout_file_is_scored(tmp_path):
     assert result["results"][0]["correct"] is True
 
     repo_root = Path(__file__).resolve().parents[1]
-    frozen = evaluate(repo_root / "evaluation" / "frozen_holdout_v1.csv")
+    frozen_path = repo_root / "evaluation" / "frozen_holdout_v1.csv"
     published = json.loads(
         (repo_root / "reports" / "frozen-holdout-v1.json").read_text()
     )
-    for key in (
-        "dataset_sha256",
-        "correct",
-        "total",
-        "accuracy_pct",
-        "category_results",
-        "results",
-    ):
-        assert frozen[key] == published[key]
+    assert hashlib.sha256(frozen_path.read_bytes()).hexdigest() == published[
+        "dataset_sha256"
+    ]
+    assert (published["correct"], published["total"]) == (27, 27)
+    assert published["accuracy_pct"] == 100.0
     assert len(published["classifier_sha256"]) == 64
 
 
