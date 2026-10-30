@@ -7,3 +7,12 @@ The independent 19-case reviewer holdout, frozen evaluator, and historical 4/19 
 The script reports classifier category accuracy, forced memory top-1/top-3 cause retrieval, thresholded memory accuracy, false-match rate, abstention, coverage, selective accuracy, per-category counts, and a measured learning curve by available memory size. A similarity score is never used as classification confidence. Run `python -m scripts.evaluate_memory path/to/adjudicated_events.jsonl --output reports/memory-evaluation.json` only after an independent, provenance-tracked event stream exists. The repository currently has no such stream, so it publishes **no memory accuracy or learning-curve numbers**.
 
 Time savings require a participant study. The approved protocol and templates are in `reports/impact-study-protocol.md` and `evaluation/`. No participant outcomes are inferred from synthetic regression tests. Use the existing study tooling only with consented real observations. Report slower and less accurate assisted investigations as well as any benefits.
+
+The new Exasol public mode reports collected count, project-labelled count,
+exact category matches against those labels, unresolved rate, and source
+reference coverage. It is not a new independent evaluation: the same ten
+project mappings came from the historical public scorecard, and short excerpts
+can lose relevant context. `false_match_rate` remains null because there are
+no independently verified public causes. Run `make public-data-evaluate` only
+against an explicitly ingested local Exasol collection; its output is a new
+report, separate from historical evaluation assets.

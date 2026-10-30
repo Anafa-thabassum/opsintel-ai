@@ -1,6 +1,6 @@
 PYTHON := .venv/bin/python
 
-.PHONY: setup database database-reset memory-check memory-migrate smoke impact-study-database api frontend verify evaluate public-evaluate public-evaluate-v2 holdout independent-holdout impact exasol-proof benchmark benchmark-compare submission-check
+.PHONY: setup database database-reset memory-check memory-migrate public-ingest public-data-evaluate smoke impact-study-database api frontend verify evaluate public-evaluate public-evaluate-v2 holdout independent-holdout impact exasol-proof benchmark benchmark-compare submission-check
 
 setup:
 	python3 -m venv .venv
@@ -18,6 +18,12 @@ memory-check:
 
 memory-migrate:
 	$(PYTHON) -m scripts.migrate_database --apply
+
+public-ingest:
+	$(PYTHON) -m scripts.ingest_public_issues
+
+public-data-evaluate:
+	$(PYTHON) -m scripts.evaluate_public_data --json-output reports/public-data-evaluation.json --markdown-output reports/public-data-evaluation.md
 
 smoke: database-reset
 	$(PYTHON) -m scripts.smoke_exasol

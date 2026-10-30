@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import "./App.css";
 import VerifiedMemory from "./VerifiedMemory";
+import PublicData from "./PublicData";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -54,6 +55,7 @@ function App() {
     }} />;
   }
 
+  if (route === "public") return <PublicData />;
   if (route === "scorecard") return <PublicScorecard />;
 
   if (route === "login" || route === "dashboard") {
@@ -97,7 +99,8 @@ function LandingPage() {
             <h1>Investigate pipeline failures from <span>evidence—not guesswork.</span></h1>
             <p>OpsIntel brings pipeline status, row-count discrepancies, and logs into one traceable investigation so data engineers know what to check next.</p>
             <div className="hero-actions">
-              <button className="primary-button hero-button" onClick={() => navigate("scorecard")}>View public-data scorecard <ArrowRight size={16} /></button>
+              <button className="primary-button hero-button" onClick={() => navigate("public")}>Investigate public incidents <ArrowRight size={16} /></button>
+              <button className="secondary-button" onClick={() => navigate("scorecard")}>View classifier scorecard</button>
               <button className="secondary-button" onClick={() => navigate("login")}>Open synthetic demo</button>
               <a className="secondary-link" href="https://github.com/Anafa-thabassum/opsintel-ai" target="_blank" rel="noreferrer"><GitBranch size={16} /> View repository</a>
             </div>
@@ -417,6 +420,7 @@ async function loadInvestigation(runId) {
             { label: "Incidents", icon: AlertTriangle },
             { label: "Investigations", icon: FileSearch },
             { label: "Verified Memory", icon: ShieldCheck },
+            { label: "Public Data", icon: Database },
           ].map(({ label, icon: Icon }) => (
             <button
               key={label}
@@ -429,6 +433,8 @@ async function loadInvestigation(runId) {
                   document.getElementById("investigation-panel")?.scrollIntoView({ behavior: "smooth" });
                 } else if (label === "Verified Memory") {
                   document.getElementById("verified-memory")?.scrollIntoView({ behavior: "smooth" });
+                } else if (label === "Public Data") {
+                  navigate("public");
                 } else {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }

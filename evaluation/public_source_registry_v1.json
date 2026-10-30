@@ -1,0 +1,30 @@
+{
+  "version": "github-issues-v1",
+  "role": "public operational examples; not verified incident memory or independent ground truth",
+  "sources": [
+    {
+      "name": "Apache Airflow",
+      "repository": "apache/airflow",
+      "api_repository": "apache/airflow",
+      "issue_numbers": [65942, 46378, 21450, 29985, 53736, 36734, 39026, 15495, 30915],
+      "code_license": "Apache-2.0",
+      "code_license_url": "https://github.com/apache/airflow/blob/main/LICENSE",
+      "issue_text_license_status": "not separately established; short excerpts fetched locally and not committed"
+    },
+    {
+      "name": "dbt",
+      "repository": "dbt-labs/dbt",
+      "api_repository": "dbt-labs/dbt",
+      "issue_numbers": [15914],
+      "code_license": "Apache-2.0",
+      "code_license_url": "https://github.com/dbt-labs/dbt/blob/main/LICENSE",
+      "issue_text_license_status": "not separately established; short excerpts fetched locally and not committed",
+      "note": "The historical dbt-labs/dbt-core issue URL redirects to dbt-labs/dbt."
+    }
+  ],
+  "excluded_source": {
+    "name": "LogHub HDFS",
+    "reason": "Dataset terms limit use to research or academic work and raw logs may contain unsanitized data; it is not included in this public issue mode.",
+    "license_url": "https://github.com/logpai/loghub/blob/master/LICENSE"
+  }
+}

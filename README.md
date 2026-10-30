@@ -42,6 +42,9 @@ Working hackathon prototype:
   telemetry.
 - A separate read-only public-data scorecard at `#/scorecard`, using cited
   Apache Airflow and dbt issue excerpts; it does not mix in synthetic telemetry.
+- A searchable `#/public` investigation workspace backed by ten live-fetched
+  Airflow/dbt GitHub issues cached in a separate Exasol table, with source
+  provenance, unresolved results, text neighbours and grouped analytics.
 - Automated regression tests and a 16-case synthetic challenge set; run the
   commands below for the current count.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
@@ -79,6 +82,15 @@ causes and leaves the confirmed root cause unset until a person verifies it.
   This page contains no synthetic incident records, generated run counts, or
   inferred operational trends; the separate Exasol demo continues to use
   clearly labelled synthetic telemetry.
+- **Public issue investigation:** `evaluation/public_source_registry_v1.json`
+  lists nine Airflow and one dbt issue. `make public-ingest` obtains their
+  current content through the official GitHub API and stores only short,
+  screened excerpts in `OPSINTEL.PUBLIC_INCIDENTS`. The issue discussion text
+  is user-generated; the repository code licence does not automatically
+  license that text. The current 7/10 project-label comparison has no
+  independent adjudication. See [ingestion](docs/public-data-ingestion.md),
+  [provenance](docs/public-data-provenance.md), and the
+  [measured report](reports/public-data-evaluation.md).
 
 ## Submission assets
 
@@ -128,6 +140,11 @@ every investigation outcome.
 Verified memory also uses Exasol for durable confirmations, features, match
 decisions, audit history, and active-record filtering. Token-pair similarity is
 calculated in the application; no database-side similarity claim is made.
+
+The separate `PUBLIC_INCIDENTS` table stores cached public issues. Exasol
+executes filtered search, pagination and source/category aggregation; the
+application selects and screens excerpts, classifies symptoms, and calculates
+text similarity.
 
 ## Architecture
 
@@ -200,7 +217,8 @@ opsintel-ai/
 │   ├── evaluation.md            # Reproducible evaluation summary
 │   └── exasol-benchmark.json    # Raw local scale measurement
 ├── scripts/setup_database.py    # Demo database setup command
-├── scripts/migrate_database.py  # Additive Exasol memory migration
+├── scripts/migrate_database.py  # Additive Exasol migrations
+├── scripts/ingest_public_issues.py # Official GitHub issue ingestion
 ├── scripts/evaluate_memory.py   # Chronological memory evaluation harness
 ├── examples/integrations/       # Airflow and dbt exported-JSON samples
 ├── submission/                  # Pitch deck, PDF and demo video
@@ -291,7 +309,8 @@ python -m scripts.setup_database --reset
 ```
 
 `--reset` drops the entire `OPSINTEL` schema. It refuses to run if verified
-memory tables exist; use a separate disposable deployment for resets.
+memory or public incident tables exist; use a separate disposable deployment
+for resets.
 
 Apply the additive verified-memory migration to an initialized schema:
 
@@ -304,6 +323,17 @@ Configure `OPSINTEL_AUTH_TOKENS_JSON` with distinct investigator and reviewer
 grants from a local secret manager. The exact format and safety boundaries are
 in [Verified Incident Memory](docs/verified-incident-memory.md). Without grants,
 the memory API remains disabled; the existing investigation API still works.
+
+The same migration command adds the separate public issue table. To populate
+it from the ten pinned public GitHub issues, run:
+
+```bash
+make public-ingest
+```
+
+An optional backend-only `GITHUB_TOKEN` raises GitHub API rate limits. The
+public mode works offline after ingestion. Open `#/public` to search and
+investigate those records. Its short excerpts are not verified root causes.
 
 ### 4. Start the backend
 
@@ -362,6 +392,7 @@ For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
 | GET | `/analytics/cascades` | Upstream/downstream failure correlations |
 | GET | `/investigate/{run_id}` | Evidence, candidates and optional LLM summary |
 | GET | `/investigate/{run_id}/root-causes` | Candidate causes only |
+| GET | `/public/*` | Exasol-backed public issue search, provenance, analytics and project-label comparison |
 | GET/POST | `/memory/*` | Authenticated verified-memory submissions, review, history, retrieval and analytics; see [API reference](docs/api-reference.md) |
 
 ## Verification
@@ -448,7 +479,7 @@ failed-run comparison, safe unconfirmed state, and cascade response.
 
 Latest verified results:
 
-- **182/182 automated tests passed** in the current local verification.
+- **193/193 automated tests passed** in the current local verification.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -493,7 +524,7 @@ database was authorized.
 
 The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
 records the historical `132/132` suite at that revision. The current verified
-result is `182/182`; the earlier report remains unchanged as dated evidence.
+result is `193/193`; the earlier report remains unchanged as dated evidence.
 
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published

@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ from app.investigator import (
     investigate_pipeline,
 )
 from app.llm import summarize_investigation
-from app import memory
+from app import memory, public_data
 from scripts.evaluate_public_corpus import evaluate as evaluate_public_corpus
 
 app = FastAPI(
@@ -99,6 +99,69 @@ def public_scorecard():
             status_code=503,
             detail="Unable to evaluate the public data corpus",
         ) from exc
+
+
+@app.get("/public/incidents")
+def public_incidents(source: str | None = None, category: str | None = None,
+                     search: str | None = None, limit: int = Query(default=50, ge=1, le=200),
+                     offset: int = Query(default=0, ge=0)):
+    try:
+        return public_data.list_public_incidents(source=source, category=category,
+                                                 search=search, limit=limit, offset=offset)
+    except Exception as exc:
+        raise HTTPException(503, "Public incident database is unavailable") from exc
+
+
+@app.get("/public/sources")
+def public_sources():
+    try:
+        registry = public_data.source_registry()
+        return {"version": registry["version"], "sources": registry["sources"],
+                "excluded_source": registry["excluded_source"]}
+    except Exception as exc:
+        raise HTTPException(503, "Public source registry is unavailable") from exc
+
+
+@app.get("/public/analytics")
+def public_incident_analytics():
+    try:
+        return public_data.public_analytics()
+    except Exception as exc:
+        raise HTTPException(503, "Public incident analytics are unavailable") from exc
+
+
+@app.get("/public/evaluation")
+def public_incident_evaluation():
+    try:
+        return public_data.evaluate_public_records()
+    except Exception as exc:
+        raise HTTPException(503, "Public incident evaluation is unavailable") from exc
+
+
+@app.get("/public/incidents/{owner}/{repo}/{number}")
+def public_incident(owner: str, repo: str, number: int):
+    try:
+        result = public_data.get_public_incident(f"{owner}/{repo}#{number}")
+        if result is None:
+            raise HTTPException(404, "Public incident not found")
+        return result
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(503, "Public incident database is unavailable") from exc
+
+
+@app.get("/public/similar/{owner}/{repo}/{number}")
+def public_similar(owner: str, repo: str, number: int):
+    try:
+        result = public_data.similar_public_incidents(f"{owner}/{repo}#{number}")
+        if result is None:
+            raise HTTPException(404, "Public incident not found")
+        return result
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(503, "Public similarity query is unavailable") from exc
 
 
 

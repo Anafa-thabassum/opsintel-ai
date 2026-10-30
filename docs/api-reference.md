@@ -2,6 +2,24 @@
 
 All existing `GET /health`, `/incidents`, `/analytics/trend`, `/analytics/cascades`, `/investigate/{run_id}`, `/investigate/{run_id}/root-causes`, and `/scorecard/public` contracts remain available. Investigation responses retain their legacy fields and canonical classification/evidence assessments.
 
+Public issue mode is read-only. It queries the locally populated Exasol
+`OPSINTEL.PUBLIC_INCIDENTS` table and never treats a public issue as a verified
+cause. Ingest records with `python -m scripts.ingest_public_issues` first.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/public/sources` | Registry, code licence and issue-text terms status |
+| GET | `/public/incidents` | Search and paginate; `source`, `category`, `search`, `limit`, `offset` |
+| GET | `/public/incidents/{owner}/{repo}/{number}` | One cached issue and its source evidence |
+| GET | `/public/similar/{owner}/{repo}/{number}` | Up to three unverified text neighbours |
+| GET | `/public/analytics` | Exasol grouped source/category counts |
+| GET | `/public/evaluation` | Current project-label comparison; no independent accuracy claim |
+
+Public data endpoints return 503 when Exasol is unavailable; `/public/sources`
+reads the versioned local registry and does not require a database. Similarity
+scores measure text overlap, not causal probability. See
+[public data ingestion](public-data-ingestion.md).
+
 Verified memory endpoints require `Authorization: Bearer <configured-token>`. An investigator grant can submit hypotheses and reject matches. A reviewer grant can also approve/reject submissions and revoke confirmations. A reviewer cannot approve a submission with the same actor ID.
 
 | Method | Path | Purpose |
