@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +16,7 @@ from app.investigator import (
     investigate_pipeline,
 )
 from app.llm import summarize_investigation
+from scripts.evaluate_public_corpus import evaluate as evaluate_public_corpus
 
 app = FastAPI(
     title="OpsIntel AI",
@@ -54,6 +56,25 @@ def health():
         raise HTTPException(
             status_code=503,
             detail="Database connection failed",
+        ) from exc
+
+
+@app.get("/scorecard/public")
+def public_scorecard():
+    """Score only the repository's cited public failure-message corpus."""
+    corpus = Path(__file__).resolve().parents[1] / "evaluation" / "public_failure_corpus_v2.csv"
+    try:
+        report = evaluate_public_corpus(corpus)
+        return {
+            **report,
+            "dataset": "evaluation/public_failure_corpus_v2.csv",
+            "data_notice": "Public source excerpts; expected categories are project mappings, not independently verified ground truth.",
+            "transformations": "Each excerpt is classified by the current deterministic evidence classifier; exact category matches are counted.",
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Unable to evaluate the public data corpus",
         ) from exc
 
 

@@ -111,6 +111,11 @@ def test_failure_cascade_query_filters_stale_and_reversed_failures(monkeypatch):
                 ),
                 (
                     "customer_sync", 2, "2026-10-19 01:00:00",
+                    "boundary_report", 8, "2026-10-19 03:00:00",
+                    1, " -> boundary_report", 120,
+                ),
+                (
+                    "customer_sync", 2, "2026-10-19 01:00:00",
                     "stale_report", 5, "2026-10-19 03:01:00",
                     1, " -> stale_report", 121,
                 ),
@@ -143,8 +148,12 @@ def test_failure_cascade_query_filters_stale_and_reversed_failures(monkeypatch):
 
     rows = db.get_failure_cascades()
 
-    assert [row[3] for row in rows] == ["daily_reporting"]
+    assert [row[3] for row in rows] == [
+        "daily_reporting",
+        "boundary_report",
+    ]
     assert rows[0][8] == 30
+    assert rows[1][8] == 120
     assert "PIPELINE_DEPENDENCY_CASCADE dependency_path" in connection.query
     assert "PIPELINE_DEPENDENCY_CASCADE cascade" not in connection.query
     assert "MINUTES_BETWEEN(downstream.RUN_TIME, upstream.RUN_TIME)" in connection.query
