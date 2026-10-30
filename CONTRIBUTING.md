@@ -12,6 +12,12 @@ submission claims.
 3. Run `npm run lint` and `npm run build` from `frontend/`.
 4. Explain user-visible changes and any new evidence claims in the pull request.
 
+For verified-memory changes, include a source-backed candidate and a negative
+or contradictory case. Keep investigator submission, independent reviewer
+approval, correction/revocation audit, and retrieval candidate status distinct.
+Do not add real tokens or sensitive excerpts to fixtures. Never run a reset
+against a deployment that contains verified memory.
+
 Do not convert candidate explanations into confirmed root causes without a
 separate verification source. New classification rules should include at least
 one positive and one false-positive regression case.

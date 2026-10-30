@@ -25,6 +25,8 @@ def test_local_exasol_defaults_still_connect(monkeypatch):
     assert captured["dsn"] == "127.0.0.1:8563"
     assert captured["user"] == "sys"
     assert captured["websocket_sslopt"]["cert_reqs"] == ssl.CERT_NONE
+    assert captured["connection_timeout"] == 10
+    assert captured["query_timeout"] == 60
 
 
 def test_remote_exasol_without_tls_verification_is_rejected(monkeypatch):

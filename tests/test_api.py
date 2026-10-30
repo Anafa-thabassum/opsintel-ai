@@ -29,6 +29,8 @@ def test_health_endpoint():
 
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
+    assert response.headers["X-Request-ID"]
+    assert float(response.headers["X-Response-Time-Ms"]) >= 0
 
 
 def test_incidents_endpoint():

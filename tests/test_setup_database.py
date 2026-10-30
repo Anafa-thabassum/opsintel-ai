@@ -25,8 +25,11 @@ def test_reset_recreates_schema_seed_and_analytics(monkeypatch, capsys):
     from scripts import setup_database
 
     class Result:
+        def __init__(self, count):
+            self.count = count
+
         def fetchone(self):
-            return (1,)
+            return (self.count,)
 
     class Connection:
         def __init__(self):
@@ -35,7 +38,7 @@ def test_reset_recreates_schema_seed_and_analytics(monkeypatch, capsys):
 
         def execute(self, query):
             self.queries.append(query.strip())
-            return Result()
+            return Result(0 if "EXA_ALL_TABLES" in query else 1)
 
         def close(self):
             self.closed = True
@@ -54,3 +57,30 @@ def test_reset_recreates_schema_seed_and_analytics(monkeypatch, capsys):
     assert "CREATE OR REPLACE VIEW OPSINTEL.PIPELINE_DEPENDENCY_CASCADE" in all_sql
     assert connection.closed is True
     assert "reset successfully" in capsys.readouterr().out
+
+
+def test_reset_refuses_to_delete_verified_memory(monkeypatch):
+    from scripts import setup_database
+
+    class Result:
+        def fetchone(self):
+            return (1,)
+
+    class Connection:
+        def __init__(self):
+            self.queries = []
+
+        def execute(self, query):
+            self.queries.append(query)
+            return Result()
+
+        def close(self):
+            pass
+
+    connection = Connection()
+    monkeypatch.setattr(setup_database, "get_connection", lambda: connection)
+    monkeypatch.setattr("sys.argv", ["setup_database", "--reset"])
+    import pytest
+    with pytest.raises(RuntimeError, match="verified memory tables exist"):
+        setup_database.main()
+    assert not any("DROP SCHEMA" in query for query in connection.queries)

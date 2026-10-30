@@ -17,8 +17,11 @@ as a completed result.
 
 ## External validation
 
-- Have two or three external authors freeze 15-20 unseen holdout cases before
-  scoring them.
+- Freeze a **new** independently labelled holdout before evaluating the current
+  classifier. The original 19-case reviewer holdout and its 4/19 baseline are
+  historical; the reported 15/19 comparison reused those cases.
+- Obtain adjudicated chronological confirmations and later queries to measure
+  verified-memory retrieval, false matches, coverage, and a learning curve.
 - Run the prepared counterbalanced investigation study with at least three
   participants and publish mixed or negative results as well as positive ones.
 - Execute and record the optional LLM grounding evaluation with an authorized

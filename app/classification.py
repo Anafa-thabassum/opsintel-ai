@@ -64,6 +64,8 @@ _TEXT_RULES = {
     ),
     "timeout": (
         re.compile(r"\b(?:pipeline|query|statement|execution)\s+timeout\s*[:=]", re.I),
+        re.compile(r"\b[a-z_]+timeout\b", re.I),
+        re.compile(r"\b(?:import|task|sensor|dagbag)\s+timeout\b", re.I),
         re.compile(r"\b(?:timed?\s+out|timeout\s+(?:occurred|reached|hit|event|cancellation)|deadline\s+exceeded)\b", re.I),
         re.compile(r"\b(?:query|statement|execution)\s+(?:exceeded|reached|hit)\b.{0,60}\b(?:timeout|time\s+limit|deadline|limit)\b", re.I),
         re.compile(r"\b(?:cancelled|canceled)\b.{0,60}\b(?:configured\s+)?(?:statement\s+)?timeout\b", re.I),
@@ -510,7 +512,7 @@ def _classify_normalized(evidence, normalization_errors=None):
     ]
     all_categories = ordered if not blocking_conflict else list(ordered)
     classification = {
-        "version": "deterministic-signals-v2",
+        "version": "deterministic-signals-v2.1",
         "symptom_category": selected,
         "secondary_categories": ordered[1:] if selected else [],
         "status": status,

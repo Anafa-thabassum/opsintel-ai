@@ -1,7 +1,9 @@
 # OpsIntel classifier architecture
 
-**Implementation:** `deterministic-signals-v2`  
-**Scope:** deterministic incident symptom classification and evidence assessment.  
+**Implementation:** `deterministic-signals-v2.1`
+
+**Scope:** deterministic incident symptom classification and evidence assessment.
+
 **Confirmation policy:** root causes remain unconfirmed by automation. The approved reviewer workflow and class-specific verification criteria have not been empirically validated.
 
 ## Flow
@@ -18,6 +20,8 @@ flowchart LR
 ```
 
 The implementation is in `app/classification.py`. `app/investigator.py` supplies run metadata and source references; `app/main.py` retains the established investigation and root-cause response fields while adding canonical assessment fields. Exasol queries and its integration are unchanged.
+
+Version 2.1 adds general exception-name and import-timeout text signals. The historical 15/19 same-reviewer comparison belongs to version 2 and has not been rerun or claimed for this version.
 
 ## Input and normalization
 
@@ -52,7 +56,7 @@ The legacy category `conflicting_evidence` remains available to API consumers. I
 
 ## Confirmation boundary
 
-The approved design requires predefined cause-specific criteria and traceable evidence. Automation may propose candidate explanations but cannot confirm them. An investigator may submit a hypothesis; an authorized reviewer must review cited evidence and record decision, rationale, identity, and timestamp. Human approval cannot override absent or contradictory evidence. This release does not implement a confirmation workflow or treat any criteria as empirically validated.
+The approved design requires predefined cause-specific criteria and traceable evidence. Automation may propose candidate explanations but cannot confirm them. An investigator may submit a hypothesis through the separate verified-memory workflow; a different authorized reviewer must review cited evidence and record decision, rationale, identity, and timestamp. Human approval cannot override absent or contradictory evidence. The workflow is implemented in `app/memory.py` and its Exasol migration. The criteria have not been empirically validated. A rollback-only SQL path passed on local Exasol; no real human-confirmed incident has been retained.
 
 ## Known limits
 

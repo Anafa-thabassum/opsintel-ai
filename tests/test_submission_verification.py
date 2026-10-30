@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from scripts import verify_submission
 from scripts.verify_submission import mp4_duration_seconds, pptx_text_and_slide_count
 
 
@@ -19,3 +20,9 @@ def test_pitch_deck_is_readable_and_has_expected_slide_count():
 
     assert slide_count == 11
     assert "FOLLOW THE EVIDENCE" in text.upper()
+
+
+def test_historical_submission_count_cannot_exceed_current_suite(monkeypatch):
+    monkeypatch.setattr(verify_submission, "_current_test_count", lambda: 100)
+    result = verify_submission.verify(allow_dirty=True)
+    assert "Historical automated-test count exceeds the current suite" in result["failures"]

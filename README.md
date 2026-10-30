@@ -1,6 +1,6 @@
 # OpsIntel AI
 
-**Evidence-based data pipeline incident investigation using Exasol Personal, FastAPI, and React.**
+**Evidence-based data incident investigation and verified operational memory using Exasol Personal, FastAPI, and React.**
 
 > **Problem statement:** Data engineers lose time diagnosing failed pipelines because run metadata, row counts, and logs are fragmented; they need one traceable investigation that identifies the next diagnostic action without treating an unverified cause as fact.
 
@@ -11,10 +11,11 @@
 
 exasol, data-engineering, pipeline-monitoring, root-cause-analysis, fastapi, react, observability
 
-On-call data engineers cannot quickly explain overnight pipeline failures
-because run history, row counts, and logs live in separate places; OpsIntel AI
-gives them a traceable starting point while leaving root-cause confirmation to
-a person.
+On-call engineers lose time when pipeline history, row counts, and logs are
+scattered. OpsIntel brings that evidence into one investigation, distinguishes
+symptoms from causal hypotheses, and can remember causes only after a separate
+authorized reviewer checks the evidence. Historical matches remain candidates
+for later incidents.
 
 The primary users are on-call data engineers and data-platform teams. Their
 investigations affect every team that depends on timely, trusted data, including
@@ -32,16 +33,22 @@ Working hackathon prototype:
 - Exasol-backed incident retrieval and historical analytics.
 - FastAPI investigation API.
 - Rule-based, evidence-first failure classification.
+- Additive Exasol schema and API for investigator submissions, independent
+  reviewer decisions, corrected/revoked confirmations, and historical candidate
+  retrieval. A rollback-only SQL workflow passed on local Exasol; no real
+  human-confirmed incident has been retained.
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard backed by live Exasol queries over synthetic
   telemetry.
 - A separate read-only public-data scorecard at `#/scorecard`, using cited
   Apache Airflow and dbt issue excerpts; it does not mix in synthetic telemetry.
-- 159 automated tests and a 16-case synthetic challenge set.
+- Automated regression tests and a 16-case synthetic challenge set; run the
+  commands below for the current count.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
 Root causes are never automatically confirmed. The system reports observations,
-candidate explanations, limitations, and the next diagnostic action.
+candidate explanations, limitations, and the next diagnostic action. Reviewer
+criteria are approved design policies but have not been empirically validated.
 
 ![OpsIntel AI dashboard showing live Exasol queries over synthetic incident telemetry](docs/images/dashboard-overview.png)
 
@@ -61,9 +68,9 @@ causes and leaves the confirmed root cause unset until a person verifies it.
   misses published in `reports/public-corpus-v1.md`.
 - **Independent validation status:** this public corpus is not an external
   reviewer holdout, and no real user-impact trials have been recorded yet.
-  The external holdout and 30–50-case public issue/CI expansion remain
-  follow-up work requiring additional provenance review rather than labels
-  invented by the project team.
+  The existing 19-case reviewer holdout is frozen at its historical result;
+  a new independently labelled holdout and broader public issue/CI corpus
+  require separate provenance and label review.
 - **Public-data scorecard:** choose **View public-data scorecard** on the
   landing page to inspect the ten source excerpts in
   `evaluation/public_failure_corpus_v2.csv`, their source and repository
@@ -80,9 +87,9 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 | Public source repository | Available |
 | MIT licence | Available |
 | Reproducible run guide | Available below |
-| Pitch deck PDF and PPTX | Present in `submission/`; slides 7, 8 and 10 visually reviewed |
-| Three-minute demo script | Available in `docs/demo-script.md` |
-| Recorded demo video | Existing 2:34 draft must be re-recorded from the current build; use an authorized disposable Exasol deployment for any live database rehearsal |
+| Pitch deck PDF and PPTX | Historical submission draft in `submission/`; it predates verified memory |
+| Live demo script | Available in `docs/demo-script.md`; rehearse against authorized Exasol before recording |
+| Recorded demo video | Historical submission draft (2:34); it does not demonstrate verified memory and must be re-recorded |
 
 ## What the prototype does
 
@@ -98,6 +105,8 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 7. Optionally summarizes the same evidence and lists what is still missing.
 8. Presents timestamps, source references, recent run history, and a safe
    engineer-review state in the dashboard.
+9. Stores a reviewer-approved cause and audit trail in Exasol after a separate
+   investigator submission; retrieves similar history as an unconfirmed candidate.
 
 ## Why Exasol
 
@@ -116,6 +125,10 @@ The sample history establishes a healthy baseline before eleven representative
 incident scenarios, allowing the UI to show an operational trend and exercise
 every investigation outcome.
 
+Verified memory also uses Exasol for durable confirmations, features, match
+decisions, audit history, and active-record filtering. Token-pair similarity is
+calculated in the application; no database-side similarity claim is made.
+
 ## Architecture
 
 ```mermaid
@@ -130,7 +143,10 @@ flowchart LR
     F --> G[Optional LLM summary]
     F --> H[React dashboard]
     G --> H
-    H --> I[Engineer verifies evidence]
+    H --> I[Engineer submits evidence]
+    I --> K[Separate authorized reviewer]
+    K --> L[(Exasol verified memory and audit)]
+    L --> H
 ```
 
 ## AI scope and safety
@@ -177,18 +193,21 @@ The deliberate safety boundary is:
 ```text
 opsintel-ai/
 ├── app/                         # API, database access and investigation logic
-├── docs/                        # Demo, Q&A and submission guidance
+├── docs/                        # Architecture, memory, demo and submission guidance
 ├── evaluation/                  # Frozen and external-reviewer holdout data
 ├── frontend/                    # React dashboard
 ├── reports/
 │   ├── evaluation.md            # Reproducible evaluation summary
 │   └── exasol-benchmark.json    # Raw local scale measurement
 ├── scripts/setup_database.py    # Demo database setup command
+├── scripts/migrate_database.py  # Additive Exasol memory migration
+├── scripts/evaluate_memory.py   # Chronological memory evaluation harness
 ├── examples/integrations/       # Airflow and dbt exported-JSON samples
 ├── submission/                  # Pitch deck, PDF and demo video
 ├── sql/
 │   ├── schema.sql
 │   ├── seed.sql
+│   ├── migrations/
 │   └── analysis/
 │       └── pipeline_health_features.sql
 ├── tests/
@@ -265,13 +284,26 @@ python -m scripts.setup_database
 ```
 
 If an older synthetic `OPSINTEL` schema already exists and may be safely
-discarded:
+discarded **before verified memory is installed**:
 
 ```bash
 python -m scripts.setup_database --reset
 ```
 
-`--reset` drops only the synthetic `OPSINTEL` schema before recreating it.
+`--reset` drops the entire `OPSINTEL` schema. It refuses to run if verified
+memory tables exist; use a separate disposable deployment for resets.
+
+Apply the additive verified-memory migration to an initialized schema:
+
+```bash
+python -m scripts.migrate_database
+python -m scripts.migrate_database --apply
+```
+
+Configure `OPSINTEL_AUTH_TOKENS_JSON` with distinct investigator and reviewer
+grants from a local secret manager. The exact format and safety boundaries are
+in [Verified Incident Memory](docs/verified-incident-memory.md). Without grants,
+the memory API remains disabled; the existing investigation API still works.
 
 ### 4. Start the backend
 
@@ -295,9 +327,10 @@ one command against a confirmed disposable Exasol deployment:
 make smoke
 ```
 
-The smoke test resets the synthetic `OPSINTEL` schema, then checks database
+The smoke test resets a disposable synthetic `OPSINTEL` schema, then checks database
 health, seeded incidents, one evidence-grounded
 investigation, the failed-run comparison, and the Exasol dependency cascade.
+It refuses to reset a schema containing verified memory tables.
 
 ### 5. Start the dashboard
 
@@ -329,6 +362,7 @@ For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
 | GET | `/analytics/cascades` | Upstream/downstream failure correlations |
 | GET | `/investigate/{run_id}` | Evidence, candidates and optional LLM summary |
 | GET | `/investigate/{run_id}/root-causes` | Candidate causes only |
+| GET/POST | `/memory/*` | Authenticated verified-memory submissions, review, history, retrieval and analytics; see [API reference](docs/api-reference.md) |
 
 ## Verification
 
@@ -406,7 +440,7 @@ directly with:
 Run either form only against an explicitly authorized disposable Exasol
 deployment.
 
-`make smoke` is also Exasol-backed. It depends on the `database` target, which
+`make smoke` is also Exasol-backed. It depends on the `database-reset` target, which
 resets the synthetic `OPSINTEL` schema before checking the database, API, and
 cascade workflow. Do not run it against an existing or unconfirmed database.
 It additionally verifies the fresh synthetic database, FastAPI endpoints,
@@ -414,7 +448,7 @@ failed-run comparison, safe unconfirmed state, and cascade response.
 
 Latest verified results:
 
-- **159/159 automated tests passed**.
+- **182/182 automated tests passed** in the current local verification.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
@@ -428,7 +462,7 @@ Latest verified results:
   engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
   this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.
 - **Frontend lint passed with no warnings**.
-- **Frontend production build passed**; Vite reported a non-failing 616.60 kB
+- **Frontend production build passed**; Vite reported a non-failing 632.77 kB
   main-chunk advisory.
 
 These results demonstrate reproducibility on the included synthetic scenarios
@@ -459,7 +493,7 @@ database was authorized.
 
 The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
 records the historical `132/132` suite at that revision. The current verified
-result is `159/159`; the earlier report remains unchanged as dated evidence.
+result is `182/182`; the earlier report remains unchanged as dated evidence.
 
 The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
 contains 27 versioned cases and a published

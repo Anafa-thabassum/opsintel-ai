@@ -16,6 +16,8 @@ from app.classification import classify_incident, normalize_evidence
     (["Duplicate business keys were found in the target partition."], {}, "duplicate_data"),
     ([{"reference": "CHECK-4", "fields": {"duplicate_count": 3}}], {}, "duplicate_data"),
     (["Statement timeout event reached during query execution."], {}, "timeout"),
+    (["TaskImportTimeout raised while parsing a workflow definition."], {}, "timeout"),
+    (["Workflow import timeout after a configured execution limit."], {}, "timeout"),
     (["Query was canceled after its configured statement timeout."], {}, "timeout"),
     (["Invalid cast prevented writing the requested value."], {}, "schema_mismatch"),
     ([{"reference": "SCHEMA-1", "fields": {
@@ -122,6 +124,27 @@ def test_excess_counts_are_not_duplicate_data_without_duplicate_evidence():
 
     assert result["result"][0] == "unclassified"
     assert any(signal["category"] == "excess_rows" for signal in result["signals"])
+
+
+def test_repeated_and_irrelevant_evidence_does_not_override_independent_symptom():
+    evidence = [
+        {"reference": "LOG-T", "observation": "Statement timed out after its configured limit."},
+        {"reference": "LOG-S", "observation": "Schema validator rejected incompatible field type."},
+        {"reference": "LOG-T", "observation": "Statement timed out after its configured limit."},
+        {"reference": "LOG-N", "observation": "Operator opened the dashboard."},
+    ]
+    result = classify_incident(evidence)
+    assert result["result"][0] == "timeout"
+    assert result["classification"]["secondary_categories"] == ["schema_mismatch"]
+    assert result["classification"]["confirmed_root_cause"] is None
+
+
+def test_empty_and_unseen_message_abstain_without_invented_cause():
+    for evidence in ([], [{"reference": "LOG-X", "observation": "Remote ZX-41 payload fragment was emitted."}]):
+        result = classify_incident(evidence)
+        assert result["result"][0] == "unclassified"
+        assert result["classification"]["resolution_status"] == "unresolved"
+        assert result["classification"]["confirmed_root_cause"] is None
 
 
 def test_public_development_corpus_v2_labels_and_provenance():

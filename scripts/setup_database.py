@@ -66,6 +66,17 @@ def main():
         """).fetchone()[0]) > 0
 
         if args.reset and schema_exists:
+            memory_tables = int(connection.execute("""
+                SELECT COUNT(*) FROM EXA_ALL_TABLES
+                WHERE TABLE_SCHEMA = 'OPSINTEL'
+                  AND TABLE_NAME IN ('CONFIRMED_INCIDENTS', 'INCIDENT_AUDIT',
+                                     'INCIDENT_SUBMISSIONS', 'INCIDENT_MATCHES')
+            """).fetchone()[0])
+            if memory_tables:
+                raise RuntimeError(
+                    "Refusing to reset OPSINTEL: verified memory tables exist. "
+                    "Use a separate disposable deployment for synthetic resets."
+                )
             connection.execute("DROP SCHEMA OPSINTEL CASCADE")
             schema_exists = False
 

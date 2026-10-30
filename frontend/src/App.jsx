@@ -11,6 +11,7 @@ import {
   XAxis, YAxis,
 } from "recharts";
 import "./App.css";
+import VerifiedMemory from "./VerifiedMemory";
 
 const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -21,7 +22,7 @@ const categoryLabels = {
   schema_mismatch: "Schema mismatch",
   dependency_failure: "Dependency failure",
   delayed_run: "Delayed run",
-  duplicate_data: "Duplicate or excess data",
+  duplicate_data: "Duplicate data",
   conflicting_evidence: "Conflicting evidence",
   unclassified: "Unknown — evidence insufficient",
 };
@@ -216,6 +217,8 @@ function Dashboard({ onExit }) {
   const [reviewByRun, setReviewByRun] = useState({});
   const investigationRequest = useRef(0);
   const [trendError, setTrendError] = useState("");
+  const [confirmedCount, setConfirmedCount] = useState(null);
+  const [confirmedRecord, setConfirmedRecord] = useState(null);
   
   async function loadIncidents() {
     setLoading(true);
@@ -413,6 +416,7 @@ async function loadInvestigation(runId) {
             { label: "Overview", icon: LayoutDashboard },
             { label: "Incidents", icon: AlertTriangle },
             { label: "Investigations", icon: FileSearch },
+            { label: "Verified Memory", icon: ShieldCheck },
           ].map(({ label, icon: Icon }) => (
             <button
               key={label}
@@ -423,6 +427,8 @@ async function loadInvestigation(runId) {
                   document.getElementById("incident-list")?.scrollIntoView({ behavior: "smooth" });
                 } else if (label === "Investigations") {
                   document.getElementById("investigation-panel")?.scrollIntoView({ behavior: "smooth" });
+                } else if (label === "Verified Memory") {
+                  document.getElementById("verified-memory")?.scrollIntoView({ behavior: "smooth" });
                 } else {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }
@@ -507,11 +513,11 @@ async function loadInvestigation(runId) {
             />
             <MetricCard
               label="Confirmed causes"
-              value="0"
-              detail="No cause confirmed yet"
+              value={confirmedCount == null ? "—" : formatNumber(confirmedCount)}
+              detail={confirmedCount == null ? "Connect verified memory to view" : "Reviewer-confirmed records"}
               icon={ShieldCheck}
               tone="green"
-              trend="Evidence-first approach"
+              trend="Exasol verified memory"
             />
           </section>
 
@@ -851,9 +857,9 @@ async function loadInvestigation(runId) {
                     <section className="decision-column confirmation-column">
                       <div className="decision-column-heading"><ShieldCheck size={14} /><span>03 · Human confirmation</span></div>
                       <div className="verification-state">
-                        <span>NOT YET VERIFIED</span>
-                        <strong>{rootCauses?.confirmed_root_cause ?? "No confirmed root cause"}</strong>
-                        <p>The system does not promote a candidate or run a repair.</p>
+                        <span>{confirmedRecord?.run_id === investigation.run_id ? "REVIEWER CONFIRMED IN EXASOL" : "NOT YET VERIFIED"}</span>
+                        <strong>{confirmedRecord?.run_id === investigation.run_id ? confirmedRecord.confirmed_description : "No confirmed root cause"}</strong>
+                        <p>{confirmedRecord?.run_id === investigation.run_id ? `Reviewed by ${confirmedRecord.confirmed_by} at ${confirmedRecord.confirmed_at}. New matches still require their own review.` : "The system does not promote a candidate or run a repair."}</p>
                       </div>
                       <div className="recommendation-card">
                         <div className="recommendation-icon"><Zap size={17} /></div>
@@ -964,6 +970,8 @@ async function loadInvestigation(runId) {
               )}
             </aside>
           </section>
+
+          <VerifiedMemory api={API} investigation={investigation} onCountChange={setConfirmedCount} onRecordChange={setConfirmedRecord} />
 
           <footer className="app-footer">
             <div><span className={`status-dot ${health === "connected" ? "online" : ""}`} /> OpsIntel API · {health === "connected" ? "Connected" : health === "checking" ? "Connecting" : "Unavailable"}</div>

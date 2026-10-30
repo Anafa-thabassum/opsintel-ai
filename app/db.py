@@ -73,6 +73,9 @@ def get_connection():
         dsn=dsn,
         user=os.getenv("EXASOL_USER", "sys"),
         password=password,
+        connection_timeout=10,
+        socket_timeout=30,
+        query_timeout=60,
         websocket_sslopt={
             "cert_reqs": ssl.CERT_REQUIRED if verify_tls else ssl.CERT_NONE
         },

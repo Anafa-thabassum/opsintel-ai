@@ -1,8 +1,14 @@
 import os
+import json
+import secrets
+import logging
+import time
 from pathlib import Path
+from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from app.db import (
     check_connection,
@@ -16,6 +22,7 @@ from app.investigator import (
     investigate_pipeline,
 )
 from app.llm import summarize_investigation
+from app import memory
 from scripts.evaluate_public_corpus import evaluate as evaluate_public_corpus
 
 app = FastAPI(
@@ -34,6 +41,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def request_metrics(request, call_next):
+    request_id = str(uuid4())
+    started = time.perf_counter()
+    response = await call_next(request)
+    latency_ms = round((time.perf_counter() - started) * 1000, 1)
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Response-Time-Ms"] = str(latency_ms)
+    logging.getLogger("opsintel.api").info(
+        "request_id=%s method=%s path=%s status=%s latency_ms=%.1f",
+        request_id, request.method, getattr(request.scope.get("route"), "path", "unmatched"),
+        response.status_code, latency_ms,
+    )
+    return response
 
 
 @app.get("/")
@@ -233,3 +256,197 @@ def root_cause_assessment(run_id: int):
             status_code=503,
             detail="Root-cause assessment failed",
         ) from exc
+
+
+def _memory_actor(authorization, *, reviewer=False):
+    """Explicit token grants; absent configuration disables memory access."""
+    try:
+        grants = json.loads(os.getenv("OPSINTEL_AUTH_TOKENS_JSON", "{}"))
+    except ValueError as exc:
+        raise HTTPException(503, "Memory authorization is misconfigured") from exc
+    if not isinstance(grants, dict) or not grants:
+        raise HTTPException(503, "Memory authorization is not configured")
+    token = authorization.removeprefix("Bearer ") if authorization and authorization.startswith("Bearer ") else ""
+    actor = next((grant for secret, grant in grants.items()
+                  if token and isinstance(secret, str) and secret and secrets.compare_digest(token, secret)), None)
+    if not isinstance(actor, dict) or not isinstance(actor.get("actor_id"), str) or actor.get("role") not in {"investigator", "reviewer"}:
+        raise HTTPException(401, "Valid engineer authorization required")
+    if reviewer and actor["role"] != "reviewer":
+        raise HTTPException(403, "Authorized root-cause reviewer required")
+    return actor["actor_id"]
+
+
+def _memory_error(exc):
+    if isinstance(exc, HTTPException):
+        raise exc
+    if isinstance(exc, KeyError):
+        raise HTTPException(404, str(exc)) from exc
+    if isinstance(exc, memory.MemoryConflict):
+        raise HTTPException(409, str(exc)) from exc
+    if isinstance(exc, ValueError):
+        raise HTTPException(422, str(exc)) from exc
+    raise HTTPException(503, "Verified memory database operation failed") from exc
+
+
+class SourceEvidence(BaseModel):
+    reference: str = Field(min_length=1, max_length=500)
+    excerpt: str = Field(min_length=1, max_length=2000)
+    kind: str = "symptom"
+    source_uri: str | None = Field(default=None, max_length=1000)
+    observed_at: str | None = Field(default=None, max_length=100)
+
+
+class HypothesisSubmission(BaseModel):
+    run_id: int
+    category: str
+    cause_description: str = Field(min_length=12, max_length=2000)
+    evidence: list[SourceEvidence] = Field(min_length=1, max_length=20)
+    kind: str = "new"
+    source_incident_id: str | None = None
+
+
+class CriterionResult(BaseModel):
+    id: str
+    passed: bool
+    method: str
+    result: str
+    evidence_refs: list[str]
+
+
+class VerificationChecklist(BaseModel):
+    version: str
+    criteria: list[CriterionResult]
+    unresolved_conflicts: list[str] = []
+
+
+class ReviewDecision(BaseModel):
+    decision: str
+    rationale: str = Field(min_length=12, max_length=2000)
+    checklist: VerificationChecklist
+
+
+class Rationale(BaseModel):
+    rationale: str = Field(min_length=12, max_length=2000)
+
+
+@app.get("/memory/criteria/{category}")
+def memory_criteria(category: str, authorization: str | None = Header(default=None)):
+    _memory_actor(authorization)
+    if category not in memory.CLASS_CRITERIA:
+        raise HTTPException(404, "Unsupported category")
+    return {"version": memory.CHECKLIST_VERSION,
+            "required": [*memory.CLASS_CRITERIA[category], *memory.COMMON_CRITERIA],
+            "notice": "Reviewer attestations require source-backed causal evidence; symptom evidence alone cannot confirm a cause."}
+
+
+@app.get("/memory/incidents")
+def memory_incidents(authorization: str | None = Header(default=None)):
+    _memory_actor(authorization)
+    try:
+        incidents = memory.list_confirmed()
+        return {"count": len(incidents), "incidents": incidents}
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.get("/memory/analytics")
+def memory_analytics(authorization: str | None = Header(default=None)):
+    _memory_actor(authorization)
+    try:
+        return memory.memory_analytics()
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.get("/memory/incidents/{run_id}")
+def memory_incident(run_id: int, authorization: str | None = Header(default=None)):
+    _memory_actor(authorization)
+    try:
+        result = memory.get_confirmed(run_id)
+        if result is None:
+            raise HTTPException(404, "No confirmed incident for this run")
+        return result
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.get("/memory/history/{run_id}")
+def memory_history(run_id: int, authorization: str | None = Header(default=None)):
+    _memory_actor(authorization)
+    try:
+        return {"run_id": run_id, "events": memory.incident_history(run_id)}
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.get("/memory/submissions")
+def memory_submissions(authorization: str | None = Header(default=None)):
+    _memory_actor(authorization)
+    try:
+        return {"submissions": memory.list_submissions()}
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.post("/memory/submissions", status_code=201)
+def memory_submit(payload: HypothesisSubmission, authorization: str | None = Header(default=None)):
+    actor_id = _memory_actor(authorization)
+    try:
+        incident = investigate_pipeline(payload.run_id)
+        if incident is None:
+            raise HTTPException(404, "Incident not found")
+        return memory.submit_hypothesis(
+            incident, category=payload.category,
+            description=payload.cause_description,
+            evidence=[item.model_dump() for item in payload.evidence],
+            actor_id=actor_id, kind=payload.kind,
+            source_incident_id=payload.source_incident_id,
+        )
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.post("/memory/submissions/{submission_id}/review")
+def memory_review(submission_id: str, payload: ReviewDecision,
+                  authorization: str | None = Header(default=None)):
+    actor_id = _memory_actor(authorization, reviewer=True)
+    try:
+        return memory.review_hypothesis(
+            submission_id, decision=payload.decision,
+            rationale=payload.rationale, checklist=payload.checklist.model_dump(),
+            reviewer_id=actor_id,
+        )
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.post("/memory/incidents/{incident_id}/revoke")
+def memory_revoke(incident_id: str, payload: Rationale,
+                  authorization: str | None = Header(default=None)):
+    actor_id = _memory_actor(authorization, reviewer=True)
+    try:
+        return memory.revoke_confirmation(incident_id, rationale=payload.rationale,
+                                          reviewer_id=actor_id)
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.get("/memory/similar/{run_id}")
+def memory_similar(run_id: int, authorization: str | None = Header(default=None)):
+    _memory_actor(authorization)
+    try:
+        incident = investigate_pipeline(run_id)
+        if incident is None:
+            raise HTTPException(404, "Incident not found")
+        return memory.similar_incidents(incident)
+    except Exception as exc:
+        _memory_error(exc)
+
+
+@app.post("/memory/matches/{match_id}/reject")
+def memory_reject_match(match_id: str, authorization: str | None = Header(default=None)):
+    actor_id = _memory_actor(authorization)
+    try:
+        return memory.reject_match(match_id, actor_id=actor_id)
+    except Exception as exc:
+        _memory_error(exc)

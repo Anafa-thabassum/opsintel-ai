@@ -26,10 +26,14 @@ export OPSINTEL_LLM_ENABLED="true"
 export OPENAI_API_KEY="your-openai-api-key"
 export OPSINTEL_LLM_MODEL="gpt-6-luna"
 python -m scripts.setup_database
+python -m scripts.migrate_database --apply
+# Supply OPSINTEL_AUTH_TOKENS_JSON from a secret manager with distinct
+# investigator and reviewer actors before enabling verified memory.
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Place the API behind an HTTPS reverse proxy and restrict network access to the
+Place the API behind an HTTPS reverse proxy with access control for all routes,
+and restrict network access to the
 Exasol endpoint. The development default disables certificate verification for
 local Exasol Personal only; a non-loopback `EXASOL_DSN` is rejected unless
 `EXASOL_TLS_VERIFY=true`. The `sys` account in `.env.example` is solely for the
@@ -65,8 +69,9 @@ Exasol deployment, run the smoke check once from the repository root:
 make smoke
 ```
 
-`make smoke` already invokes the `database` target, which resets the synthetic
-`OPSINTEL` schema. Do not run it against an existing or unconfirmed database.
+`make smoke` invokes `database-reset`, which resets the synthetic `OPSINTEL`
+schema. It refuses to reset a schema with verified-memory tables. Use only a
+confirmed disposable deployment.
 The smoke check verifies database health, seeded incidents, a failed-run versus
 last-success comparison, the safe unconfirmed state, and the dependency cascade.
 
@@ -76,9 +81,11 @@ authentication or authorization control.
 
 ## Production gap
 
-The prototype does not include production authentication, authorization, live
-orchestrator connections, multi-user concurrency validation, audited data
-retention, or an independent evaluation of LLM summary quality. Exported JSON
+The verified-memory API has controlled-demo bearer-token grants and a separate
+reviewer role, but the broader investigation API still lacks production
+authentication. The prototype does not include live orchestrator connections,
+multi-user concurrency validation, audited data retention, or an independent
+evaluation of LLM summary quality. Exported JSON
 adapter examples for Airflow and dbt are documented under
 `examples/integrations/`. Add production controls before using real operational
 data. The configured model identifier is documented, but account entitlement
