@@ -35,6 +35,8 @@ Working hackathon prototype:
 - Optional LLM narrative summary grounded in the retrieved evidence.
 - React landing page and dashboard backed by live Exasol queries over synthetic
   telemetry.
+- A separate read-only public-data scorecard at `#/scorecard`, using cited
+  Apache Airflow and dbt issue excerpts; it does not mix in synthetic telemetry.
 - 137 automated tests and a 16-case synthetic challenge set.
 - Reproducible Exasol benchmark over one million synthetic pipeline runs.
 
@@ -62,6 +64,14 @@ causes and leaves the confirmed root cause unset until a person verifies it.
   The external holdout and 30–50-case public issue/CI expansion remain
   follow-up work requiring additional provenance review rather than labels
   invented by the project team.
+- **Public-data scorecard:** choose **View public-data scorecard** on the
+  landing page to inspect the ten source excerpts in
+  `evaluation/public_failure_corpus_v2.csv`, their source and repository
+  licence links, the project-authored category mappings, and current classifier
+  results. Reproduce the 7/10 compatibility score with `make public-evaluate-v2`.
+  This page contains no synthetic incident records, generated run counts, or
+  inferred operational trends; the separate Exasol demo continues to use
+  clearly labelled synthetic telemetry.
 
 ## Submission assets
 
@@ -322,29 +332,85 @@ For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
 
 ## Verification
 
-Run the complete backend, regression, lint, and build verification:
+### Routine local verification
+
+Run the complete local verification used by the `verify` Make target:
 
 ```bash
 make verify
 ```
 
-Backend:
+This runs the Python test suite, the predefined synthetic evaluation, frontend
+lint, and the frontend production build. It does not reset or require Exasol.
+
+The equivalent individual commands are:
 
 ```bash
 python -m pytest -q
 python -m tests.run_evaluation
-python -m scripts.evaluate_public_corpus
-python -m scripts.exasol_proof
-python -m scripts.benchmark_exasol
 ```
 
-Frontend:
+From the repository root, run the frontend checks separately:
 
 ```bash
-cd frontend
-npm run lint
-npm run build
+cd frontend && npm run lint
 ```
+
+```bash
+cd frontend && npm run build
+```
+
+### Optional report regeneration
+
+The public-corpus commands evaluate the cited CSV files and write JSON and
+Markdown reports. They are useful when intentionally regenerating evaluation
+artifacts, but they are not routine read-only verification:
+
+```bash
+make public-evaluate
+make public-evaluate-v2
+```
+
+The commands invoke `scripts/evaluate_public_corpus.py` and may overwrite the
+corresponding files under `reports/`. Review the resulting diff and provenance
+before publishing any regenerated report.
+
+### Exasol-backed proof and benchmark
+
+These commands require a live, configured Exasol Personal connection and are
+separate from `make verify`:
+
+```bash
+make exasol-proof
+```
+
+`make exasol-proof` runs read-only queries against the existing
+`OPSINTEL.PIPELINE_HEALTH_FEATURES`, `PIPELINE_RUNS`, and `PIPELINE_LOGS` data
+to print the historical completeness and incident evidence used by the demo.
+Keep that output with the benchmark record when preparing the judging demo.
+
+```bash
+make benchmark
+```
+
+`make benchmark` runs `scripts/benchmark_exasol.py`. It creates and imports
+synthetic data into `OPSINTEL_BENCHMARK`, measures repeated analytical queries,
+and drops that benchmark schema when finished. The Makefile target does not
+forward command-line options; to retain the isolated schema, invoke the script
+directly with:
+
+```bash
+.venv/bin/python -m scripts.benchmark_exasol --keep-schema
+```
+
+Run either form only against an explicitly authorized disposable Exasol
+deployment.
+
+`make smoke` is also Exasol-backed. It depends on the `database` target, which
+resets the synthetic `OPSINTEL` schema before checking the database, API, and
+cascade workflow. Do not run it against an existing or unconfirmed database.
+It additionally verifies the fresh synthetic database, FastAPI endpoints,
+failed-run comparison, safe unconfirmed state, and cascade response.
 
 Latest verified results:
 
@@ -364,12 +430,6 @@ Latest verified results:
 - **Frontend lint passed with no warnings**.
 - **Frontend production build passed**; Vite reported a non-failing 616.60 kB
   main-chunk advisory.
-
-With Exasol Personal running, `make exasol-proof` prints the actual historical
-completeness rows and timestamped log evidence used by the demo investigation.
-Keep that output with the benchmark record when preparing the judging demo.
-`make smoke` additionally verifies the fresh synthetic database, FastAPI
-endpoints, failed-run comparison, safe unconfirmed state, and cascade response.
 
 These results demonstrate reproducibility on the included synthetic scenarios
 and a local, single-user analytical benchmark; they are not production
@@ -427,9 +487,10 @@ requires two or three pseudonymous case-author IDs and referenced evidence; and
 publishes JSON plus Markdown scoring and error analysis. It records the dataset,
 classifier configuration, evaluator, scoring rules, and evaluation timestamp,
 including missing labels and unresolved predictions. Current external-reviewer
-status: **0 cases recorded by 0 external authors**. The template is intentionally
-header-only and must be completed, committed, and tagged before an independent
-result can be reported.
+status: **19 cases from 3 pseudonymous external reviewer authors**, recorded in
+the frozen `independent-holdout-v1` result. The template is intentionally
+header-only for future rounds, which must use a new dataset version and freeze
+tag rather than overwrite this result.
 
 The [human-impact study protocol](reports/impact-study-protocol.md) now includes
 ten frozen cases and a counterbalanced 40-trial assignment for four

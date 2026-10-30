@@ -53,6 +53,8 @@ function App() {
     }} />;
   }
 
+  if (route === "scorecard") return <PublicScorecard />;
+
   if (route === "login" || route === "dashboard") {
     return <DemoAccess onEnter={() => {
       sessionStorage.setItem("opsintel-demo-session", "true");
@@ -94,23 +96,20 @@ function LandingPage() {
             <h1>Investigate pipeline failures from <span>evidence—not guesswork.</span></h1>
             <p>OpsIntel brings pipeline status, row-count discrepancies, and logs into one traceable investigation so data engineers know what to check next.</p>
             <div className="hero-actions">
-              <button className="primary-button hero-button" onClick={() => navigate("login")}>Open the live demo <ArrowRight size={16} /></button>
+              <button className="primary-button hero-button" onClick={() => navigate("scorecard")}>View public-data scorecard <ArrowRight size={16} /></button>
+              <button className="secondary-button" onClick={() => navigate("login")}>Open synthetic demo</button>
               <a className="secondary-link" href="https://github.com/Anafa-thabassum/opsintel-ai" target="_blank" rel="noreferrer"><GitBranch size={16} /> View repository</a>
             </div>
             <div className="hero-trust"><ShieldCheck size={16} /><span>No automated repair. Root causes remain unconfirmed until a human verifies them.</span></div>
           </div>
 
-          <div className="evidence-preview" aria-label="Example investigation evidence">
-            <div className="preview-top"><span>RUN-0001 · DAILY_SALES_IMPORT</span><span className="status-badge failed"><span />FAILED</span></div>
-            <div className="preview-title"><FileSearch size={20} /><span>Investigation evidence</span></div>
-            <div className="preview-stat-grid">
-              <div><span>Expected</span><strong>100</strong></div>
-              <div><span>Received</span><strong>80</strong></div>
-              <div><span>Missing</span><strong className="danger-text">20</strong></div>
-            </div>
-            <div className="preview-step"><Database size={15} /><div><strong>Observation</strong><span>Row count is below the expected total.</span></div></div>
-            <div className="preview-step violet"><Sparkles size={15} /><div><strong>Candidate explanation</strong><span>Processing may have ended early.</span></div></div>
-            <div className="preview-confirm"><ShieldCheck size={15} /> Confirmed root cause: <strong>None</strong></div>
+          <div className="evidence-preview" aria-label="Public Apache Airflow issue excerpt">
+            <div className="preview-top"><span>APACHE AIRFLOW · ISSUE #46378</span><span className="status-badge public"><span />PUBLIC SOURCE</span></div>
+            <div className="preview-title"><FileSearch size={20} /><span>Source error excerpt</span></div>
+            <blockquote className="public-excerpt">AirflowTaskTimeout: DagBag import timeout</blockquote>
+            <div className="preview-step"><Database size={15} /><div><strong>Source category</strong><span>dag_parse_or_import_timeout</span></div></div>
+            <div className="preview-step violet"><Sparkles size={15} /><div><strong>OpsIntel mapping</strong><span>timeout · project-mapped label</span></div></div>
+            <div className="preview-confirm"><ShieldCheck size={15} /> <a href="https://github.com/apache/airflow/issues/46378" target="_blank" rel="noreferrer">Open public source issue</a></div>
           </div>
         </section>
 
@@ -122,6 +121,56 @@ function LandingPage() {
       </main>
 
       <footer className="public-footer"><span>Follow the evidence. Investigate faster. Confirm carefully.</span><span>ExaThon India 2026</span></footer>
+    </div>
+  );
+}
+
+function PublicScorecard() {
+  const [report, setReport] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch(`${API}/scorecard/public`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Public scorecard returned HTTP ${response.status}`);
+        return response.json();
+      })
+      .then(setReport)
+      .catch((err) => setError(err.message || "Unable to load the public scorecard."));
+  }, []);
+
+  return (
+    <div className="public-shell scorecard-shell">
+      <header className="public-nav">
+        <a href="#/home" aria-label="OpsIntel AI home"><Brand /></a>
+        <div className="public-nav-actions">
+          <span className="track-chip">PUBLIC SOURCE CORPUS · V2</span>
+          <button className="ghost-button" onClick={() => navigate("home")}>Back to overview</button>
+        </div>
+      </header>
+      <main className="scorecard-content">
+        <div className="eyebrow"><ShieldCheck size={14} /> PUBLIC-DATA SCORECARD</div>
+        <h1>Classifier compatibility on sourced failure messages</h1>
+        <p className="page-subtitle">Real excerpts from public Apache Airflow and dbt issue records. No generated incidents, run counts, or trend data.</p>
+        {error && <div className="error-banner">{error}</div>}
+        {!report && !error && <div className="panel">Loading public corpus…</div>}
+        {report && <>
+          <section className="scorecard-summary">
+            <div className="metric-card"><div className="metric-top">Exact category matches</div><div className="metric-value">{report.correct}/{report.total}</div><div className="metric-detail">{report.accuracy_pct}% on this project-mapped corpus</div></div>
+            <div className="metric-card"><div className="metric-top">Public cases</div><div className="metric-value">{report.total}</div><div className="metric-detail">Apache Airflow and dbt sources</div></div>
+          </section>
+          <p className="scorecard-notice">{report.data_notice} {report.transformations}</p>
+          <section className="scorecard-cases" aria-label="Public source cases">
+            {report.results.map((item) => <article className="panel scorecard-case" key={item.id}>
+              <div className="scorecard-case-heading"><div><span className="panel-kicker">{item.id} · {item.project}</span><h2>{item.correct ? "Category matched" : "Category mismatch"}</h2></div><span className={`scorecard-result ${item.correct ? "matched" : "mismatch"}`}>{item.predicted}</span></div>
+              <blockquote>{item.excerpt}</blockquote>
+              <div className="scorecard-labels"><span>Source label: <strong>{item.source_category}</strong></span><span>OpsIntel mapping: <strong>{item.expected}</strong></span><span>Classifier: <strong>{item.predicted}</strong></span></div>
+              <p>{item.labelling_rationale || item.labelling_note}</p>
+              <div className="scorecard-sources"><a href={item.source_url} target="_blank" rel="noreferrer">Public source</a><a href={item.license_url} target="_blank" rel="noreferrer">Repository licence</a><span>{item.license}</span></div>
+            </article>)}
+          </section>
+        </>}
+      </main>
     </div>
   );
 }

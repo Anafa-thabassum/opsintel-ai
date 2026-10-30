@@ -1,5 +1,12 @@
 # Contributing
 
+For application, database, evaluation, security, or submission changes, follow
+the [architecture-first engineering workflow](docs/engineering-workflow.md) and
+complete its [change-plan template](docs/templates/change-plan.md) before
+starting significant implementation. Keep the scope focused and obtain human
+approval before changing architecture, contracts, evaluation methodology, or
+submission claims.
+
 1. Create a focused branch and keep synthetic data free of secrets.
 2. Run `python -m pytest -q` and `python -m tests.run_evaluation`.
 3. Run `npm run lint` and `npm run build` from `frontend/`.
