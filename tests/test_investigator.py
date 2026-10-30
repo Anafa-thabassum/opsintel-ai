@@ -19,7 +19,8 @@ def test_root_cause_is_not_claimed_as_confirmed():
     result = assess_root_causes(incident)
 
     assert result["confirmed_root_cause"] is None
-    assert len(result["candidates"]) > 0
+    assert result["candidates"] == []
+    assert result["resolution_status"] == "unresolved"
 
 
 def test_root_cause_candidates_are_supported_observations():
@@ -27,6 +28,7 @@ def test_root_cause_candidates_are_supported_observations():
         "evidence": [
             {"observation": "Source returned only 80 rows"},
             {
+                "reference": "LOG-1",
                 "observation": (
                     "Import ended before all expected rows were processed"
                 )
@@ -44,6 +46,7 @@ def test_timeout_evidence_produces_timeout_candidate():
     incident = {
         "evidence": [
             {
+                "reference": "LOG-2",
                 "observation": (
                     "Pipeline timeout: execution exceeded 30 minutes"
                 )
@@ -63,6 +66,7 @@ def test_schema_mismatch_evidence_produces_schema_candidate():
     incident = {
         "evidence": [
             {
+                "reference": "SCHEMA-1",
                 "observation": (
                     "Schema mismatch: incoming field price_text "
                     "does not match expected numeric type"
@@ -357,11 +361,13 @@ def test_equal_row_counts_do_not_add_row_count_candidate():
         "expected_rows": 500,
         "actual_rows": 500,
         "evidence": [
-            {"observation": "Pipeline status is FAILED"},
+            {"reference": "RUN-1", "observation": "Pipeline status is FAILED"},
             {
+                "reference": "COUNTS-1",
                 "observation": "Expected 500 rows, but received 500"
             },
             {
+                "reference": "LOG-1",
                 "observation": (
                     "[ERROR] Pipeline execution exceeded "
                     "the 30 minute time limit"
@@ -392,18 +398,19 @@ def test_delayed_run_evidence_remains_unconfirmed():
     assert "scheduled" in next_action
 
 
-def test_excess_rows_are_classified_as_possible_duplicates():
-    from app.investigator import classify_evidence
-
-    category, hypothesis, _ = classify_evidence(
+def test_excess_rows_are_not_mislabeled_as_duplicates_without_key_evidence():
+    result = _classify_evidence_details(
         [],
         -20,
         expected_rows=100,
         actual_rows=120,
     )
 
-    assert category == "duplicate_data"
-    assert "duplication point is unknown" in hypothesis
+    category, hypothesis, _ = result["result"]
+
+    assert category == "unclassified"
+    assert any(signal["category"] == "excess_rows" for signal in result["signals"])
+    assert "does not support" in hypothesis
 
 
 def test_conflicting_completion_logs_are_not_forced_to_a_cause():
@@ -412,7 +419,7 @@ def test_conflicting_completion_logs_are_not_forced_to_a_cause():
     category, hypothesis, _ = classify_evidence(
         [
             "Pipeline completed successfully",
-            "ERROR: worker failed after final write",
+            "Pipeline status is FAILED",
         ],
         0,
     )

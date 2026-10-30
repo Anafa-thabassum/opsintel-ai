@@ -42,9 +42,10 @@ def test_timeout_does_not_create_generic_row_count_candidate():
         "expected_rows": 500,
         "actual_rows": 500,
         "evidence": [
-            {"observation": "Pipeline status is FAILED"},
-            {"observation": "Expected 500 rows, but received 500"},
+            {"reference": "RUN-1", "observation": "Pipeline status is FAILED"},
+            {"reference": "COUNTS-1", "observation": "Expected 500 rows, but received 500"},
             {
+                "reference": "LOG-1",
                 "observation": (
                     "[ERROR] Pipeline timeout: execution exceeded 30 minutes"
                 )
@@ -65,8 +66,9 @@ def test_schema_mismatch_suppresses_generic_row_count_candidate():
         "expected_rows": 200,
         "actual_rows": 0,
         "evidence": [
-            {"observation": "Expected 200 rows, but received 0"},
+            {"reference": "COUNTS-2", "observation": "Expected 200 rows, but received 0"},
             {
+                "reference": "LOG-2",
                 "observation": (
                     "[ERROR] Schema mismatch: price_text does not match "
                     "expected numeric type"
