@@ -159,7 +159,8 @@ Frozen evaluation files and historical reports remain unchanged. Dataset hashes,
 For the detailed system architecture, component responsibilities,
 Exasol integration, and end-to-end investigation workflow:
 
-[View Detailed Architecture](docs/ARCHITECTURE.md)
+[View Detailed Architecture](docs/architecture.md)
+
 
 ## License and contribution
 
