@@ -1,8 +1,9 @@
 # Classifier design addendum v1
 
-**Status: revised design for approval; implementation is not approved.** The
-role and cause-specific criteria below are proposals awaiting final approval;
-they have not been empirically validated. This addendum clarifies the
+**Status: approved design policies; implementation exists.** The role-based
+confirmation workflow and seven cause-specific criteria were approved by the
+project owner. They have not been empirically validated as proof of causal
+accuracy. This addendum clarifies the
 architecture proposal after review of
 [`classifier-error-analysis-v1.md`](classifier-error-analysis-v1.md),
 [`classifier-architecture-proposal-v1.md`](classifier-architecture-proposal-v1.md),
@@ -107,9 +108,9 @@ assessor derives references from `source` plus `run_id`/`log_id`, and can
 fall back to `EVIDENCE-{index}`. That generated label alone is not source
 provenance and cannot satisfy canonical traceability.
 
-## Proposed role-based root-cause confirmation
+## Approved role-based root-cause confirmation
 
-**Proposed; awaiting final approval; not empirically validated.** The
+**Approved design policy; not empirically validated.** The
 deterministic classifier and optional LLM may extract evidence and propose
 candidates only. Neither may set or promote `confirmed_root_cause`.
 
@@ -121,8 +122,8 @@ candidates only. Neither may set or promote `confirmed_root_cause`.
    reviewer grant defined by the project owner/admin. The reviewer checks the
    evidence and each applicable criterion, then records approve, reject, or
    needs-more-evidence, with rationale, reviewer identity/role, and timestamp.
-   Proposed safeguard: the reviewer is a different person from the
-   investigator who submitted the hypothesis.
+   The reviewer must be a different person from the investigator who
+   submitted the hypothesis.
 3. Approval is allowed only if all mandatory positive evidence and verification
    criteria below pass, provenance resolves to source records, and no material
    contradiction remains. Human approval cannot override insufficient or
@@ -137,18 +138,19 @@ candidates only. Neither may set or promote `confirmed_root_cause`.
 5. Confirmation does not change incident lifecycle. The lifecycle owner
    separately records remediation and any transition to resolved/closed.
 
-The authorized role name/grant process and reviewer independence rule are
-proposals awaiting final approval. No existing permission or confirmation
-workflow is assumed.
+The investigator/reviewer roles, explicit reviewer authorization, reviewer
+independence, and audit record are approved design policies. The current
+implementation enforces configured grants and distinct actor IDs. These
+controls have not been evaluated in a production identity environment.
 
-## Proposed cause-specific verification criteria
+## Approved cause-specific verification criteria
 
 The following are proposed minimum gates for confirming a causal explanation.
 They distinguish **symptom evidence** (enough to classify what happened) from
 **causal evidence** (evidence for why it happened and the mechanism). A symptom
-may be `candidate_only` with no causal candidate. The criteria are design
-proposals, not empirically validated rules; they must be reviewed and versioned
-before implementation or use in a human study.
+may be `candidate_only` with no causal candidate. The criteria are approved design policies and are versioned in the
+implementation. They have not been empirically validated and do not by
+themselves establish real-world causal accuracy.
 
 | Supported class | Symptom evidence (classification only) | Additional positive causal evidence required to confirm | Disqualifying conditions; missing or conflicting evidence |
 |---|---|---|---|
@@ -177,7 +179,7 @@ Frozen evaluator v2.0 and historical reports remain untouched.
 |---|---|---|
 | Evidence provenance and relevance | Every emitted evidence ref resolves exactly to a real item in that case's input evidence; the item's text/typed fields support the linked signal, candidate, conflict, or confirmation assertion. Derived signals cite every operand and recompute to the reported value. | Missing, generated-only, invented, dangling, or irrelevant ref; unsupported assertion; or unreproducible derivation. A populated reference field alone never passes. |
 | Causal claim safety | Every causal statement is marked candidate or confirmed. Candidates cite supporting and, when present, contradicting evidence. A confirmed cause has the complete confirmation record and passes every predeclared criterion. Human review adjudicates claim-to-evidence relevance. | Unqualified causal statement, candidate without support, confirmation without all gates, or human approval used to override insufficient/contradictory evidence. |
-| Role-based confirmation | For each confirmed cause, an investigator submission is followed by a decision from an explicitly authorized reviewer; the record contains decision, rationale, reviewer identity/role, timestamp, checklist version, and criterion-level results. The proposed independent-reviewer safeguard is met. | Classifier/LLM confirmation, missing/unauthorized reviewer, missing audit record, self-approval if independence is approved, or reviewer override of a failed/missing/contradicted criterion. |
+| Role-based confirmation | For each confirmed cause, an investigator submission is followed by a decision from an explicitly authorized reviewer; the record contains decision, rationale, reviewer identity/role, timestamp, checklist version, and criterion-level results. The approved independent-reviewer requirement is met. | Classifier/LLM confirmation, missing/unauthorized reviewer, missing audit record, self-approval, or reviewer override of a failed/missing/contradicted criterion. |
 | Cause-specific verification | Every confirmed cause maps to a supported class and satisfies all applicable positive-evidence requirements in the verification table, with source-backed evidence for the mechanism and no active disqualifier. | Symptom-only evidence is used as causal proof; a required check is missing; a disqualifier applies; or an unresolved contradiction remains. Candidate/unconfirmed outcomes may still pass when confirmation is correctly withheld. |
 | Conflict | For annotated incompatible claims over the same entity/run, metric/state, and time scope, output marks evidence conflicting and cites both sides. If category choice is blocked, `classification.status=unresolved`, `resolution_status=unresolved`, and legacy category is `conflicting_evidence`. Non-comparable claims remain non-conflicts. | One side silently selected, conflict omitted, only one side cited, or non-comparable claims treated as contradictory. |
 | Abstention and candidate-only | Annotated insufficient/materially ambiguous cases have `classification.status=unresolved` and `resolution_status=unresolved` with a case-specific reason. A supported symptom with unconfirmed cause has `classification.status=supported` and `resolution_status=candidate_only`, including when `candidates=[]`; in that empty case an explicit no-supported-cause explanation is present. | Category assigned without positive evidence; supported symptom marked unresolved solely because cause is unknown; empty candidate list filled with speculation; or unsupported symptom marked candidate-only. |
@@ -204,16 +206,16 @@ traceability requires stable references at the future input boundary.
 - **Approved:** human confirmation cannot bypass predefined criteria or
   insufficient/contradictory evidence; classifier and LLM cannot promote
   candidates.
-- **Proposed policy awaiting final approval:** investigator-submitted
-  hypothesis, explicitly authorized human reviewer, proposed reviewer
-  independence, auditable decision/rationale/identity/timestamp, and
-  cause-specific positive evidence and disqualifier criteria for every
-  supported class. These criteria are not empirically validated and must be
-  approved before implementation or use in a human study.
+- **Approved design policy:** investigator-submitted hypothesis, explicitly
+  authorized independent reviewer, auditable decision/rationale/identity/
+  timestamp, and cause-specific positive evidence and disqualifier criteria
+  for every supported class. The policy is implemented but not empirically
+  validated as a measure of real-world causal accuracy.
 - **Compatibility behavior recorded:** canonical `resolution_status`
   (`candidate_only`, `unresolved`, or `confirmed`) is derived from separate
   classification and causal-assessment fields; legacy `candidates_only`
   remains based on a non-empty candidate list until consumers migrate.
 
 No public-data development corpus has been started. This addendum is returned
-for approval; stop here until approved.
+as the approved design contract. The implementation and its evaluation are
+reported separately; empirical validation remains outstanding.

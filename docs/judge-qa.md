@@ -54,17 +54,17 @@ pseudonymous authors and scored 4/19; its error analysis is published.
 
 ## What has been measured?
 
-One hundred thirty-seven automated tests, a predefined 16-case synthetic
+The latest local run passed 197 automated tests, a predefined 16-case synthetic
 regression set, a separate 27-case versioned project-authored holdout, a frozen
-19-case reviewer holdout, frontend quality checks, and a reproducible local
-Exasol scale benchmark. The reviewer holdout scored 4/19 and is not a
+19-case reviewer holdout, frontend lint/build, and a reproducible local Exasol
+scale benchmark. The reviewer holdout scored 4/19 and is not a
 production accuracy estimate. The frozen four-participant impact study still
 has 0/40 recorded trials from 0/4 participants.
 
-A separate licensed public-message corpus covers nine short messages from
-Apache Spark, Apache Airflow, and dbt-common. It scores 6/9 with every source,
-licence, prediction, and mismatch published. Its labels are project-authored,
-so it measures vocabulary compatibility rather than independent accuracy.
+The newer public issue workspace covers ten Airflow/dbt issues and scores 7/10
+against project-assigned labels, with no independent adjudication. An older
+nine-message compatibility set scores 6/9. Neither result is independent
+accuracy.
 
 ## How does the system handle an unseen failure?
 

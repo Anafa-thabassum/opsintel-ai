@@ -155,19 +155,17 @@ def verify(allow_dirty=False):
         failures.append("Controlled benchmark ratio is inconsistent in the deck")
     if f"{current_test_count}/{current_test_count} automated tests passed" not in readme:
         failures.append("Current automated-test result is missing from the README")
+    if not re.search(rf"\b{current_test_count}\s+automated tests passed\b", deck_text, re.IGNORECASE):
+        failures.append("Current automated-test result is missing from the deck")
+    if f"{current_test_count} passing automated tests" not in narration:
+        failures.append("Current automated-test result is missing from the demo script")
     historical_match = re.search(r"Automated tests: \*\*(\d+) passed\*\*", evaluation)
     if historical_match is None:
         failures.append("Historical automated-test count is missing from the evaluation report")
-    else:
-        historical_count = int(historical_match.group(1))
-        if historical_count > current_test_count:
-            failures.append("Historical automated-test count exceeds the current suite")
-        if not re.search(rf"\b{historical_count}\s*/\s*{historical_count}\b", deck_text):
-            failures.append("Historical automated-test result is inconsistent in the deck")
-        if f"{historical_count} passing automated tests" not in narration:
-            failures.append("Historical automated-test result is inconsistent in the narration")
-        if "historical submission" not in readme.lower():
-            failures.append("README must identify the dated deck and narration as a historical submission")
+    elif int(historical_match.group(1)) > current_test_count:
+        failures.append("Historical automated-test count exceeds the current suite")
+    if "historical 2:34" not in readme.lower():
+        failures.append("README must identify the existing MP4 as a historical recording")
 
     deck_text_lower = deck_text.lower()
     if "one upstream failure explains" in deck_text_lower:

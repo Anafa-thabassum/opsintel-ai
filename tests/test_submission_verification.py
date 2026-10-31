@@ -19,10 +19,12 @@ def test_pitch_deck_is_readable_and_has_expected_slide_count():
     )
 
     assert slide_count == 11
-    assert "FOLLOW THE EVIDENCE" in text.upper()
+    assert "EVIDENCE-FIRST PIPELINE INVESTIGATION" in text.upper()
+    assert "VERIFIED MEMORY REQUIRES A SEPARATE REVIEWER" in text.upper()
 
 
-def test_historical_submission_count_cannot_exceed_current_suite(monkeypatch):
+def test_current_test_count_must_appear_in_deck_and_demo_script(monkeypatch):
     monkeypatch.setattr(verify_submission, "_current_test_count", lambda: 100)
     result = verify_submission.verify(allow_dirty=True)
-    assert "Historical automated-test count exceeds the current suite" in result["failures"]
+    assert "Current automated-test result is missing from the deck" in result["failures"]
+    assert "Current automated-test result is missing from the demo script" in result["failures"]

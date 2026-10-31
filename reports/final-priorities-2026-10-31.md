@@ -43,10 +43,10 @@ as ground truth or tune the classifier against them.
 | `.venv/bin/python -m tests.run_evaluation` | 16/16 predefined synthetic challenge cases; not production accuracy |
 | `npm run lint` | Passed |
 | `npm run build` | Passed; Vite reports a non-failing 650.06 kB main-chunk size advisory |
-| `.venv/bin/python -m scripts.verify_submission --allow-dirty` | Passed; 197 tests recorded and no submission-artifact failures |
+| `.venv/bin/python -m scripts.verify_submission --allow-dirty` | Passed; 197 tests passed in the current run and no submission-artifact failures |
 | Frozen-holdout hashes | Unchanged at initial and final inspection; values listed below |
 | Hosted CI on current tree | Not run; current changes are uncommitted |
-| Public-data UI | Reloaded local app and inspected populated public workspace: 10 records, provenance and evidence links visible; not a complete all-route or mobile QA pass |
+| Public-data UI | Browser page renders with explicit Exasol-unavailable state; prior populated 10-record inspection is documented in reports/final-transformation-2026-10-31.md |
 | Live Exasol memory workflow | Existing ten-record public ingestion is available locally; the full reviewer confirmation/restart/retrieval journey was not verified |
 
 Protected hashes:

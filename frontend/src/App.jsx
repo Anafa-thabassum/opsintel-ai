@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowRight, Bot,
-  ChevronDown, ChevronRight, CircleDot,
+  ChevronDown, ChevronRight, CircleDot, Menu, PanelLeftClose, PanelLeftOpen, X,
   Database, FileSearch, GitBranch, LayoutDashboard, LoaderCircle, LockKeyhole,
   RefreshCw, Search, ShieldCheck, Sparkles, Sun, Moon, Terminal, Zap,
 } from "lucide-react";
@@ -124,7 +124,7 @@ function LandingPage() {
         </section>
       </main>
 
-      <footer className="public-footer"><span>Follow the evidence. Investigate faster. Confirm carefully.</span><span>ExaThon India 2026</span></footer>
+      <footer className="public-footer"><span>Follow the evidence. Investigate clearly. Confirm carefully.</span><span>ExaThon India 2026</span></footer>
     </div>
   );
 }
@@ -156,7 +156,7 @@ function PublicScorecard() {
         <div className="eyebrow"><ShieldCheck size={14} /> PUBLIC-DATA SCORECARD</div>
         <h1>Classifier compatibility on sourced failure messages</h1>
         <p className="page-subtitle">Real excerpts from public Apache Airflow and dbt issue records. No generated incidents, run counts, or trend data.</p>
-        {error && <div className="error-banner">{error}</div>}
+        {error && <div className="error-banner" role="alert">{error}</div>}
         {!report && !error && <div className="panel">Loading public corpus…</div>}
         {report && <>
           <section className="scorecard-summary">
@@ -216,13 +216,20 @@ function Dashboard({ onExit }) {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("latest");
+  const [incidentPage, setIncidentPage] = useState(0);
   const [activeNav, setActiveNav] = useState("Overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [reviewByRun, setReviewByRun] = useState({});
   const investigationRequest = useRef(0);
   const [trendError, setTrendError] = useState("");
+  const [cascadeError, setCascadeError] = useState("");
   const [confirmedCount, setConfirmedCount] = useState(null);
   const [confirmedRecord, setConfirmedRecord] = useState(null);
+  const [compatibilityReport, setCompatibilityReport] = useState(null);
+  const [compatibilityError, setCompatibilityError] = useState("");
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -233,6 +240,7 @@ function Dashboard({ onExit }) {
     setLoading(true);
     setError("");
     setTrendError("");
+    setCascadeError("");
 
     try {
       const [healthResult, incidentsResult, trendResult, cascadeResult] = await Promise.allSettled([
@@ -287,11 +295,14 @@ function Dashboard({ onExit }) {
         try {
           const cascadeData = await cascadeResponse.json();
           setCascades(Array.isArray(cascadeData.cascades) ? cascadeData.cascades : []);
+          setCascadeError("");
         } catch {
           setCascades([]);
+          setCascadeError("Unable to read dependency analytics data.");
         }
       } else {
         setCascades([]);
+        setCascadeError(cascadeResponse ? `Dependency analytics returned HTTP ${cascadeResponse.status}.` : "Unable to connect to dependency analytics.");
       }
 
       const nextId = rows.some((item) => item.run_id === selectedId)
@@ -301,6 +312,8 @@ function Dashboard({ onExit }) {
       setSelectedId(nextId);
     } catch (err) {
       setHealth("error");
+      setTrendError("Trend analytics are unavailable while the API or database connection is down.");
+      setCascadeError("Dependency analytics are unavailable while the API or database connection is down.");
       setError(
         err?.message || "Unable to connect to the OpsIntel API. Make sure your FastAPI server is running at 127.0.0.1:8000."
       );
@@ -356,18 +369,39 @@ async function loadInvestigation(runId) {
   }, [refreshKey]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${API}/scorecard/public`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error(`Public evaluation returned HTTP ${response.status}`)))
+      .then(setCompatibilityReport)
+      .catch((err) => { if (err.name !== "AbortError") setCompatibilityError(err.message || "Public evaluation is unavailable."); });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
     if (selectedId != null) loadInvestigation(selectedId);
   }, [selectedId]);
 
   const filteredIncidents = useMemo(() => {
     return incidents.filter((incident) => {
-      const matchesSearch = incident.pipeline_name
-        .toLowerCase()
-        .includes(search.toLowerCase());
+      const haystack = `${incident.pipeline_name} ${incident.run_id} ${incident.status}`.toLowerCase();
+      const matchesSearch = haystack.includes(search.toLowerCase());
       const matchesFilter = filter === "all" || incident.status === filter;
       return matchesSearch && matchesFilter;
     });
   }, [incidents, search, filter]);
+  const sortedIncidents = useMemo(() => [...filteredIncidents].sort((left, right) => (
+    sortOrder === "missing"
+      ? (Number(right.missing_rows) || 0) - (Number(left.missing_rows) || 0)
+      : Number(right.run_id) - Number(left.run_id)
+  )), [filteredIncidents, sortOrder]);
+  const incidentPageCount = Math.ceil(sortedIncidents.length / 20);
+  const visibleIncidents = sortedIncidents.slice(incidentPage * 20, (incidentPage + 1) * 20);
+  const evaluationCategories = useMemo(() => [...new Set((compatibilityReport?.results || []).flatMap((row) => [row.expected, row.predicted]))].sort(), [compatibilityReport]);
+  const evaluationMatrix = useMemo(() => {
+    const matrix = Object.fromEntries(evaluationCategories.map((category) => [category, Object.fromEntries(evaluationCategories.map((prediction) => [prediction, 0]))]));
+    for (const row of compatibilityReport?.results || []) matrix[row.expected][row.predicted] += 1;
+    return matrix;
+  }, [compatibilityReport, evaluationCategories]);
 
   const totalMissing = incidents.reduce(
     (total, item) => total + Number(item.missing_rows ?? 0),
@@ -424,8 +458,9 @@ async function loadInvestigation(runId) {
   };
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+      {mobileNavigationOpen && <button className="mobile-nav-backdrop" aria-label="Close navigation" onClick={() => setMobileNavigationOpen(false)} />}
+      <aside className={`sidebar ${mobileNavigationOpen ? "mobile-open" : ""}`}>
         <a className="brand" href="#" onClick={(e) => e.preventDefault()}>
           <div className="brand-mark"><Activity size={23} /></div>
           <div>
@@ -434,36 +469,36 @@ async function loadInvestigation(runId) {
           </div>
         </a>
 
+        <button className="sidebar-collapse-button" onClick={() => setSidebarCollapsed((value) => !value)} aria-label={sidebarCollapsed ? "Expand navigation" : "Collapse navigation"} title={sidebarCollapsed ? "Expand navigation" : "Collapse navigation"}>
+          {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        </button>
         <div className="workspace-label">WORKSPACE</div>
         <nav className="nav-list">
           {[
-            { label: "Overview", icon: LayoutDashboard },
-            { label: "Incidents", icon: AlertTriangle },
-            { label: "Investigations", icon: FileSearch },
-            { label: "Verified Memory", icon: ShieldCheck },
-            { label: "Public Data", icon: Database },
-          ].map(({ label, icon: Icon }) => (
+            { label: "Overview", icon: LayoutDashboard, target: "workspace-overview" },
+            { label: "Investigations", icon: FileSearch, target: "investigation-panel" },
+            { label: "Pipelines", icon: Activity, target: "incident-list" },
+            { label: "Dependency Graph", icon: GitBranch, target: "dependency-graph" },
+            { label: "Verified Memory", icon: ShieldCheck, target: "verified-memory" },
+            { label: "Public Data", icon: Database, route: "public" },
+            { label: "Analytics", icon: Zap, target: "analytics-panel" },
+            { label: "Incident History", icon: AlertTriangle, target: "incident-list" },
+          ].map(({ label, icon: Icon, target, route: destination }) => (
             <button
               key={label}
               className={`nav-item ${activeNav === label ? "active" : ""}`}
+              title={sidebarCollapsed ? label : undefined}
+              aria-current={activeNav === label ? "page" : undefined}
               onClick={() => {
                 setActiveNav(label);
-                if (label === "Incidents") {
-                  document.getElementById("incident-list")?.scrollIntoView({ behavior: "smooth" });
-                } else if (label === "Investigations") {
-                  document.getElementById("investigation-panel")?.scrollIntoView({ behavior: "smooth" });
-                } else if (label === "Verified Memory") {
-                  document.getElementById("verified-memory")?.scrollIntoView({ behavior: "smooth" });
-                } else if (label === "Public Data") {
-                  navigate("public");
-                } else {
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }
+                setMobileNavigationOpen(false);
+                if (destination) return navigate(destination);
+                document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
             >
               <Icon size={18} />
               <span>{label}</span>
-              {label === "Incidents" && <span className="nav-count">{incidents.length}</span>}
+              {(label === "Pipelines" || label === "Incident History") && <span className="nav-count">{health === "error" ? "—" : incidents.length}</span>}
             </button>
           ))}
         </nav>
@@ -489,10 +524,14 @@ async function loadInvestigation(runId) {
 
       <main className="main-area">
         <header className="topbar">
+          <button className="mobile-menu-button" aria-label={mobileNavigationOpen ? "Close navigation" : "Open navigation"} onClick={() => setMobileNavigationOpen((value) => !value)}>
+            {mobileNavigationOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
           <div className="breadcrumb">
             <span>Workspace</span><ChevronRight size={14} /><strong>{activeNav}</strong>
           </div>
           <div className="topbar-actions">
+            <label className="global-search"><Search size={15} /><input aria-label="Search pipelines and runs" value={search} onChange={(event) => { setSearch(event.target.value); setIncidentPage(0); }} placeholder="Search pipelines or runs" /></label>
             <div className="live-indicator"><span /> SYSTEM {health === "connected" ? "OPERATIONAL" : health === "checking" ? "CHECKING" : "DEGRADED"}</div>
             <button className="icon-button" title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")}>{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}</button>
             <button className="icon-button" title="Refresh data" onClick={() => setRefreshKey((n) => n + 1)}><RefreshCw size={17} /></button>
@@ -500,24 +539,25 @@ async function loadInvestigation(runId) {
           </div>
         </header>
 
-        <div className="page-content">
+        <div className="page-content" id="workspace-overview">
           <section className="welcome-row">
             <div>
               <div className="eyebrow"><Sparkles size={14} /> INTELLIGENCE OVERVIEW</div>
               <h1>Operations <span>command center</span></h1>
-              <p className="page-subtitle">Understand failures. Follow the evidence. Restore reliability.</p>
+              <p className="page-subtitle">Investigate failures. Trace evidence. Keep causes reviewable.</p>
+              <span className="synthetic-data-pill"><Database size={13} /> Synthetic demo telemetry</span>
             </div>
             <button className="primary-button" onClick={() => setRefreshKey((n) => n + 1)}>
               <RefreshCw size={16} /> Refresh intelligence
             </button>
           </section>
 
-          {error && <div className="error-banner"><AlertTriangle size={17} />{error}</div>}
+          {error && <div className="error-banner" role="alert"><AlertTriangle size={17} />{error}</div>}
 
           <section className="metric-grid">
             <MetricCard
               label="Pipeline incidents"
-              value={loading ? "—" : formatNumber(incidents.length)}
+              value={loading || health === "error" ? "—" : formatNumber(incidents.length)}
               detail="Requires investigation"
               icon={AlertTriangle}
               tone="red"
@@ -525,7 +565,7 @@ async function loadInvestigation(runId) {
             />
             <MetricCard
               label="Known rows missing"
-              value={loading ? "—" : formatNumber(totalMissing)}
+              value={loading || health === "error" ? "—" : formatNumber(totalMissing)}
               detail="Across runs with row counts"
               icon={Database}
               tone="purple"
@@ -560,7 +600,7 @@ async function loadInvestigation(runId) {
               </div>
 
               <div className="chart-summary">
-                <strong>{loading ? "—" : incidents.length}</strong>
+                <strong>{loading || health === "error" ? "—" : incidents.length}</strong>
                 <span>Incidents across pipeline history</span>
               </div>
 
@@ -570,10 +610,10 @@ async function loadInvestigation(runId) {
                     <LoaderCircle className="spin" size={22} />
                     Loading trend analytics…
                   </div>
-                ) : trendError ? (
+                ) : trendError || health === "error" ? (
                   <div className="empty-state" role="status">
                     <AlertTriangle size={20} />
-                    <span>{trendError}</span>
+                    <span>{trendError || "Trend analytics are unavailable."}</span>
                   </div>
                 ) : chartData.length === 0 ? (
                   <div className="empty-state">No trend data available yet.</div>
@@ -590,11 +630,11 @@ async function loadInvestigation(runId) {
                         </linearGradient>
                       </defs>
 
-                      <CartesianGrid stroke="#20273a" strokeDasharray="3 5" vertical={false} />
+                      <CartesianGrid stroke={theme === "light" ? "#dce3ea" : "#20273a"} strokeDasharray="3 5" vertical={false} />
 
                       <XAxis
                         dataKey="time"
-                        tick={{ fill: "#7f8ba5", fontSize: 11 }}
+                        tick={{ fill: theme === "light" ? "#657386" : "#7f8ba5", fontSize: 11 }}
                         axisLine={false}
                         tickLine={false}
                       />
@@ -602,7 +642,7 @@ async function loadInvestigation(runId) {
                       <YAxis
                         yAxisId="count"
                         allowDecimals={false}
-                        tick={{ fill: "#7f8ba5", fontSize: 11 }}
+                        tick={{ fill: theme === "light" ? "#657386" : "#7f8ba5", fontSize: 11 }}
                         axisLine={false}
                         tickLine={false}
                       />
@@ -612,19 +652,19 @@ async function loadInvestigation(runId) {
                         orientation="right"
                         domain={[0, 100]}
                         tickFormatter={(value) => `${value}%`}
-                        tick={{ fill: "#f59e0b", fontSize: 11 }}
+                        tick={{ fill: theme === "light" ? "#96500a" : "#f59e0b", fontSize: 11 }}
                         axisLine={false}
                         tickLine={false}
                       />
 
                       <Tooltip
                         contentStyle={{
-                          background: "#121827",
-                          border: "1px solid #303951",
+                          background: theme === "light" ? "#fff" : "#121827",
+                          border: `1px solid ${theme === "light" ? "#d7e0e8" : "#303951"}`,
                           borderRadius: 10,
-                          color: "#f1f4ff",
+                          color: theme === "light" ? "#1e2b39" : "#f1f4ff",
                         }}
-                        labelStyle={{ color: "#aab4cc" }}
+                        labelStyle={{ color: theme === "light" ? "#536477" : "#aab4cc" }}
                         formatter={(value, name) => [
                           value == null
                             ? "Unavailable"
@@ -681,28 +721,46 @@ async function loadInvestigation(runId) {
                 <div className="orb-center"><Activity size={31} /></div>
               </div>
               <div className="health-title">{health === "connected" ? "Data source reachable" : health === "checking" ? "Checking connection" : "Connection needs attention"}</div>
-              <p className="health-description">{health === "connected" ? "FastAPI and the database health endpoint responded successfully." : "Check that your API server is running."}</p>
+              <p className="health-description">{health === "connected" ? "FastAPI and the database health endpoint responded successfully." : "The API or Exasol connection is unavailable."}</p>
               <div className="service-list">
-                <ServiceRow name="FastAPI service" status={health === "connected"} />
-                <ServiceRow name="Exasol connection" status={health === "connected"} />
-                <ServiceRow name="Incident endpoint" status={!error && !loading} />
-                <ServiceRow name="Cascade analytics" status={!error && !loading} />
+                <ServiceRow name="FastAPI service" status={health === "connected" ? true : health === "checking" ? null : false} />
+                <ServiceRow name="Exasol connection" status={health === "connected" ? true : health === "checking" ? null : false} />
+                <ServiceRow name="Incident endpoint" status={loading ? null : error ? false : true} />
+                <ServiceRow name="Cascade analytics" status={loading ? null : health === "error" || cascadeError ? false : true} />
               </div>
             </div>
           </section>
 
-          {cascades.length > 0 && (
-            <section className="panel cascade-panel" aria-label="Cross-pipeline failure cascade">
+          <section className="panel evaluation-panel" id="analytics-panel">
+            <div className="panel-heading">
+              <div><div className="panel-kicker">DETERMINISTIC EVALUATION</div><h2>Public message compatibility</h2><p className="panel-description">Current classifier compared with project-assigned mappings; these labels are not independent ground truth.</p></div>
+              {compatibilityReport && <span className="subtle-pill">n = {compatibilityReport.total}</span>}
+            </div>
+            {compatibilityError && <div className="empty-state" role="alert">{compatibilityError}</div>}
+            {!compatibilityReport && !compatibilityError && <div className="empty-state">Loading evaluation output…</div>}
+            {compatibilityReport && <>
+              <div className="evaluation-metrics">
+                <div><span>Exact mapping matches</span><strong>{compatibilityReport.correct}/{compatibilityReport.total}</strong><small>{compatibilityReport.accuracy_pct}% · project-labelled corpus</small></div>
+                <div><span>Unresolved outputs</span><strong>{compatibilityReport.results.filter((row) => row.predicted === "unclassified").length}/{compatibilityReport.total}</strong><small>Classifier abstained from a category</small></div>
+                <div><span>Public cases</span><strong>{compatibilityReport.total}</strong><small>Apache Airflow and dbt messages</small></div>
+              </div>
+              <div className="evaluation-table-wrap"><table className="evaluation-table"><caption>Rows are project-assigned categories; columns are deterministic classifier outputs.</caption><thead><tr><th scope="col">Expected mapping</th>{evaluationCategories.map((category) => <th scope="col" key={category}>{categoryLabels[category] || category}</th>)}</tr></thead><tbody>{evaluationCategories.map((expected) => <tr key={expected}><th scope="row">{categoryLabels[expected] || expected}</th>{evaluationCategories.map((predicted) => <td key={predicted}>{evaluationMatrix[expected][predicted] || "—"}</td>)}</tr>)}</tbody></table></div>
+              <div className="evaluation-misses"><strong>Cases needing review</strong>{compatibilityReport.results.filter((row) => !row.correct).map((row) => <a key={row.id} href={row.source_url} target="_blank" rel="noreferrer"><span>{row.id} · {row.project}</span><small>Mapped: {categoryLabels[row.expected] || row.expected} · Output: {categoryLabels[row.predicted] || row.predicted}</small></a>)}{!compatibilityReport.results.some((row) => !row.correct) && <p>No mapping mismatches in this run.</p>}</div>
+              <p className="evaluation-limit">This is a small project-labelled compatibility set. No independent validation, root-cause accuracy, memory learning curve, or Exasol performance benchmark is represented here.</p>
+            </>}
+          </section>
+
+            <section className="panel cascade-panel" id="dependency-graph" aria-label="Cross-pipeline failure cascade">
               <div className="panel-heading">
                 <div>
                   <div className="panel-kicker">EXASOL CONNECT BY</div>
                   <h2>Cross-pipeline failure cascade</h2>
                   <p className="panel-description">Failures occurred downstream within a 120-minute window. Temporal correlation — causation not confirmed.</p>
                 </div>
-                <span className="subtle-pill"><GitBranch size={12} /> {cascades.length} downstream failures</span>
+                <span className="subtle-pill"><GitBranch size={12} /> {cascadeError || health === "error" ? "Unavailable" : `${cascades.length} downstream failures`}</span>
               </div>
               <div className="dependency-graph" aria-label="Interactive dependency failure graph">
-                {cascadeGroups.map((group) => <div className="dependency-graph-row" key={group.root_run_id}>
+                {cascadeGroups.length ? cascadeGroups.map((group) => <div className="dependency-graph-row" key={group.root_run_id}>
                   <button className="dependency-node root" onClick={() => setSelectedId(group.root_run_id)} aria-label={`Investigate root ${group.root_pipeline}, run ${group.root_run_id}`}>
                     <small>ROOT FAILURE</small><strong>{group.root_pipeline}</strong><span>RUN-{String(group.root_run_id).padStart(4, "0")} · {group.root_run_time}</span>
                   </button>
@@ -712,24 +770,27 @@ async function loadInvestigation(runId) {
                       <span className="dependency-node downstream"><small>DEPTH {cascade.dependency_depth} · +{Number(cascade.correlation_lag_minutes).toFixed(1)} MIN</small><strong>{cascade.downstream_pipeline}</strong><span>RUN-{String(cascade.downstream_run_id).padStart(4, "0")} · {cascade.downstream_run_time}</span><em>{cascade.dependency_path}</em></span>
                     </button>)}
                   </div>
-                </div>)}
+                </div>) : <div className="empty-state" role="status">{cascadeError || (health === "error" ? "Dependency analytics are unavailable." : "No correlated downstream failures are present in the current history.")}</div>}
               </div>
             </section>
-          )}
 
           <section className="panel incidents-panel" id="incident-list">
             <div className="panel-heading incident-heading">
               <div>
                 <div className="panel-kicker">LIVE FROM EXASOL</div>
-                <h2>Pipeline incidents <span className="count-chip">{incidents.length}</span></h2>
+                <h2>Pipeline incidents <span className="count-chip">{health === "error" ? "—" : incidents.length}</span></h2>
                 <p className="panel-description">Select an incident to inspect its evidence and diagnostic recommendations.</p>
               </div>
               <div className="table-tools">
-                <div className="search-box"><Search size={15} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search pipelines..." /></div>
-                <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter incidents">
+                <label className="mobile-incident-search"><Search size={15} /><input aria-label="Search pipelines and runs" value={search} onChange={(event) => { setSearch(event.target.value); setIncidentPage(0); }} placeholder="Search pipelines or runs" /></label>
+                <select value={filter} onChange={(e) => { setFilter(e.target.value); setIncidentPage(0); }} aria-label="Filter incidents by status">
                   <option value="all">All statuses</option>
                   <option value="FAILED">Failed</option>
                   <option value="SUCCESS">Success</option>
+                </select>
+                <select value={sortOrder} onChange={(event) => { setSortOrder(event.target.value); setIncidentPage(0); }} aria-label="Sort incidents">
+                  <option value="latest">Latest run</option>
+                  <option value="missing">Most rows missing</option>
                 </select>
               </div>
             </div>
@@ -740,9 +801,9 @@ async function loadInvestigation(runId) {
               </div>
               {loading ? (
                 <div className="empty-state"><LoaderCircle className="spin" size={22} /> Loading incidents from Exasol…</div>
-              ) : filteredIncidents.length === 0 ? (
-                <div className="empty-state">No matching incidents found.</div>
-              ) : filteredIncidents.map((item) => {
+              ) : sortedIncidents.length === 0 ? (
+                <div className="empty-state" role="status">{error ? "Incident history is unavailable while the API or database connection is down." : "No matching incidents found."}</div>
+              ) : visibleIncidents.map((item) => {
                 const completenessPct = completeness(
                   item.expected_rows,
                   item.actual_rows
@@ -770,7 +831,7 @@ async function loadInvestigation(runId) {
                 );
               })}
             </div>
-            <div className="table-footer"><span><CircleDot size={13} /> Data retrieved from your API</span><span>{filteredIncidents.length} visible · {incidents.length} total</span></div>
+            <div className="table-footer"><span><CircleDot size={13} /> Data retrieved from your API</span><span>{error ? "Data unavailable" : `${sortedIncidents.length ? incidentPage * 20 + 1 : 0}–${Math.min((incidentPage + 1) * 20, sortedIncidents.length)} of ${sortedIncidents.length}`}</span>{!error && incidentPageCount > 1 && <div className="incident-pagination"><button disabled={incidentPage === 0} onClick={() => setIncidentPage((page) => page - 1)}>Previous</button><span>Page {incidentPage + 1} of {incidentPageCount}</span><button disabled={incidentPage + 1 >= incidentPageCount} onClick={() => setIncidentPage((page) => page + 1)}>Next</button></div>}</div>
           </section>
 
           <section className="investigation-layout" id="investigation-panel">
@@ -1023,8 +1084,10 @@ function MetricCard({ label, value, detail, icon: Icon, tone, trend }) {
 }
 
 function ServiceRow({ name, status }) {
+  const state = status === true ? "good" : status === false ? "error" : "waiting";
+  const label = state === "good" ? "Operational" : state === "error" ? "Unavailable" : "Checking";
   return (
-    <div className="service-row"><span>{name}</span><span className={`service-status ${status ? "good" : "waiting"}`}><i />{status ? "Operational" : "Checking"}</span></div>
+    <div className="service-row"><span>{name}</span><span className={`service-status ${state}`}><i />{label}</span></div>
   );
 }
 

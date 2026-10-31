@@ -2,31 +2,27 @@
 
 > **Problem statement:** Data engineers lose time diagnosing failed pipelines because run metadata, row counts, and logs are fragmented; they need one traceable investigation that identifies the next diagnostic action without treating an unverified cause as fact.
 
-The repository separates reproducible synthetic demonstration data from a
-small, licensed public-message compatibility corpus. The latter contains nine
-project-labelled Spark, Airflow, and dbt-common messages with source and
-licence URLs; it scored 6/9 and is not presented as independent accuracy.
+OpsIntel combines clearly labelled synthetic Exasol telemetry with a separate
+public Airflow/dbt issue workspace. The public ten-case category comparison is
+7/10 against project-authored labels; it is not independent validation.
 
 | File | Purpose |
 |---|---|
-| `opsintel-ai-pitch-deck.pdf` | Primary pitch deck for upload |
-| `opsintel-ai-pitch-deck.pptx` | Editable pitch deck for the live presentation |
-| `opsintel-ai-demo.mp4` | Existing 2:34 narrated draft; re-record from the current build before submission |
-| `video-narration.txt` | Final 11-scene narration with current test and evaluation claims |
+| `opsintel-ai-pitch-deck.pdf` | Updated 11-slide pitch deck |
+| `opsintel-ai-pitch-deck.pptx` | Editable source deck |
+| `opsintel-ai-demo.mp4` | Historical 2:34 recording; it does not show verified memory |
+| `video-narration.txt` | Draft for a future recording; not a recording transcript |
 
-The narration reflects the expanded incident suite, failed-run comparison,
-137-test suite, and claim-level LLM grounding. The current PPTX and PDF include
-the 137/137 result and describe the 120-minute cascade as temporal correlation
-with causation unconfirmed. The committed MP4 was recorded before those final
-changes, so **do not submit it unchanged**. Re-record
-`video-narration.txt` in the team's own voice from the current build. If the
-recording includes a live Exasol workflow, use only an explicitly authorized
-disposable database. Keep the result below three minutes and then run:
+The updated deck describes investigator submission, separate reviewer
+approval, Exasol audit storage, public-data limitations, and the actual
+validation boundary. It reports 197 tests from the latest local run, 16/16
+predefined synthetic challenge cases, and the 7/10 project-label comparison.
+It does not describe the 15/19 comparison as independent validation.
 
-```bash
-make submission-check
-```
-
-Before submission, upload the video to an accessible location and test the
-link in a private browser window. GitHub may display or download the MP4, but a
-public video host is usually easier for judges.
+The new memory walkthrough cannot be recorded on this machine today: the
+Exasol service is unavailable, so no real confirmation, restart persistence,
+or retrieval was demonstrated. Record it only with an authorized disposable
+Exasol database, separate investigator/reviewer identities, and verified
+source evidence. If the cause checklist cannot be satisfied, record a
+`needs_more_evidence` outcome instead of a confirmation. Keep the video under
+three minutes, then run `make submission-check`.

@@ -13,6 +13,8 @@
 .public-data-intro p { max-width: 700px; margin: 13px 0 0; color: #a0adc1; font-size: 15px; line-height: 1.7; }
 .public-data-live { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; padding: 9px 12px; border: 1px solid #2c514d; border-radius: 5px; color: #91d1b8; background: #17352b55; font: 11px 'DM Mono', monospace; }
 .public-data-live span { width: 7px; height: 7px; border-radius: 50%; background: #66d8a8; }
+.public-data-live.offline { border-color: #813e4b; color: #ffbac4; background: #34151b; }
+.public-data-live.offline span { background: #ff7e8d; }
 .public-data-error { margin-bottom: 18px; padding: 13px 15px; border: 1px solid #813e4b; color: #ffbac4; background: #34151b; font-size: 13px; }
 .public-data-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #293447; background: #111a27; }
 .public-data-metrics > div { display: grid; gap: 5px; padding: 20px 24px; }

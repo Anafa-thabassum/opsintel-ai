@@ -1,17 +1,21 @@
-[0:00-0:25 — Problem]
-At 3:07 a.m., a pipeline alert says failed, but the on-call engineer still has to explain why a run expected one hundred rows and received eighty. Run metadata, counts, and logs are scattered. OpsIntel AI brings that evidence together while refusing to name an unverified root cause. Uptime Institute reports that 54 percent of surveyed significant outages cost more than one hundred thousand dollars, but OpsIntel's impact study is pending, so no project-specific saving is claimed.
+# Next demo recording script — draft, not recorded
 
-[0:25-0:50 — Reproducible incident]
-These are synthetic incidents stored and analysed in Exasol. The dashboard is not hardcoded: SQL calculates completeness and historical features. I am selecting the reproducible daily-sales failure, where one hundred rows were expected and eighty arrived.
+The existing MP4 is a historical 2:34 draft and does not show verified incident memory. Record this script only when an authorized disposable Exasol instance is available and every displayed approval or retrieval is real. If source-backed causal evidence is unavailable, show “needs more evidence”; do not simulate confirmation.
 
-[0:50-1:40 — Evidence, candidates, and cascade]
-OpsIntel retrieves the run and logs, then applies deterministic rules. Each observation names its source. Early termination is a candidate explanation, while the confirmed root cause remains empty. The engineer receives the next diagnostic check; no repair runs automatically. Exasol also traverses the dependency graph. The failed customer-sync run is temporally correlated with three downstream failures that occur after it and within a one-hundred-and-twenty-minute window. Timestamps and non-negative lag support the investigation, but temporal correlation does not establish causation.
+[0:00–0:25 — Problem and user]
+On-call data engineers reconstruct incidents across run history, row counts, and logs. OpsIntel brings these observations together and keeps symptom classification separate from candidate causes. We have not measured investigation-time savings.
 
-[1:40-2:10 — Safe next steps and limitations]
-The next action is diagnostic: inspect the first termination error and source counts before deciding whether to rerun anything. Optional model text cannot alter the deterministic category or confirm a cause. External-reviewer validation remains at zero cases from zero reviewers. The human study remains at zero of forty trials from zero of four participants, and live-model grounding has not been verified.
+[0:25–0:55 — Exasol evidence]
+This workspace uses clearly labelled synthetic demo telemetry. Exasol queries calculate run history, completeness, rolling baselines, and dependency correlations. Show the actual SQL and current query result; do not call it production telemetry.
 
-[2:10-2:40 — Exasol and measured results]
-Exasol is the shared analytical evidence layer. Window functions calculate previous status, rolling row-count baselines, completeness, and failure rate, while CONNECT BY traverses dependencies. The repository has 159 passing automated tests and sixteen of sixteen predefined synthetic regression cases. A licensed public-message corpus matched six of nine project-labelled cases, and all three misses are published. In the cache-off comparison, DuckDB was faster on this laptop, so no Exasol speed advantage is claimed.
+[0:55–1:20 — Investigate]
+Select a failed run. Review its source records, row-count comparison, logs, and extracted signals. OpsIntel classifies the supported symptom and lists evidence gaps. A candidate explanation is not a confirmed root cause.
 
-[2:40-3:00 — Close]
-OpsIntel places the failed run, source-backed observations, candidate explanations, and next safe check in one view. It does not claim production accuracy, measured time savings, causal cascade detection, or automatic recovery. Follow the evidence. Investigate faster. Confirm carefully.
+[1:20–1:45 — Submit and review]
+An investigator submits a source-backed hypothesis. A separate authorized reviewer checks the cause-specific criteria, alternatives, and contradictions. Approve only when every criterion passes; otherwise request more evidence or reject. Show the actual Exasol audit record.
+
+[1:45–2:15 — Retrieve memory]
+Restart the application, investigate a differently worded later failure, and retrieve the real historical confirmation as a candidate. Compare matching and differing evidence. The new incident remains unconfirmed until an engineer verifies its relevance.
+
+[2:15–3:00 — Evaluation and limits]
+The latest local run reports 197 passing automated tests and 16 of 16 predefined synthetic challenge cases. The public issue comparison is 7 of 10 against project-authored labels with no outside adjudication. The original reviewer set recorded 4 of 19 historically; a 15 of 19 comparison on those same cases is not new independent validation. A local benchmark found DuckDB faster at ten million rows. We have no measured user time savings, independent new holdout, or demonstrated causal accuracy.

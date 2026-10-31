@@ -64,11 +64,10 @@ causes and leaves the confirmed root cause unset until a person verifies it.
   cases, versioned 27-case holdout, and benchmark workloads are generated for
   this hackathon. They are reproducible, but they are not production telemetry.
 - **Public compatibility data:**
-  `evaluation/public_failure_corpus_v1.csv` contains nine short messages taken
-  from official Apache Spark, Apache Airflow, and dbt-common source or
-  documentation. Every row records its source URL, Apache-2.0 licence URL, and
-  project-authored expected category. The current score is 6/9, with all three
-  misses published in `reports/public-corpus-v1.md`.
+  `evaluation/public_failure_corpus_v1.csv` is the older nine-message
+  compatibility set (6/9 project labels). The current ten-issue v2 comparison
+  is 7/10 against project-authored labels, not independent ground truth; the
+  cases and mismatches are documented in the versioned reports.
 - **Independent validation status:** this public corpus is not an external
   reviewer holdout, and no real user-impact trials have been recorded yet.
   The existing 19-case reviewer holdout is frozen at its historical result;
@@ -99,9 +98,11 @@ causes and leaves the confirmed root cause unset until a person verifies it.
 | Public source repository | Available |
 | MIT licence | Available |
 | Reproducible run guide | Available below |
-| Pitch deck PDF and PPTX | Historical submission draft in `submission/`; it predates verified memory |
+| Pitch deck PDF and PPTX | Updated for reviewer-governed memory and current evidence; live Exasol workflow is not verified today |
 | Live demo script | Available in `docs/demo-script.md`; rehearse against authorized Exasol before recording |
-| Recorded demo video | Historical submission draft (2:34); it does not demonstrate verified memory and must be re-recorded |
+| Recorded demo video | Historical 2:34 recording; it does not demonstrate verified memory and must be re-recorded |
+
+See the [final ExaThon execution review](reports/exathon-final-execution-2026-10-31.md) for checks, rubric status, and blockers.
 
 ## What the prototype does
 
@@ -483,8 +484,8 @@ Latest verified results:
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
-- **6/9 licensed public framework messages matched** in a separate
-  project-labelled compatibility corpus; all three misses are published.
+- The older **6/9 public-message corpus** is preserved as a separate historical
+  project-labelled compatibility result; all three misses are published.
 - A second issue-linked starter corpus contains **10 Airflow/dbt cases** and
   scores **7/10** after preserving source labels and documenting their mapping
   into OpsIntel's taxonomy. This is also project-labelled compatibility
@@ -493,7 +494,7 @@ Latest verified results:
   engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
   this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.
 - **Frontend lint passed with no warnings**.
-- **Frontend production build passed**; Vite reported a non-failing 632.77 kB
+- **Frontend production build passed**; Vite reported a non-failing 657.66 kB
   main-chunk advisory.
 
 These results demonstrate reproducibility on the included synthetic scenarios
@@ -646,4 +647,4 @@ Licensed under the [MIT Licence](LICENSE).
 
 ---
 
-**OpsIntel AI — Follow the evidence. Investigate faster. Confirm carefully.**
+**OpsIntel AI — Follow the evidence. Investigate clearly. Confirm carefully.**
