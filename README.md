@@ -9,6 +9,22 @@ OpsIntel helps data engineers investigate failed runs using source-linked logs, 
 [![CI](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+## Problem statement
+
+**Track 04 — The Work Behind the Work**
+
+Data engineers and data-platform teams are responsible for maintaining reliable data pipelines that support analytics, dashboards, finance, and business operations.
+
+When pipelines fail overnight or deliver incomplete data, engineers often have to manually investigate fragmented execution metadata, row counts, logs, and upstream dependencies to identify what went wrong.
+
+Although monitoring tools can detect pipeline failures, understanding the underlying causes still requires engineers to correlate evidence across multiple sources. This delays diagnosis, makes investigations difficult to reproduce, and causes operational knowledge to remain scattered across individuals and incident records.
+
+OpsIntel AI addresses this problem by bringing operational evidence into one structured investigation workflow, producing traceable candidate explanations, and retaining causes only after authorized human review.
+
+**Primary users:** On-call data engineers and data-platform teams.
+
+**Why it matters:** Pipeline failures and incomplete data can delay downstream analytics, dashboards, finance reporting, and business decisions.
+
 ## What it does
 
 - **Connects operational evidence:** Exasol calculates run completeness, rolling history, and time-correlated dependency paths.
@@ -104,6 +120,7 @@ These results answer different questions and must not be combined into one accur
 | Public issue corpus V2 | 7/10 | Project-assigned taxonomy mappings; not independent adjudication. |
 | Exasol/DuckDB analytical comparison | DuckDB faster in recorded 1M and 10M runs | Synthetic workload, seven runs per engine, local single-user environment. At 10M rows: DuckDB median 1,080.358 ms; Exasol median 4,902.269 ms. |
 | Memory lookup | 51.627 ms median, 64.753 ms p95 | Zero-active-history baseline only; not evidence of scaling or performance improvement. |
+| Frozen reviewer holdout | 4/19 (21.1%) | Three pseudonymous reviewer authors; frozen historical result; 15 wrong labels and 16 unresolved outputs. |
 
 Frozen evaluation files and historical reports remain unchanged. Dataset hashes, exact methods, benchmark samples, label provenance, and limitations are in the [reproducibility report](reports/reproducibility-and-evaluation.md) and the linked source reports. No participant study or real-human memory confirmation is claimed.
 
@@ -114,6 +131,17 @@ Frozen evaluation files and historical reports remain unchanged. Dataset hashes,
 - [Exasol setup](docs/EXASOL_SETUP.md) · [Verified Incident Memory](docs/VERIFIED_INCIDENT_MEMORY.md) · [API reference](docs/API_REFERENCE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md) · [Security](docs/SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 - [Evaluation methodology](docs/evaluation-methodology.md) · [Public data provenance](docs/public-data-provenance.md) · [Demo script](docs/demo-script.md)
+-  [Deployment guide](docs/deployment.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Security](docs/SECURITY.md)
+
+## Hackathon submission
+
+- **Track:** Track 04 — The Work Behind the Work
+- **Source code:** This public GitHub repository
+- **Pitch deck:** See the submission materials in the `submission/` directory.
+- **Demo video:** A final demonstration video of no more than 3 minutes will be included with the submission.
+- **Setup:** Follow the [Quickstart](docs/QUICKSTART.md).
+- **Deployment:** Follow the [Deployment guide](docs/deployment.md).
+- **License:** MIT.
 
 ## Known limitations
 
