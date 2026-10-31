@@ -6,7 +6,7 @@ OpsIntel AI helps data engineers investigate failed or incomplete runs when logs
 
 > **Start here:** Exasol Personal + Python + Node.js → `make setup` → initialize the demo database → start FastAPI and the React dashboard. See [Quickstart](docs/QUICKSTART.md).
 
-[![CI](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml)
+[![CI](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## What it does
