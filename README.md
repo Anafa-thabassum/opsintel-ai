@@ -86,7 +86,7 @@ curl http://127.0.0.1:8000/investigate/1
 
 ## Verified Incident Memory status
 
-The Exasol-backed API workflow was exercised end to end with public Airflow issue evidence and temporary **test-only** identities. The test approval was later revoked through the audited endpoint. It verified persistence, retrieval, and a one-winner concurrent review transition; it did **not** verify a real authorized human decision. The only current live-memory performance measurement is an empty-history query (0 active memories): median 51.627 ms and p95 64.753 ms over 30 requests. It is not a scale benchmark. Human review and increasing-history measurements remain outstanding.
+The existing MP4 is a historical 2:34 recording and does not show the current Verified Incident Memory workflow. The Exasol-backed API workflow was exercised end to end with public Airflow issue evidence and temporary **test-only** identities. The test approval was later revoked through the audited endpoint. It verified persistence, retrieval, and a one-winner concurrent review transition; it did **not** verify a real authorized human decision. The only current live-memory performance measurement is an empty-history query (0 active memories): median 51.627 ms and p95 64.753 ms over 30 requests. It is not a scale benchmark. Human review and increasing-history measurements remain outstanding.
 
 See the [memory workflow](docs/VERIFIED_INCIDENT_MEMORY.md), [rehearsal checklist](docs/verified-incident-memory-browser-rehearsal.md), and [runtime evidence](reports/exasol-memory-e2e-2026-10-31.md).
 
@@ -96,7 +96,7 @@ These results answer different questions and must not be combined into one accur
 
 | Evidence | Result | Provenance and limit |
 |---|---:|---|
-| Automated suite | 200 tests passed | Latest local `make verify` on 2026-10-31; includes unit/API/frontend checks. |
+| Automated suite | 200/200 automated tests passed | Latest local `make verify` on 2026-10-31; includes unit/API/frontend checks. |
 | Classifier challenge | 16/16 | Predefined synthetic challenge; regression evidence, not production accuracy. |
 | Project-authored holdout | 27/27 | Synthetic, project-authored; not independent. |
 | Frozen reviewer holdout | 4/19 (21.1%) | Three pseudonymous reviewer authors; frozen historical result; 15 wrong labels and 16 unresolved outputs. |
