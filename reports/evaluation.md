@@ -1,5 +1,7 @@
 # OpsIntel AI — Evaluation Report
 
+> **Historical snapshot:** This report preserves earlier counts and environment notes. For the latest consolidated results, hashes, and benchmark limitations, see [reproducibility and evaluation](reproducibility-and-evaluation.md). Frozen datasets, labels, and their original reports remain unchanged.
+
 ## Objective
 
 Evaluate whether OpsIntel AI classifies common data-pipeline failure evidence

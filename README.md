@@ -1,369 +1,70 @@
 # OpsIntel AI
 
-**Evidence-based data incident investigation and verified operational memory using Exasol Personal, FastAPI, and React.**
+**Follow pipeline evidence from Exasol to a human-reviewed incident hypothesis.**
 
-> **Problem statement:** Data engineers lose time diagnosing failed pipelines because run metadata, row counts, and logs are fragmented; they need one traceable investigation that identifies the next diagnostic action without treating an unverified cause as fact.
+OpsIntel AI helps data engineers investigate failed or incomplete runs when logs, row counts, and historical context are spread across systems. It brings those observations together, shows traceable candidate explanations, and leaves root-cause confirmation to an authorized human reviewer.
 
-> ExaThon India 2026 · Track 04: The Work Behind the Work
+> **Start here:** Exasol Personal + Python + Node.js → `make setup` → initialize the demo database → start FastAPI and the React dashboard. See [Quickstart](docs/QUICKSTART.md).
 
 [![CI](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml)
-[![Licence: MIT](https://img.shields.io/badge/Licence-MIT-green.svg)](LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-exasol, data-engineering, pipeline-monitoring, root-cause-analysis, fastapi, react, observability
+## What it does
 
-On-call engineers lose time when pipeline history, row counts, and logs are
-scattered. OpsIntel brings that evidence into one investigation, distinguishes
-symptoms from causal hypotheses, and can remember causes only after a separate
-authorized reviewer checks the evidence. Historical matches remain candidates
-for later incidents.
+- Queries pipeline runs, logs, row counts, and historical health features from Exasol.
+- Classifies supported symptoms deterministically and keeps evidence references attached to findings.
+- Compares failed runs with successful history and calculates dependency paths in Exasol.
+- Presents candidate causes and missing evidence. It does not execute repairs or confirm causes automatically.
+- Optionally asks an LLM to summarize the same retrieved evidence; the feature is off by default and the deterministic investigation remains available on fallback.
+- Provides a separate public-issue explorer and scorecard. Project-assigned labels are identified as such.
+- Includes a Verified Incident Memory workflow: an investigator submits a hypothesis, a different authorized reviewer checks evidence, and Exasol stores approved records and audit history. Retrieved records remain candidates.
 
-The primary users are on-call data engineers and data-platform teams. Their
-investigations affect every team that depends on timely, trusted data, including
-analytics, finance, and business operations. As broader industry context rather
-than a project-specific impact claim, Uptime Institute's 2024 survey reports
-that 54% of respondents said their most recent significant outage cost more
-than $100,000. OpsIntel has not measured an equivalent financial effect for
-pipeline incidents. See the
-[Uptime Institute Global Data Center Survey 2024](https://datacenter.uptimeinstitute.com/rs/711-RIA-145/images/2024.GlobalDataCenterSurvey.Report.pdf?version=0).
-
-## Project status
-
-Working hackathon prototype:
-
-- Exasol-backed incident retrieval and historical analytics.
-- FastAPI investigation API.
-- Rule-based, evidence-first failure classification.
-- Additive Exasol schema and API for investigator submissions, independent
-  reviewer decisions, corrected/revoked confirmations, and historical candidate
-  retrieval. A rollback-only SQL workflow passed on local Exasol; no real
-  human-confirmed incident has been retained.
-- Optional LLM narrative summary grounded in the retrieved evidence.
-- React landing page and dashboard backed by live Exasol queries over synthetic
-  telemetry.
-- A separate read-only public-data scorecard at `#/scorecard`, using cited
-  Apache Airflow and dbt issue excerpts; it does not mix in synthetic telemetry.
-- A searchable `#/public` investigation workspace backed by ten live-fetched
-  Airflow/dbt GitHub issues cached in a separate Exasol table, with source
-  provenance, unresolved results, text neighbours and grouped analytics.
-- Automated regression tests and a 16-case synthetic challenge set; run the
-  commands below for the current count.
-- Reproducible Exasol benchmark over one million synthetic pipeline runs.
-
-Root causes are never automatically confirmed. The system reports observations,
-candidate explanations, limitations, and the next diagnostic action. Reviewer
-criteria are approved design policies but have not been empirically validated.
-
-![OpsIntel AI dashboard showing live Exasol queries over synthetic incident telemetry](docs/images/dashboard-overview.png)
-
-The investigation view keeps database observations separate from candidate
-causes and leaves the confirmed root cause unset until a person verifies it.
-
-## Data provenance
-
-- **Synthetic project data:** the Exasol schema, seeded incidents, regression
-  cases, versioned 27-case holdout, and benchmark workloads are generated for
-  this hackathon. They are reproducible, but they are not production telemetry.
-- **Public compatibility data:**
-  `evaluation/public_failure_corpus_v1.csv` is the older nine-message
-  compatibility set (6/9 project labels). The current ten-issue v2 comparison
-  is 7/10 against project-authored labels, not independent ground truth; the
-  cases and mismatches are documented in the versioned reports.
-- **Independent validation status:** this public corpus is not an external
-  reviewer holdout, and no real user-impact trials have been recorded yet.
-  The existing 19-case reviewer holdout is frozen at its historical result;
-  a new independently labelled holdout and broader public issue/CI corpus
-  require separate provenance and label review.
-- **Public-data scorecard:** choose **View public-data scorecard** on the
-  landing page to inspect the ten source excerpts in
-  `evaluation/public_failure_corpus_v2.csv`, their source and repository
-  licence links, the project-authored category mappings, and current classifier
-  results. Reproduce the 7/10 compatibility score with `make public-evaluate-v2`.
-  This page contains no synthetic incident records, generated run counts, or
-  inferred operational trends; the separate Exasol demo continues to use
-  clearly labelled synthetic telemetry.
-- **Public issue investigation:** `evaluation/public_source_registry_v1.json`
-  lists nine Airflow and one dbt issue. `make public-ingest` obtains their
-  current content through the official GitHub API and stores only short,
-  screened excerpts in `OPSINTEL.PUBLIC_INCIDENTS`. The issue discussion text
-  is user-generated; the repository code licence does not automatically
-  license that text. The current 7/10 project-label comparison has no
-  independent adjudication. See [ingestion](docs/public-data-ingestion.md),
-  [provenance](docs/public-data-provenance.md), and the
-  [measured report](reports/public-data-evaluation.md).
-
-## Submission assets
-
-| Asset | Status |
-|---|---|
-| Public source repository | Available |
-| MIT licence | Available |
-| Reproducible run guide | Available below |
-| Pitch deck PDF and PPTX | Updated for reviewer-governed memory and current evidence; live Exasol workflow is not verified today |
-| Live demo script | Available in `docs/demo-script.md`; rehearse against authorized Exasol before recording |
-| Recorded demo video | Historical 2:34 recording; it does not demonstrate verified memory and must be re-recorded |
-
-See the [final ExaThon execution review](reports/exathon-final-execution-2026-10-31.md) for checks, rubric status, and blockers.
-
-## What the prototype does
-
-1. Retrieves failed or incomplete pipeline runs from Exasol.
-2. Calculates historical completeness and rolling failure features in Exasol.
-3. Collects the selected run's log evidence.
-4. Compares the failed run with its last successful run and historical
-   completeness baseline, including new or changed log messages.
-5. Classifies timeout, schema, dependency, early-termination, incomplete-data,
-   delayed, duplicate, conflicting, and unknown evidence.
-6. Produces candidate causes with exact supporting evidence references and safe
-   investigation steps; insufficient evidence returns an explicit unresolved result.
-7. Optionally summarizes the same evidence and lists what is still missing.
-8. Presents timestamps, source references, recent run history, and a safe
-   engineer-review state in the dashboard.
-9. Stores a reviewer-approved cause and audit trail in Exasol after a separate
-   investigator submission; retrieves similar history as an unconfirmed candidate.
+![OpsIntel dashboard screenshot](docs/images/dashboard-overview.png)
 
 ## Why Exasol
 
-Exasol is the analytical core rather than a passive record store. The
-`OPSINTEL.PIPELINE_HEALTH_FEATURES` view uses analytical window functions to
-calculate:
+Exasol is used for the analytical work, not just as a persistence layer. The `OPSINTEL.PIPELINE_HEALTH_FEATURES` view computes completeness, prior status, rolling row baselines, and rolling failure rates with window functions. A `CONNECT BY` query traverses dependency relationships. Exasol also stores submissions, confirmations, evidence features, candidate matches, and audit events. Fingerprinting and similarity scoring run in Python.
 
-- previous pipeline status with `LAG`;
-- rolling actual-row baselines;
-- rolling failure rates;
-- missing-row counts and completeness percentages;
-- daily incident telemetry consumed by the dashboard.
-- cross-pipeline failure cascades calculated with Exasol `CONNECT BY`.
+The demo pipeline history is synthetic and is clearly separate from the public issue corpus. See [architecture](docs/ARCHITECTURE.md) and [Exasol setup](docs/EXASOL_SETUP.md).
 
-The sample history establishes a healthy baseline before eleven representative
-incident scenarios, allowing the UI to show an operational trend and exercise
-every investigation outcome.
+## Quickstart
 
-Verified memory also uses Exasol for durable confirmations, features, match
-decisions, audit history, and active-record filtering. Token-pair similarity is
-calculated in the application; no database-side similarity claim is made.
+### Prerequisites
 
-The separate `PUBLIC_INCIDENTS` table stores cached public issues. Exasol
-executes filtered search, pagination and source/category aggregation; the
-application selects and screens excerpts, classifies symptoms, and calculates
-text similarity.
+- Exasol Personal running locally, or a reachable Exasol service. Local defaults use `127.0.0.1:8563`.
+- Python 3.12 or newer. CI uses Python 3.12; the latest local verification used Python 3.14.
+- Node.js 20.19+ or 22.12+; CI uses Node 20. Install the frontend dependencies from the lockfile.
 
-## Architecture
-
-```mermaid
-flowchart LR
-    A[Pipeline runs and logs] --> B[(Exasol Personal)]
-    B --> C[Analytical view]
-    B --> J[Dependency cascade query]
-    C --> D[FastAPI]
-    J --> D
-    D --> E[Evidence classifier]
-    E --> F[Candidate causes]
-    F --> G[Optional LLM summary]
-    F --> H[React dashboard]
-    G --> H
-    H --> I[Engineer submits evidence]
-    I --> K[Separate authorized reviewer]
-    K --> L[(Exasol verified memory and audit)]
-    L --> H
-```
-
-## AI scope and safety
-
-The classifier and candidate generation remain deterministic and rule-based.
-An optional OpenAI Responses API step can turn the retrieved evidence and
-candidates into a concise narrative and a list of evidence gaps. Every factual
-claim must cite one or more retrieved run or log references; the integration
-requires exact supporting excerpts and rejects the entire model response when
-any claim uses an unknown reference, borrows facts from uncited evidence,
-invents a numeric fact or identifier, or asserts a confirmed cause. Evidence
-gaps must be selected verbatim from a server-owned category allowlist. The
-integration is disabled by default and does not replace or modify the
-deterministic assessment. The configured `gpt-6-luna` model ID is
-listed in the
-[official OpenAI model catalog](https://developers.openai.com/api/docs/models/gpt-6-luna).
-The [Batch 7 evaluation record](reports/llm-evaluation.md) separates 14 passing
-mocked boundary tests from the still-pending live-model evaluation. The current
-focused suite also checks per-citation fact binding and rejects evidence gaps
-outside the server-owned allowlist without adding new test cases.
-
-The deliberate safety boundary is:
-
-- database observations are facts;
-- explanations are candidates;
-- confirmed root cause remains `null` until independently verified;
-- the LLM output is labelled as a narrative summary only;
-- no automated repair is executed.
-
-## Technology
-
-| Component | Technology |
-|---|---|
-| Analytical database | Exasol Personal |
-| Backend | Python and FastAPI |
-| Database client | PyExasol |
-| Optional summarizer | OpenAI Responses API through HTTPX |
-| Local analytical baseline | DuckDB 1.5.6 |
-| Frontend | React, Vite and Recharts |
-| Verification | pytest, Oxlint and GitHub Actions |
-
-## Repository structure
-
-```text
-opsintel-ai/
-├── app/                         # API, database access and investigation logic
-├── docs/                        # Architecture, memory, demo and submission guidance
-├── evaluation/                  # Frozen and external-reviewer holdout data
-├── frontend/                    # React dashboard
-├── reports/
-│   ├── evaluation.md            # Reproducible evaluation summary
-│   └── exasol-benchmark.json    # Raw local scale measurement
-├── scripts/setup_database.py    # Demo database setup command
-├── scripts/migrate_database.py  # Additive Exasol migrations
-├── scripts/ingest_public_issues.py # Official GitHub issue ingestion
-├── scripts/evaluate_memory.py   # Chronological memory evaluation harness
-├── examples/integrations/       # Airflow and dbt exported-JSON samples
-├── submission/                  # Pitch deck, PDF and demo video
-├── sql/
-│   ├── schema.sql
-│   ├── seed.sql
-│   ├── migrations/
-│   └── analysis/
-│       └── pipeline_health_features.sql
-├── tests/
-├── .env.example
-├── Makefile                     # One-command setup and verification
-├── LICENSE
-├── requirements.txt
-└── README.md
-```
-
-## Run locally
-
-### Requirements
-
-- Python 3.12 or newer. The current development environment uses Python 3.14.
-- Node.js 20 or newer.
-- Exasol Personal running locally or at an accessible endpoint.
-
-For a one-command dependency setup after cloning:
-
-```bash
-make setup
-```
-
-### 1. Clone and install the backend
+### Install and start
 
 ```bash
 git clone https://github.com/Anafa-thabassum/opsintel-ai.git
 cd opsintel-ai
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+make setup
 ```
 
-### 2. Configure Exasol
-
-The defaults connect to Exasol Personal at `127.0.0.1:8563` and read its local
-deployment password from:
-
-```text
-~/.exasol/personal/deployments/default/secrets.json
-```
-
-For another deployment, export the variables documented in `.env.example`:
+Start Exasol Personal using its application or, when its CLI is installed:
 
 ```bash
-export EXASOL_DSN="127.0.0.1:8563"
-export EXASOL_USER="sys"
-export EXASOL_PASSWORD="your-local-password"
-export EXASOL_TLS_VERIFY="false"
+exasol start --wait-timeout-minutes 3
 ```
 
-Do not commit passwords or secret files. Certificate verification should be
-enabled for non-local deployments.
-
-To enable the optional LLM summary, set these backend-only variables:
+Configure the backend environment from `.env.example` (the Python app does not automatically load a `.env` file):
 
 ```bash
-export OPSINTEL_LLM_ENABLED="true"
-export OPENAI_API_KEY="your-openai-api-key"
-export OPSINTEL_LLM_MODEL="gpt-6-luna"
+cp .env.example .env
+set -a
+source .env
+set +a
 ```
 
-If the feature is disabled or the model request fails, the endpoint still
-returns the complete deterministic investigation. Never expose the API key to
-the React frontend. The documented model identifier is present in the official
-OpenAI model catalog, but you must test that your own API account can access it
-before enabling the feature in a public demo.
-
-### 3. Initialize the synthetic demo database
+The local Exasol password can come from Exasol Personal's default secrets file. Otherwise set `EXASOL_PASSWORD` in your shell or secret manager. Then prepare the synthetic demo schema and start the API:
 
 ```bash
-python -m scripts.setup_database
+make database
+make memory-migrate
+make api
 ```
-
-If an older synthetic `OPSINTEL` schema already exists and may be safely
-discarded **before verified memory is installed**:
-
-```bash
-python -m scripts.setup_database --reset
-```
-
-`--reset` drops the entire `OPSINTEL` schema. It refuses to run if verified
-memory or public incident tables exist; use a separate disposable deployment
-for resets.
-
-Apply the additive verified-memory migration to an initialized schema:
-
-```bash
-python -m scripts.migrate_database
-python -m scripts.migrate_database --apply
-```
-
-Configure `OPSINTEL_AUTH_TOKENS_JSON` with distinct investigator and reviewer
-grants from a local secret manager. The exact format and safety boundaries are
-in [Verified Incident Memory](docs/verified-incident-memory.md). Without grants,
-the memory API remains disabled; the existing investigation API still works.
-
-The same migration command adds the separate public issue table. To populate
-it from the ten pinned public GitHub issues, run:
-
-```bash
-make public-ingest
-```
-
-An optional backend-only `GITHUB_TOKEN` raises GitHub API rate limits. The
-public mode works offline after ingestion. Open `#/public` to search and
-investigate those records. Its short excerpts are not verified root causes.
-
-### 4. Start the backend
-
-```bash
-python -m uvicorn app.main:app --reload
-```
-
-Verify:
-
-```bash
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/analytics/trend
-```
-
-Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
-
-To reset the synthetic schema and exercise the complete database/API path in
-one command against a confirmed disposable Exasol deployment:
-
-```bash
-make smoke
-```
-
-The smoke test resets a disposable synthetic `OPSINTEL` schema, then checks database
-health, seeded incidents, one evidence-grounded
-investigation, the failed-run comparison, and the Exasol dependency cascade.
-It refuses to reset a schema containing verified memory tables.
-
-### 5. Start the dashboard
 
 In a second terminal:
 
@@ -374,277 +75,55 @@ npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173`.
-
-The landing page links to a judge-facing demo-access screen before the
-dashboard. This creates only a temporary browser session; it is intentionally
-labelled as a demo gate and is not production authentication.
-
-For a hosted build, see [`docs/deployment.md`](docs/deployment.md).
-
-## API
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/` | Service identity |
-| GET | `/health` | Lightweight database connectivity check |
-| GET | `/incidents` | Failed or incomplete runs |
-| GET | `/analytics/trend` | Exasol-calculated daily telemetry |
-| GET | `/analytics/cascades` | Upstream/downstream failure correlations |
-| GET | `/investigate/{run_id}` | Evidence, candidates and optional LLM summary |
-| GET | `/investigate/{run_id}/root-causes` | Candidate causes only |
-| GET | `/public/*` | Exasol-backed public issue search, provenance, analytics and project-label comparison |
-| GET/POST | `/memory/*` | Authenticated verified-memory submissions, review, history, retrieval and analytics; see [API reference](docs/api-reference.md) |
-
-## Verification
-
-### Routine local verification
-
-Run the complete local verification used by the `verify` Make target:
+Open <http://127.0.0.1:5173>. Verify the API and try an existing demo incident:
 
 ```bash
-make verify
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/investigate/1
 ```
 
-This runs the Python test suite, the predefined synthetic evaluation, frontend
-lint, and the frontend production build. It does not reset or require Exasol.
+`make database` creates and seeds synthetic demo tables only when `OPSINTEL` is absent; it does not replace an existing schema. `make memory-migrate` applies additive migrations. Do not use `make database-reset` or `make smoke` except against a disposable database you are authorized to reset. See [Installation](docs/INSTALLATION.md) and [Troubleshooting](docs/TROUBLESHOOTING.md).
 
-The equivalent individual commands are:
+## Verified Incident Memory status
 
-```bash
-python -m pytest -q
-python -m tests.run_evaluation
-```
+The Exasol-backed API workflow was exercised end to end with public Airflow issue evidence and temporary **test-only** identities. The test approval was later revoked through the audited endpoint. It verified persistence, retrieval, and a one-winner concurrent review transition; it did **not** verify a real authorized human decision. The only current live-memory performance measurement is an empty-history query (0 active memories): median 51.627 ms and p95 64.753 ms over 30 requests. It is not a scale benchmark. Human review and increasing-history measurements remain outstanding.
 
-From the repository root, run the frontend checks separately:
+See the [memory workflow](docs/VERIFIED_INCIDENT_MEMORY.md), [rehearsal checklist](docs/verified-incident-memory-browser-rehearsal.md), and [runtime evidence](reports/exasol-memory-e2e-2026-10-31.md).
 
-```bash
-cd frontend && npm run lint
-```
+## Evaluation and measured evidence
 
-```bash
-cd frontend && npm run build
-```
+These results answer different questions and must not be combined into one accuracy score.
 
-### Optional report regeneration
+| Evidence | Result | Provenance and limit |
+|---|---:|---|
+| Automated suite | 200 tests passed | Latest local `make verify` on 2026-10-31; includes unit/API/frontend checks. |
+| Classifier challenge | 16/16 | Predefined synthetic challenge; regression evidence, not production accuracy. |
+| Project-authored holdout | 27/27 | Synthetic, project-authored; not independent. |
+| Frozen reviewer holdout | 4/19 (21.1%) | Three pseudonymous reviewer authors; frozen historical result; 15 wrong labels and 16 unresolved outputs. |
+| Public compatibility corpus V1 | 6/9 | Project-mapped framework messages; historical compatibility result. |
+| Public issue corpus V2 | 7/10 | Project-assigned taxonomy mappings; not independent adjudication. |
+| Exasol/DuckDB analytical comparison | DuckDB faster in recorded 1M and 10M runs | Synthetic workload, seven runs per engine, local single-user environment. At 10M rows: DuckDB median 1,080.358 ms; Exasol median 4,902.269 ms. |
+| Memory lookup | 51.627 ms median, 64.753 ms p95 | Zero-active-history baseline only; not evidence of scaling or performance improvement. |
 
-The public-corpus commands evaluate the cited CSV files and write JSON and
-Markdown reports. They are useful when intentionally regenerating evaluation
-artifacts, but they are not routine read-only verification:
+Frozen evaluation files and historical reports remain unchanged. Dataset hashes, exact methods, benchmark samples, label provenance, and limitations are in the [reproducibility report](reports/reproducibility-and-evaluation.md) and the linked source reports. No participant study or real-human memory confirmation is claimed.
 
-```bash
-make public-evaluate
-make public-evaluate-v2
-```
+## Documentation
 
-The commands invoke `scripts/evaluate_public_corpus.py` and may overwrite the
-corresponding files under `reports/`. Review the resulting diff and provenance
-before publishing any regenerated report.
-
-### Exasol-backed proof and benchmark
-
-These commands require a live, configured Exasol Personal connection and are
-separate from `make verify`:
-
-```bash
-make exasol-proof
-```
-
-`make exasol-proof` runs read-only queries against the existing
-`OPSINTEL.PIPELINE_HEALTH_FEATURES`, `PIPELINE_RUNS`, and `PIPELINE_LOGS` data
-to print the historical completeness and incident evidence used by the demo.
-Keep that output with the benchmark record when preparing the judging demo.
-
-```bash
-make benchmark
-```
-
-`make benchmark` runs `scripts/benchmark_exasol.py`. It creates and imports
-synthetic data into `OPSINTEL_BENCHMARK`, measures repeated analytical queries,
-and drops that benchmark schema when finished. The Makefile target does not
-forward command-line options; to retain the isolated schema, invoke the script
-directly with:
-
-```bash
-.venv/bin/python -m scripts.benchmark_exasol --keep-schema
-```
-
-Run either form only against an explicitly authorized disposable Exasol
-deployment.
-
-`make smoke` is also Exasol-backed. It depends on the `database-reset` target, which
-resets the synthetic `OPSINTEL` schema before checking the database, API, and
-cascade workflow. Do not run it against an existing or unconfirmed database.
-It additionally verifies the fresh synthetic database, FastAPI endpoints,
-failed-run comparison, safe unconfirmed state, and cascade response.
-
-Latest verified results:
-
-- **198/198 automated tests passed** in the current local verification.
-- **16/16 predefined synthetic challenge cases classified correctly**.
-- **27/27 versioned project-authored holdout cases classified correctly** across all
-  nine outcomes.
-- The older **6/9 public-message corpus** is preserved as a separate historical
-  project-labelled compatibility result; all three misses are published.
-- A second issue-linked starter corpus contains **10 Airflow/dbt cases** and
-  scores **7/10** after preserving source labels and documenting their mapping
-  into OpsIntel's taxonomy. This is also project-labelled compatibility
-  evidence, not independent accuracy.
-- **Controlled 1M/10M Exasol–DuckDB comparison recorded** with seven runs per
-  engine and Exasol's query cache disabled. At 10M rows, DuckDB was faster on
-  this laptop: 1,080.358 ms versus Exasol's 4,902.269 ms median.
-- **Frontend lint passed with no warnings**.
-- **Frontend production build passed**; Vite reported a non-failing 657.66 kB
-  main-chunk advisory.
-
-These results demonstrate reproducibility on the included synthetic scenarios
-and a local, single-user analytical benchmark; they are not production
-accuracy, throughput, or concurrency claims. See
-[`reports/evaluation.md`](reports/evaluation.md), the earlier raw
-[`Exasol benchmark`](reports/exasol-benchmark.json), and the controlled
-[`database comparison`](reports/database-comparison.json).
-
-The separate [public-message report](reports/public-corpus-v1.md) evaluates
-short Apache Spark, Apache Airflow, and dbt-common failure messages with a source
-and Apache-2.0 licence URL on every row. Its 6/9 score is intentionally not
-presented as independent accuracy. `make public-evaluate` regenerates both the
-JSON and Markdown reports, including every mismatch.
-
-The [`judging evidence map`](reports/judging-scorecard.md) links each published
-criterion to a concrete file or demo moment.
-
-The [`project roadmap`](docs/roadmap.md) separates contribution-sized work from
-validation that requires external reviewers, participants, or authorized live
-services.
-
-The [Batch 6 clean-clone rehearsal](reports/clean-rehearsal-2026-10-19.md)
-verified dependency installation, 126 tests, the 16-case evaluation, frontend
-lint/build, and API/frontend startup from revision `2a17d4f`. Live Exasol setup
-and the database-backed browser workflow remain unverified because no disposable
-database was authorized.
-
-The [Batch 8 final verification](reports/final-verification-2026-10-19.md)
-records the historical `132/132` suite at that revision. The current verified
-result was `193/193`; that earlier report remains unchanged as dated evidence.
-The later priority work is summarized in
-[`reports/final-priorities-2026-10-31.md`](reports/final-priorities-2026-10-31.md).
-
-The separate [`versioned project-authored holdout`](evaluation/frozen_holdout_v1.csv)
-contains 27 versioned cases and a published
-[`result report`](reports/frozen-holdout-v1.md). Reproduce it with
-`make holdout`. The project team authored this dataset, so its 27/27 result is
-not an independent or production accuracy claim.
-
-The current independent reviewer holdout contains 19 genuinely unseen cases
-from three pseudonymous authors. It is frozen at the
-`independent-holdout-v1` tag and scored **4/19 (21.1%)**; all misses and
-unresolved predictions are published in
-[`reports/independent-holdout-v1.md`](reports/independent-holdout-v1.md).
-For a future round, two or three external reviewers can create 15–20 new cases
-from [`evaluation/holdout_template.csv`](evaluation/holdout_template.csv).
-After committing and tagging the new dataset, run:
-
-```bash
-make independent-holdout \
-  FILE=evaluation/independent_holdout_v1.csv \
-  REF=independent-holdout-v1
-```
-
-The evaluator verifies the tagged dataset, classifier, and evaluator hashes;
-requires two or three pseudonymous case-author IDs and referenced evidence; and
-publishes JSON plus Markdown scoring and error analysis. It records the dataset,
-classifier configuration, evaluator, scoring rules, and evaluation timestamp,
-including missing labels and unresolved predictions. Current external-reviewer
-status: **19 cases from 3 pseudonymous external reviewer authors**, recorded in
-the frozen `independent-holdout-v1` result. The template is intentionally
-header-only for future rounds, which must use a new dataset version and freeze
-tag rather than overwrite this result.
-
-The [human-impact study protocol](reports/impact-study-protocol.md) now includes
-ten frozen cases and a counterbalanced 40-trial assignment for four
-pseudonymous participants. Load its cases into Exasol with
-`make impact-study-database`, keep the LLM disabled, record the assigned trials
-in [`evaluation/impact_template.csv`](evaluation/impact_template.csv), then run:
-
-```bash
-make impact \
-  FILE=/path/to/impact-results.csv \
-  RECRUITMENT=/path/to/recruitment.md
-```
-
-The summarizer verifies stable trial IDs and the frozen assignment, derives
-outcomes from the hidden case key, enforces that the LLM stayed disabled, and
-records hashes, missing data, protocol deviations, and the tested commit. It
-does not calculate a condition comparison until every assigned trial and a
-balanced manual baseline are present. The current result count is **0/40 trials
-from 0/4 participants**, so no time-saving or causal-impact claim is made.
-
-## Comparative database benchmark
-
-`make benchmark-compare` runs the same window-analytics and daily-aggregation
-workload on Exasol Personal and DuckDB at one million and ten million rows. The
-repository includes the same-machine
-[`database comparison`](reports/database-comparison.json) and an
-[`editable SVG chart`](reports/database-comparison.svg). Exasol's repeated-query
-cache is disabled; both engines run sequentially with seven measured queries.
-
-The result is deliberately not cherry-picked. At 1M rows, DuckDB recorded a
-114.912 ms median versus Exasol's 437.118 ms. At 10M rows, DuckDB recorded
-1,080.358 ms versus Exasol's 4,902.269 ms—about 4.5× faster in this local test.
-This does not support an Exasol speed-win claim.
-
-This comparison is local and single-user. It tests query latency, not
-concurrency, distributed scale, operational cost, or production reliability.
-Exasol remains central because shared pipeline history, window features, log
-evidence, and hierarchical dependency cascades stay queryable inside the
-operational analytical database instead of being extracted into the API
-process. The implementation uses analytical window functions, `CONNECT BY`,
-and PyExasol's bulk iterable import path. It does not implement a UDF.
-
-## Airflow and dbt import sample
-
-The [`exported-JSON adapter`](examples/integrations/README.md) normalizes sample
-Airflow DAG runs and dbt `run_results` records into OpsIntel's run and log
-schema. Previewing is read-only; `--apply` must be supplied before the adapter
-writes to Exasol. This is an integration example, not a live orchestrator
-connector.
-
-## Demonstration scenarios
-
-| Pipeline | Evidence category |
-|---|---|
-| Daily sales import | Early termination |
-| Customer sync | Timeout |
-| Product catalog | Schema mismatch |
-| Daily reporting | Upstream dependency failure |
-| Late file ingest | Delayed run |
-| Partial orders load | Incomplete data |
-| Billing retry | Duplicate or excess data |
-| Warehouse publish | Conflicting evidence |
-| Partner feed | Unclassified messy log |
-| Customer orders and billing export | Downstream dependency cascade |
+- [Quickstart](docs/QUICKSTART.md) · [Installation](docs/INSTALLATION.md) · [Configuration](docs/CONFIGURATION.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Data flow](docs/DATA_FLOW.md) · [Incident investigation](docs/INCIDENT_INVESTIGATION.md)
+- [Exasol setup](docs/EXASOL_SETUP.md) · [Verified Incident Memory](docs/VERIFIED_INCIDENT_MEMORY.md) · [API reference](docs/API_REFERENCE.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md) · [Security](docs/SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+- [Evaluation methodology](docs/evaluation-methodology.md) · [Public data provenance](docs/public-data-provenance.md) · [Demo script](docs/demo-script.md)
 
 ## Known limitations
 
-- Data and logs are synthetic.
-- The challenge set is small and predefined.
-- Classification uses transparent rules rather than semantic language models.
-- Independent reviewer holdout status: **4/19 (21.1%)** on the frozen
-  `independent-holdout-v1` dataset. This is not a production accuracy estimate;
-  the 27/27 result remains project-authored.
-- Live LLM access and real-model grounding remain unverified; only mocked
-  boundary tests have run.
-- Production concurrency and live orchestrator connectivity have not been
-  established; the repository includes exported-JSON adapter samples only.
-- Human-impact study status: **0/40 assigned trials recorded across 0/4
-  participants**. The frozen cases, counterbalanced assignment, recording
-  template, and result summarizer are ready for administration.
-- Recommendations are diagnostic suggestions, not executed repairs.
+- Demo pipeline records are synthetic; public issue excerpts are short and have project-assigned labels unless explicitly stated otherwise.
+- The frozen reviewer holdout is only 19 cases and scored 4/19. The classifier is deterministic and can abstain on unfamiliar wording.
+- Cause-specific review criteria are approved design policies, not empirically validated causal tests.
+- No authorized human review, browser rehearsal, participant study, or increasing-history memory benchmark has been completed.
+- The one-million and ten-million row comparisons are local, synthetic, single-user workloads; they do not establish distributed performance or production cost.
+- The email demo gate is not authentication. Most investigation endpoints do not require a token; do not expose this prototype to an untrusted network or use sensitive production logs.
 
-## Licence
+## License and contribution
 
-Licensed under the [MIT Licence](LICENSE).
-
----
-
-**OpsIntel AI — Follow the evidence. Investigate clearly. Confirm carefully.**
+OpsIntel AI is licensed under the [MIT License](LICENSE). Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report security issues privately using the GitHub security advisory process described in [SECURITY.md](SECURITY.md).

@@ -1,5 +1,7 @@
 # Evaluation methodology
 
+> Current consolidated metrics, dataset hashes, benchmark details, and limitations are in [the reproducibility and evaluation record](../reports/reproducibility-and-evaluation.md). This page describes evaluator protocols; it does not replace any frozen result.
+
 The independent 19-case reviewer holdout, frozen evaluator, and historical 4/19 report remain unchanged. The previously reported 15/19 result reused that reviewer set and is a development comparison, not fresh independent validation. The two-case public development corpus V2 is for development checks only; it has provisional labels and does not contain confirmed incident memory.
 
 `scripts/evaluate_memory.py` accepts a separately curated chronological JSONL event stream. Each event has a unique `event_id`, `event_type` (`confirmation` or `query`), timezone-aware ISO `timestamp`, `run_id`, and an `incident` object with the same run ID and source-backed `evidence`. Confirmation events also require a stable `cause_id`. Query events may include independently adjudicated `expected_category` and `expected_cause_id`; null cause IDs are negative examples. The evaluator rejects duplicate confirmation runs, excludes self-matches, and allows only confirmations strictly earlier than a query. Do not feed hidden reviewer labels to development or threshold selection.

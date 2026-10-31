@@ -1,33 +1,31 @@
 # Contributing
 
-For application, database, evaluation, security, or submission changes, follow
-the [architecture-first engineering workflow](docs/engineering-workflow.md) and
-complete its [change-plan template](docs/templates/change-plan.md) before
-starting significant implementation. Keep the scope focused and obtain human
-approval before changing architecture, contracts, evaluation methodology, or
-submission claims.
+Thanks for considering a contribution. Keep changes focused and preserve evaluation provenance.
 
-1. Create a focused branch and keep synthetic data free of secrets.
-2. Run `python -m pytest -q` and `python -m tests.run_evaluation`.
-3. Run `npm run lint` and `npm run build` from `frontend/`.
-4. Explain user-visible changes and any new evidence claims in the pull request.
+## Before changing behavior
 
-For verified-memory changes, include a source-backed candidate and a negative
-or contradictory case. Keep investigator submission, independent reviewer
-approval, correction/revocation audit, and retrieval candidate status distinct.
-Do not add real tokens or sensitive excerpts to fixtures. Never run a reset
-against a deployment that contains verified memory.
+- Read [Architecture](docs/ARCHITECTURE.md), [Data flow](docs/DATA_FLOW.md), [Security](SECURITY.md), and [Evaluation methodology](docs/evaluation-methodology.md).
+- For significant work, follow the [engineering workflow](docs/engineering-workflow.md) and complete `docs/templates/change-plan.md`.
+- Do not modify frozen datasets, labels, hashes, or historical reports to improve a new result. Add a new versioned set/report instead.
+- Do not claim root-cause confirmation, independent validation, participant benefit, or performance gains without evidence.
 
-Do not convert candidate explanations into confirmed root causes without a
-separate verification source. New classification rules should include at least
-one positive and one false-positive regression case.
+## Development checks
 
-## Good first contributions
+From the repository root:
 
-- Add a new synthetic unknown or conflicting-evidence regression case.
-- Improve an empty, loading, or database-disconnected dashboard message.
-- Add another exported-JSON orchestrator sample without introducing a live
-  service dependency.
-- Clarify a setup step that failed in a clean clone.
+```bash
+make verify
+```
 
-Larger validation work is tracked in [`docs/roadmap.md`](docs/roadmap.md).
+This runs pytest, the predefined synthetic challenge, Oxlint, and the Vite build. For a focused check, use the relevant pytest module, then lint/build if frontend files changed. `make verify` does not require Exasol.
+
+Database-backed work needs an explicitly authorized disposable Exasol Personal instance. Use additive migrations. Do not run `make database-reset` or `make smoke` against any database containing data to preserve. Never commit `.env`, tokens, credentials, personal data, or sensitive incident excerpts.
+
+## Pull requests
+
+- Explain behavior changes, data/provenance changes, verification commands, and limitations.
+- Include source-backed positive and negative cases for classifier behavior; preserve abstention and human-review boundaries.
+- Update relevant documentation and the completion ledger when a documented milestone changes.
+- Include screenshots only when they show the actual current application; redact credentials and sensitive records.
+
+Good first contributions include documentation fixes, empty/error-state improvements, and synthetic classifier regression cases that are clearly marked as synthetic.
