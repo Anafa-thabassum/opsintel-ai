@@ -23,4 +23,4 @@ Exasol stores the reviewed record and audit history. After restarting the applic
 This later incident uses different wording. OpsIntel retrieves a similar confirmed incident and shows the evidence on both sides. FastAPI computes the similarity score; it is a retrieval signal, not a probability. The new incident remains unconfirmed until it is reviewed on its own evidence.
 
 [2:40–3:00 | Show evaluation limits]
-Our current public issue comparison uses project-assigned labels, and the frozen reviewer set is small. We have no independent memory learning curve or measured engineer time savings. OpsIntel is designed to make the evidence and the human decision inspectable.
+Current CI reports 200 passing automated tests. Our public issue comparison uses project-assigned labels, and the frozen reviewer set is small. We have no independent memory learning curve or measured engineer time savings. OpsIntel is designed to make the evidence and the human decision inspectable.

@@ -54,7 +54,7 @@ pseudonymous authors and scored 4/19; its error analysis is published.
 
 ## What has been measured?
 
-The latest local run passed 197 automated tests, a predefined 16-case synthetic
+The latest GitHub Actions run passed 200 automated tests, a predefined 16-case synthetic
 regression set, a separate 27-case versioned project-authored holdout, a frozen
 19-case reviewer holdout, frontend lint/build, and a reproducible local Exasol
 scale benchmark. The reviewer holdout scored 4/19 and is not a

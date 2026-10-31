@@ -96,7 +96,7 @@ These results answer different questions and must not be combined into one accur
 
 | Evidence | Result | Provenance and limit |
 |---|---:|---|
-| Automated suite | 197/197 automated tests passed | Latest local `make verify` recorded in the final execution report on 2026-10-31; includes unit/API/frontend checks. |
+| Automated suite | 200/200 automated tests passed | Latest GitHub Actions run on 2026-10-31; the current pytest suite, evaluation, frontend lint, and production build passed. |
 | Classifier challenge | 16/16 | Predefined synthetic challenge; regression evidence, not production accuracy. |
 | Project-authored holdout | 27/27 | Synthetic, project-authored; not independent. |
 | Frozen reviewer holdout | 4/19 (21.1%) | Three pseudonymous reviewer authors; frozen historical result; 15 wrong labels and 16 unresolved outputs. |

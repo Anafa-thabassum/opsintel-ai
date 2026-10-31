@@ -15,8 +15,8 @@ public Airflow/dbt issue workspace. The public ten-case category comparison is
 
 The updated deck describes investigator submission, separate reviewer
 approval, Exasol audit storage, application-side similarity ranking, public-data
-limitations, and the actual validation boundary. It reports 197 tests from the
-latest local run, 16/16 predefined synthetic challenge cases, and the 7/10
+limitations, and the actual validation boundary. It reports 200 passing tests
+from the current CI run, 16/16 predefined synthetic challenge cases, and the 7/10
 project-label comparison. It does not describe the 15/19 comparison as
 independent validation.
 

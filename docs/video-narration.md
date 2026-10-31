@@ -50,7 +50,7 @@
 
 **Screen:** Briefly show the evaluation/limitations summary.
 
-**Say:** “Our current public issue comparison uses project-assigned labels, and the frozen reviewer set is small. We have no independent memory learning curve or measured engineer time savings. OpsIntel is designed to make the evidence and the human decision inspectable.”
+**Say:** “Current CI reports 200 passing automated tests. Our public issue comparison uses project-assigned labels, and the frozen reviewer set is small. We have no independent memory learning curve or measured engineer time savings. OpsIntel is designed to make the evidence and the human decision inspectable.”
 
 ## Fallback narration when Exasol or an authorized reviewer is unavailable
 
