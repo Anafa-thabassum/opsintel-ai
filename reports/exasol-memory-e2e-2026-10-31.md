@@ -98,3 +98,45 @@ These logs contain no bearer tokens. They are temporary host files and are not c
 - No Exasol throughput/latency benchmark, larger-history stress run, full browser UI rehearsal, or participant study was performed.
 - Confirmation criteria are approved design policy, not empirically validated causal criteria.
 - The test telemetry and revoked memory/audit trail remain in local Exasol for reproducibility. No data cleanup was performed.
+
+## Follow-up audit and read-only benchmark (2026-10-31)
+
+### Human-review record check
+
+A read-only query of all `INCIDENT_SUBMISSIONS`, `CONFIRMED_INCIDENTS`, and `INCIDENT_AUDIT` rows found one review, and it is explicitly a test review—not an authorized human decision:
+
+- Submission `7a3c6c59-714f-4f90-a27a-12eafe232448`: submitted by `e2e-investigator-test`, status `approved`, reviewed by `e2e-reviewer-test-b` at `2026-10-31 04:04:26`.
+- Stored decision rationale says “Test-only reviewer checked the public source trace…”; the incident is now `revoked`.
+- The persisted packet cites `OPSINTEL.PIPELINE_LOGS · LOG-36734011` for the symptom and `https://github.com/apache/airflow/issues/36734` for the causal source. The stored criteria each include evidence references.
+- Confirmation audit `903ea259-e9cd-48f0-9c3b-5447b6a0bd3d` records the reviewer and approved checklist/evidence snapshot. Revocation audit `f1a25f2b-4989-43c4-937e-1040a9856bc4` records the same actor, rationale, before snapshot, and `{"status":"revoked"}` after snapshot.
+
+Therefore the database correctly preserves reviewer identity, decision, evidence references, and audit history for the **test actor**. No authorized human review was found or simulated. Human review remains incomplete.
+
+### Measured empty-history baseline
+
+Command:
+
+```sh
+.venv/bin/python -m scripts.benchmark_memory_exasol --run-id 3673402 --expected-history 0 --warmups 3 --repetitions 30
+```
+
+Observed at `2026-10-31T04:17:32.295572+00:00`:
+
+| Metric | Result |
+|---|---:|
+| Active confirmed history | 0 |
+| Revoked rows | 1 (excluded from retrieval) |
+| Warm-up / measured requests | 3 / 30 |
+| Median end-to-end `similar_incidents(record=False)` latency | 51.627 ms |
+| Nearest-rank p95 latency | 64.753 ms |
+| Min / max | 43.156 / 68.460 ms |
+| Python traced peak during repetitions | 349,780 bytes |
+| Process peak RSS | 51,363,840 bytes (macOS reports bytes) |
+| Exasol server memory | Not measured |
+| Cache policy | Application/Exasol default; not explicitly changed or independently verified |
+| Correctness | `unresolved`, zero candidates, stable across runs; appropriate for zero active history |
+| Database writes | None; `record=False`; match-row count unchanged |
+
+All 30 latency samples in milliseconds: `48.968, 54.157, 51.248, 50.366, 52.420, 51.679, 48.434, 48.982, 56.633, 49.254, 43.156, 46.690, 64.753, 54.160, 53.900, 57.429, 51.576, 48.180, 46.115, 48.594, 52.361, 52.191, 60.597, 68.460, 58.891, 47.338, 57.387, 51.566, 55.763, 46.932`.
+
+This is an empty-history baseline only. It provides no evidence about scaling, useful match correctness, throughput, or performance improvement. Exact benchmark procedure and future history checkpoints are in `reports/exasol-memory-benchmark-protocol-v1.md`.
