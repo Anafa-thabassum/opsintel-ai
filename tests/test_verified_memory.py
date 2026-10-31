@@ -118,16 +118,21 @@ def test_review_rejects_self_approval_missing_checks_and_conflicts(monkeypatch):
 
 
 class _Result:
-    def __init__(self, row=None):
+    def __init__(self, row=None, affected=1):
         self.row = row
+        self.affected = affected
 
     def fetchone(self):
         return self.row
 
+    def rowcount(self):
+        return self.affected
+
 
 class _Connection:
-    def __init__(self, row=None):
+    def __init__(self, row=None, affected=1):
         self.row = row
+        self.affected = affected
         self.statements = []
         self.committed = False
         self.rolled_back = False
@@ -137,7 +142,7 @@ class _Connection:
 
     def execute(self, query, values=None):
         self.statements.append((query, values))
-        return _Result(self.row if "SELECT" in query else None)
+        return _Result(self.row if "SELECT" in query else None, self.affected)
 
     def commit(self):
         self.committed = True
@@ -147,6 +152,19 @@ class _Connection:
 
     def close(self):
         pass
+
+
+def test_concurrent_review_loser_rolls_back_before_writing_audit(monkeypatch):
+    connection = _Connection(affected=0)
+    monkeypatch.setattr(memory, "get_submission", lambda submission_id: _submission())
+    monkeypatch.setattr(memory, "get_connection", lambda: connection)
+
+    with pytest.raises(memory.MemoryConflict, match="reviewed concurrently"):
+        memory.review_hypothesis("s1", decision="reject", rationale="Evidence does not support the proposed cause", checklist={}, reviewer_id="bob")
+
+    assert connection.statements[0][0].lstrip().startswith("UPDATE OPSINTEL.INCIDENT_SUBMISSIONS")
+    assert len(connection.statements) == 1
+    assert connection.rolled_back and not connection.committed
 
 
 def test_approval_writes_confirmation_features_audit_and_review_atomically(monkeypatch):

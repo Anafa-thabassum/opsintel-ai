@@ -328,6 +328,18 @@ def review_hypothesis(submission_id, *, decision, rationale, checklist, reviewer
     incident_id = submission["source_incident_id"] or str(uuid4())
 
     def write(connection):
+        # Claim the pending submission in the same transaction as its review.
+        # Concurrent reviewers may both load the old state, but only one
+        # conditional transition from pending can proceed.
+        claim = connection.execute("""
+            UPDATE OPSINTEL.INCIDENT_SUBMISSIONS
+            SET STATUS = {status}
+            WHERE SUBMISSION_ID = {submission_id} AND STATUS = 'pending'
+        """, {"status": "approved" if decision == "approve" else decision,
+              "submission_id": submission_id})
+        if claim.rowcount() != 1:
+            raise MemoryConflict("Submission was reviewed concurrently")
+
         current_row = connection.execute(f"""
             SELECT {_INCIDENT_COLUMNS} FROM OPSINTEL.CONFIRMED_INCIDENTS
             WHERE RUN_ID = {{run_id!d}}
@@ -392,9 +404,9 @@ def review_hypothesis(submission_id, *, decision, rationale, checklist, reviewer
                    actor_id=reviewer_id, rationale=rationale, after={"checklist": checklist})
         connection.execute("""
             UPDATE OPSINTEL.INCIDENT_SUBMISSIONS
-            SET STATUS = {status}, REVIEWED_BY = {reviewer_id}, REVIEWED_AT = {timestamp},
+            SET REVIEWED_BY = {reviewer_id}, REVIEWED_AT = {timestamp},
                 REVIEW_RATIONALE = {rationale}, CHECKLIST_JSON = {checklist}
-            WHERE SUBMISSION_ID = {submission_id}
+            WHERE SUBMISSION_ID = {submission_id} AND STATUS = {status}
         """, {"status": "approved" if decision == "approve" else decision,
               "reviewer_id": reviewer_id, "timestamp": timestamp, "rationale": rationale.strip(),
               "checklist": _json(checklist), "submission_id": submission_id})

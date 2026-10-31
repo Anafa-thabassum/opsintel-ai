@@ -480,7 +480,7 @@ failed-run comparison, safe unconfirmed state, and cascade response.
 
 Latest verified results:
 
-- **197/197 automated tests passed** in the current local verification.
+- **198/198 automated tests passed** in the current local verification.
 - **16/16 predefined synthetic challenge cases classified correctly**.
 - **27/27 versioned project-authored holdout cases classified correctly** across all
   nine outcomes.
