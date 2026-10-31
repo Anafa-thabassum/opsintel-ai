@@ -41,7 +41,7 @@ The optional public-issue explorer is separate from the synthetic demo telemetry
 
 Exasol is used for the analytical work, not just as a persistence layer. The `OPSINTEL.PIPELINE_HEALTH_FEATURES` view computes completeness, prior status, rolling row baselines, and rolling failure rates with window functions. A `CONNECT BY` query traverses dependency relationships. Exasol also stores submissions, confirmations, evidence features, candidate matches, and audit events. Fingerprinting and similarity scoring run in Python.
 
-The demo pipeline history is synthetic and is clearly separate from the public issue corpus. See [architecture](docs/ARCHITECTURE.md) and [Exasol setup](docs/EXASOL_SETUP.md).
+The demo pipeline history is synthetic and is clearly separate from the public issue corpus. See [Exasol setup](docs/EXASOL_SETUP.md).
 
 ## Quickstart
 
@@ -152,6 +152,14 @@ Frozen evaluation files and historical reports remain unchanged. Dataset hashes,
 - No real incident has yet been approved and retained by an authorized human reviewer. Browser rehearsal, participant study, and increasing-history memory benchmarking remain outstanding.
 - The one-million and ten-million row comparisons are local, synthetic, single-user workloads; they do not establish distributed performance or production cost.
 - The email demo gate is not authentication. Most investigation endpoints do not require a token; do not expose this prototype to an untrusted network or use sensitive production logs.
+
+  
+## Architecture
+
+For the detailed system architecture, component responsibilities,
+Exasol integration, and end-to-end investigation workflow:
+
+[View Detailed Architecture](docs/ARCHITECTURE.md)
 
 ## License and contribution
 
