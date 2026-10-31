@@ -1,21 +1,26 @@
-# Next demo recording script — draft, not recorded
+OpsIntel AI — proposed narration for a 2:45–3:00 recording
+This is a draft, not a transcript of the existing video. Follow docs/demo-script.md. Record the memory workflow only with available Exasol, real separate investigator/reviewer identities, and source evidence that passes the approved criteria. Otherwise use the honest fallback in docs/video-narration.md.
 
-The existing MP4 is a historical 2:34 draft and does not show verified incident memory. Record this script only when an authorized disposable Exasol instance is available and every displayed approval or retrieval is real. If source-backed causal evidence is unavailable, show “needs more evidence”; do not simulate confirmation.
+[0:00–0:20 | Open dashboard and a failed run]
+When a data pipeline fails, engineers often have to piece together run status, row counts, and logs. OpsIntel brings those observations into one investigation and keeps the evidence attached to each finding.
 
-[0:00–0:25 — Problem and user]
-On-call data engineers reconstruct incidents across run history, row counts, and logs. OpsIntel brings these observations together and keeps symptom classification separate from candidate causes. We have not measured investigation-time savings.
+[0:20–0:45 | Show the real Exasol query and result]
+Exasol calculates completeness, rolling run history, and time-correlated downstream paths. The pipeline records here are synthetic demo telemetry. A downstream failure after an upstream one is a correlation to inspect, not proof of causation.
 
-[0:25–0:55 — Exasol evidence]
-This workspace uses clearly labelled synthetic demo telemetry. Exasol queries calculate run history, completeness, rolling baselines, and dependency correlations. Show the actual SQL and current query result; do not call it production telemetry.
+[0:45–1:10 | Show evidence references, row comparison, signals, and gaps]
+For this run, these are the observed facts. OpsIntel reports the supported symptom and shows what evidence is missing. A candidate explanation is only a possibility; the system leaves the root cause unconfirmed.
 
-[0:55–1:20 — Investigate]
-Select a failed run. Review its source records, row-count comparison, logs, and extracted signals. OpsIntel classifies the supported symptom and lists evidence gaps. A candidate explanation is not a confirmed root cause.
+[1:10–1:35 | Submit as investigator; show pending state]
+An investigator can propose a specific cause with traceable supporting evidence. Submission creates a review request. The investigator cannot approve their own hypothesis.
 
-[1:20–1:45 — Submit and review]
-An investigator submits a source-backed hypothesis. A separate authorized reviewer checks the cause-specific criteria, alternatives, and contradictions. Approve only when every criterion passes; otherwise request more evidence or reject. Show the actual Exasol audit record.
+[1:35–2:00 | Switch to a different authorized reviewer]
+A separate authorized reviewer checks the source evidence, the class-specific criteria, and any alternatives or contradictions. Missing or conflicting support means more evidence is needed. Only a review that passes every required gate can create a confirmed memory.
 
-[1:45–2:15 — Retrieve memory]
-Restart the application, investigate a differently worded later failure, and retrieve the real historical confirmation as a candidate. Compare matching and differing evidence. The new incident remains unconfirmed until an engineer verifies its relevance.
+[2:00–2:20 | Show read-only Exasol confirmation/audit rows; restart app]
+Exasol stores the reviewed record and audit history. After restarting the application, the reviewer, decision, timestamp, and evidence references are still present.
 
-[2:15–3:00 — Evaluation and limits]
-The latest local run reports 200 passing automated tests and 16 of 16 predefined synthetic challenge cases. The public issue comparison is 7 of 10 against project-authored labels with no outside adjudication. The original reviewer set recorded 4 of 19 historically; a 15 of 19 comparison on those same cases is not new independent validation. A local benchmark found DuckDB faster at ten million rows. We have no measured user time savings, independent new holdout, or demonstrated causal accuracy.
+[2:20–2:40 | Investigate a differently worded later incident]
+This later incident uses different wording. OpsIntel retrieves a similar confirmed incident and shows the evidence on both sides. FastAPI computes the similarity score; it is a retrieval signal, not a probability. The new incident remains unconfirmed until it is reviewed on its own evidence.
+
+[2:40–3:00 | Show evaluation limits]
+Our current public issue comparison uses project-assigned labels, and the frozen reviewer set is small. We have no independent memory learning curve or measured engineer time savings. OpsIntel is designed to make the evidence and the human decision inspectable.

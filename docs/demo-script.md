@@ -1,23 +1,44 @@
-# OpsIntel demonstration script
+# Final demo approach
 
-This script describes the **intended live rehearsal**, not an already verified recording. The current repository has no measured memory benchmark or participant study. Use only a disposable Exasol Personal deployment and source-backed incident evidence. Never invent a causal source to make the confirmation step succeed.
+## The story
 
-## Preparation
+Show one engineering question from start to finish: **what failed, which evidence supports that description, what remains uncertain, and what would be required before a cause enters shared memory?** Keep the sequence visible: observation → candidate → authorized review → persisted memory → later candidate. The investigator proposes; the reviewer decides. A later similarity match never confirms a new incident.
 
-1. Run backend and frontend checks. Start an authorized Exasol Personal deployment, initialize the demo schema if safe, and apply the additive memory migration.
-2. Configure separate investigator and reviewer bearer grants in a local secret manager. Keep tokens out of the screen recording.
-3. Confirm that the chosen incident has real causal evidence meeting the approved cause-specific checklist. The existing synthetic seed logs alone may be insufficient; if so, demonstrate the `needs_more_evidence` decision instead of a false confirmation.
-4. Rehearse the exact browser and SQL steps. Capture source IDs and timestamps without displaying credentials or sensitive logs.
+The supplied four-page feature plan is useful for this narrative and for the confirm-then-retrieve shape. Treat its 21% starting figure as historical context only. Do not use its illustrative learning curve, target accuracy, “every confirmation makes the team faster” claim, or proposed in-database matching as project results: those are not supported by current evidence and do not describe the implementation.
 
-## Walkthrough
+## Before recording
 
-1. **Detect:** open the dashboard and show an Exasol-sourced failed run. State clearly that the bundled incident telemetry is synthetic demonstration data.
-2. **Investigate:** select the run, inspect log/source references, row-count comparison, extracted signals, and any dependency correlation. Point out where the classifier abstains or shows competing symptoms.
-3. **Explain:** show candidate explanations and the separate unconfirmed cause field. A candidate and a similarity score do not prove causation.
-4. **Submit:** with an investigator grant, enter a specific hypothesis and attach source-backed symptom and causal evidence. The result is pending.
-5. **Review:** with a different authorized reviewer grant, inspect every cited source and complete the versioned cause-specific checklist. Approve only if all gates pass and contradictions are resolved. Otherwise choose needs more evidence or reject.
-6. **Remember:** after a valid approval, show the active record and audit event in Exasol. Show the `CONFIRMED_INCIDENTS`, `INCIDENT_FEATURES`, and `INCIDENT_AUDIT` tables, without revealing tokens.
-7. **Retrieve:** investigate a later, different run. Show a historical candidate with matching/differing features, version, date, and the required engineer-verification label. Reject a false candidate if appropriate. A new run remains unconfirmed until its own review.
-8. **Analyse:** open `#/public` to search the locally ingested Airflow/dbt issue records, inspect a source excerpt and original URL, then show the project-label comparison and memory operational counts. The public issue labels are project mappings, and memory accuracy, learning curve, and human time savings remain unmeasured until independently adjudicated cases and participants exist.
+1. Use an authorized, disposable Exasol Personal deployment. Check the database, API, and dashboard before recording; do not reset any database that may contain data.
+2. Use real, distinct investigator and authorized reviewer identities. Do not show temporary `e2e-*` test identities as people or use test records as human approval.
+3. Choose source-backed evidence for both the symptom and proposed cause. Review the approved class-specific criteria, missing information, alternatives, and contradictions before recording. If any required gate fails, demonstrate `needs_more_evidence` instead of approving.
+4. Prepare a later, differently worded incident with independently traceable evidence. Never use the frozen 19-case reviewer holdout as demo or tuning material.
+5. Prepare a read-only SQL query for the submission, confirmation, and audit records. Have the application restart command ready; restart the app only, not Exasol.
+6. Hide tokens, passwords, personal tabs, unrelated notifications, and sensitive log content. Capture only evidence you have permission to show.
+7. Test the exact route, source references, and window arrangement once. Record a clean take; do not edit in simulated clicks, confirmations, SQL output, or metrics.
 
-If Exasol is unavailable, show the public scorecard and repository SQL/code path, and explicitly say the persistence demonstration could not be verified. The previous three-minute submission video is a historical draft and must be re-recorded before claiming it demonstrates verified memory.
+## Three-minute recording plan
+
+| Time | Show | Say / do |
+|---|---|---|
+| 0:00–0:18 | Dashboard and a failed run | “Pipeline incidents scatter status, counts, and logs. OpsIntel brings those observations together so an engineer can inspect the evidence behind the next diagnostic step.” |
+| 0:18–0:42 | Actual Exasol query and result | Point to the query that calculates completeness/history or dependency paths. Say the bundled pipeline history is synthetic demo telemetry. Describe downstream links as time-correlated, not proven causes. |
+| 0:42–1:08 | Selected investigation | Open a run, inspect its row-count comparison, source references, and extracted signals. State the supported symptom, then show any missing evidence or conflict. Do not call a candidate a root cause. |
+| 1:08–1:35 | Investigator submission | Submit a specific hypothesis with its source evidence. Show the pending state and explain that the submitter cannot approve it. |
+| 1:35–2:00 | Separate reviewer view | The authorized reviewer reads the cited source, records a rationale, and checks the required criteria. Approve only when every criterion is supported and no disqualifying conflict remains. Otherwise select `needs_more_evidence` or reject. |
+| 2:00–2:22 | Exasol audit query, then app restart | Show the real reviewer identity, decision, timestamp, evidence references, and one audit event. Restart the application and show that the record remains. Never imply a test token is a human reviewer. |
+| 2:22–2:42 | Differently worded later incident | Show the retrieved historical incident with cited matching and differing evidence. Say similarity ranks a candidate; it is not a probability, and the new run stays unconfirmed. |
+| 2:42–3:00 | Evaluation limits / closing | “The public issue comparison uses project-assigned labels, and the 19-case reviewer result is small and unchanged. We have not measured engineer time savings or an independent memory learning curve. OpsIntel keeps the evidence and decision visible.” |
+
+## If the live memory workflow cannot be demonstrated
+
+The latest local execution report says Exasol is unavailable in that environment. Do not record the sequence above as completed until the database and real reviewer workflow are available. Record an honest product walkthrough instead: show the dashboard, a source-linked investigation, the actual SQL/code path, and the unavailable-service state. Say directly that persistence, human review, restart, and retrieval were not demonstrated in that recording. Label that video a **product walkthrough**, not a verified-memory end-to-end demo.
+
+The prior Exasol exercise used temporary test identities and was revoked afterward. It established an earlier technical test of persistence and retrieval, but it is not a real human decision and must not be presented as one. There is no measured learning curve, independent memory accuracy, human time saving, or new video recording yet.
+
+## Q&A approach
+
+- **Why Exasol?** Show the actual window and dependency SQL plus persistent memory/audit tables. Be candid that Python computes fingerprint similarity and local benchmarks did not show an Exasol speed advantage.
+- **How do you avoid invented causes?** Separate observed facts, candidates, and confirmed causes. Show citations and the reviewer checklist; the automated classifier and optional LLM cannot approve.
+- **Does memory improve accuracy or save time?** We do not yet have an independently adjudicated chronological memory set or a participant study, so no such improvement is claimed.
+- **What is synthetic?** The seeded pipeline history is synthetic. Public issue excerpts are separate and their labels are project-assigned unless the corpus record says otherwise.
+- **What happens when evidence conflicts?** The system surfaces the conflict and leaves the cause unconfirmed; the reviewer must resolve it or request more evidence.

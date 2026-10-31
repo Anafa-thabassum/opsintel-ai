@@ -2,22 +2,20 @@
 
 **Follow pipeline evidence from Exasol to a human-reviewed incident hypothesis.**
 
-OpsIntel AI helps data engineers investigate failed or incomplete runs when logs, row counts, and historical context are spread across systems. It brings those observations together, shows traceable candidate explanations, and leaves root-cause confirmation to an authorized human reviewer.
+OpsIntel helps data engineers investigate failed runs using source-linked logs, row counts, and pipeline history. It separates observed symptoms from candidate causes and leaves confirmation to an authorized reviewer.
 
-> **Start here:** Exasol Personal + Python + Node.js → `make setup` → initialize the demo database → start FastAPI and the React dashboard. See [Quickstart](docs/QUICKSTART.md).
+**Start here:** [Quickstart](docs/QUICKSTART.md) · [Live demo approach](docs/demo-script.md) · [Evaluation limits](reports/reproducibility-and-evaluation.md)
 
 [![CI](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Anafa-thabassum/opsintel-ai/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## What it does
 
-- Queries pipeline runs, logs, row counts, and historical health features from Exasol.
-- Classifies supported symptoms deterministically and keeps evidence references attached to findings.
-- Compares failed runs with successful history and calculates dependency paths in Exasol.
-- Presents candidate causes and missing evidence. It does not execute repairs or confirm causes automatically.
-- Optionally asks an LLM to summarize the same retrieved evidence; the feature is off by default and the deterministic investigation remains available on fallback.
-- Provides a separate public-issue explorer and scorecard. Project-assigned labels are identified as such.
-- Includes a Verified Incident Memory workflow: an investigator submits a hypothesis, a different authorized reviewer checks evidence, and Exasol stores approved records and audit history. Retrieved records remain candidates.
+- **Connects operational evidence:** Exasol calculates run completeness, rolling history, and time-correlated dependency paths.
+- **Keeps investigations traceable:** deterministic rules report supported symptoms, cite evidence, surface gaps, and abstain when evidence is insufficient.
+- **Governs incident memory:** an investigator proposes a cause; a different authorized reviewer checks the evidence; Exasol stores approved records and audit history. Later matches are candidates. FastAPI computes similarity, which is not a probability or confirmation.
+
+The optional public-issue explorer is separate from the synthetic demo telemetry. Its category labels are project-assigned, not independent adjudications.
 
 ![OpsIntel command center dashboard with synthetic demo telemetry and incident investigation controls](docs/images/dashboard-overview.png)
 
@@ -98,7 +96,7 @@ These results answer different questions and must not be combined into one accur
 
 | Evidence | Result | Provenance and limit |
 |---|---:|---|
-| Automated suite | 200/200 automated tests passed | Latest local `make verify` on 2026-10-31; includes unit/API/frontend checks. |
+| Automated suite | 197/197 automated tests passed | Latest local `make verify` recorded in the final execution report on 2026-10-31; includes unit/API/frontend checks. |
 | Classifier challenge | 16/16 | Predefined synthetic challenge; regression evidence, not production accuracy. |
 | Project-authored holdout | 27/27 | Synthetic, project-authored; not independent. |
 | Frozen reviewer holdout | 4/19 (21.1%) | Three pseudonymous reviewer authors; frozen historical result; 15 wrong labels and 16 unresolved outputs. |
