@@ -39,6 +39,12 @@ function App() {
     () => sessionStorage.getItem("opsintel-demo-session") === "true"
   );
 
+  function enterDemo() {
+    sessionStorage.setItem("opsintel-demo-session", "true");
+    setHasDemoSession(true);
+    navigate("dashboard");
+  }
+
   useEffect(() => {
     const handleHashChange = () => {
       setRoute(window.location.hash.replace(/^#\/?/, "") || "home");
@@ -59,14 +65,10 @@ function App() {
   if (route === "scorecard") return <PublicScorecard />;
 
   if (route === "login" || route === "dashboard") {
-    return <DemoAccess onEnter={() => {
-      sessionStorage.setItem("opsintel-demo-session", "true");
-      setHasDemoSession(true);
-      navigate("dashboard");
-    }} />;
+    return <DemoAccess onEnter={enterDemo} />;
   }
 
-  return <LandingPage />;
+  return <LandingPage onOpenDemo={enterDemo} />;
 }
 
 function Brand() {
@@ -81,7 +83,7 @@ function Brand() {
   );
 }
 
-function LandingPage() {
+function LandingPage({ onOpenDemo }) {
   return (
     <div className="public-shell">
       <header className="public-nav">
@@ -101,7 +103,7 @@ function LandingPage() {
             <div className="hero-actions">
               <button className="primary-button hero-button" onClick={() => navigate("public")}>Investigate public incidents <ArrowRight size={16} /></button>
               <button className="secondary-button" onClick={() => navigate("scorecard")}>View classifier scorecard</button>
-              <button className="secondary-button" onClick={() => navigate("login")}>Open synthetic demo</button>
+              <button className="secondary-button" onClick={onOpenDemo}>Open synthetic demo</button>
               <a className="secondary-link" href="https://github.com/Anafa-thabassum/opsintel-ai" target="_blank" rel="noreferrer"><GitBranch size={16} /> View repository</a>
             </div>
             <div className="hero-trust"><ShieldCheck size={16} /><span>No automated repair. Root causes remain unconfirmed until a human verifies them.</span></div>
