@@ -458,6 +458,13 @@ async function loadInvestigation(runId) {
     const suffix = difference.unit === "percentage points" ? " pp" : "";
     return `${value > 0 ? "+" : ""}${value.toLocaleString("en-IN")}${suffix}`;
   };
+  const openInvestigation = (runId) => {
+    setSelectedId(runId);
+    setActiveNav("Investigations");
+    requestAnimationFrame(() => {
+      document.getElementById("investigation-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   return (
     <div className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
@@ -549,9 +556,14 @@ async function loadInvestigation(runId) {
               <p className="page-subtitle">Investigate failures. Trace evidence. Keep causes reviewable.</p>
               <span className="synthetic-data-pill"><Database size={13} /> Synthetic demo telemetry</span>
             </div>
-            <button className="primary-button" onClick={() => setRefreshKey((n) => n + 1)}>
-              <RefreshCw size={16} /> Refresh intelligence
-            </button>
+            <div className="dashboard-actions">
+              <button className="primary-button" onClick={() => document.getElementById("incident-list")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                <FileSearch size={16} /> Investigate incidents <ArrowRight size={15} />
+              </button>
+              <button className="secondary-button refresh-action" onClick={() => setRefreshKey((n) => n + 1)}>
+                <RefreshCw size={15} /> Refresh data
+              </button>
+            </div>
           </section>
 
           {error && <div className="error-banner" role="alert"><AlertTriangle size={17} />{error}</div>}
@@ -767,7 +779,7 @@ async function loadInvestigation(runId) {
                     <small>ROOT FAILURE</small><strong>{group.root_pipeline}</strong><span>RUN-{String(group.root_run_id).padStart(4, "0")} · {group.root_run_time}</span>
                   </button>
                   <div className="dependency-edges" aria-label={`Downstream pipelines from ${group.root_pipeline}`}>
-                    {group.edges.map((cascade) => <button className="dependency-edge" key={`${cascade.root_run_id}-${cascade.downstream_run_id}`} onClick={() => setSelectedId(cascade.downstream_run_id)} aria-label={`Investigate downstream ${cascade.downstream_pipeline}, run ${cascade.downstream_run_id}`}>
+                    {group.edges.map((cascade) => <button className="dependency-edge" key={`${cascade.root_run_id}-${cascade.downstream_run_id}`} onClick={() => openInvestigation(cascade.downstream_run_id)} aria-label={`Investigate downstream ${cascade.downstream_pipeline}, run ${cascade.downstream_run_id}`}>
                       <span className="dependency-edge-line" aria-hidden="true">→</span>
                       <span className="dependency-node downstream"><small>DEPTH {cascade.dependency_depth} · +{Number(cascade.correlation_lag_minutes).toFixed(1)} MIN</small><strong>{cascade.downstream_pipeline}</strong><span>RUN-{String(cascade.downstream_run_id).padStart(4, "0")} · {cascade.downstream_run_time}</span><em>{cascade.dependency_path}</em></span>
                     </button>)}
@@ -816,7 +828,8 @@ async function loadInvestigation(runId) {
                   <button
                     key={item.run_id}
                     className={`incident-row ${isSelected ? "selected" : ""}`}
-                    onClick={() => setSelectedId(item.run_id)}
+                    onClick={() => openInvestigation(item.run_id)}
+                    aria-pressed={isSelected}
                   >
                     <span className="pipeline-cell">
                       <span className={`pipeline-icon ${isSelected ? "selected-icon" : ""}`}><GitBranch size={16} /></span>

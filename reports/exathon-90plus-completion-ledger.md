@@ -31,7 +31,7 @@ was exercised against Exasol.
 | 13 | Atomic, race-safe reviewer decision | COMPLETE | Against live Exasol, two simultaneous reviewers produced exactly one HTTP 200 and one HTTP 409; SQL showed one confirmation and one confirmation audit, with no duplicate transition. |
 | 14 | Audit, correction, revocation, and restart persistence | PARTIAL | Live confirmation persisted across app restart; audited revoke produced one revocation event and stale match. Correction workflow was not exercised; test confirmation is now revoked. |
 | 15 | One-click synthetic demo entry | COMPLETE | Home-page action enters the temporary browser demo session without the email form. |
-| 16 | Verified-memory reviewer and investigator UI | PARTIAL | Existing role-aware UI remains; a full rehearsal checklist is prepared in `docs/verified-incident-memory-browser-rehearsal.md`, but no real-human browser rehearsal occurred. |
+| 16 | Verified-memory reviewer and investigator UI | PARTIAL | Role-aware UI remains and a live local browser smoke check confirmed the dashboard, incident navigation, selected-run evidence, candidate explanations, and human-confirmation boundary. A full reviewer workflow with an authorized human remains outstanding; see the 2026-10-31 UI verification below. |
 | 17 | Current and historical evidence comparison | COMPLETE | Similar-memory card displays the current investigation evidence separately from historical evidence. |
 | 18 | Chronological leave-one-out / prequential evaluation | PARTIAL | Leakage-checked chronological evaluation harness exists; no adjudicated confirmation/query event stream is available. |
 | 19 | Separate false-match metrics | PARTIAL | Evaluator reports false matches independently; no valid measured rate exists without adjudicated events. |
@@ -47,7 +47,7 @@ was exercised against Exasol.
 | 29 | Python regression and evaluation tests | COMPLETE | Targeted `test_benchmark_memory_exasol.py` + `test_verified_memory.py`: 18 passed. One `make verify`: 200 tests passed; challenge 16/16. |
 | 30 | Frontend lint and production build | COMPLETE | The single `make verify` passed Oxlint and Vite production build; Vite emitted a non-failing >500 kB chunk advisory. |
 | 31 | Hosted CI and exact runner parity | BLOCKED | No commit/push was made as instructed. Local checks passed; hosted CI was not triggered. |
-| 32 | README, operational documentation, and judge preparation | PARTIAL | Live API/Exasol workflow is documented; a full browser rehearsal with a real authorized reviewer and demo recording remains outstanding. |
+| 32 | README, operational documentation, and judge preparation | PARTIAL | Live API/Exasol workflow is documented and the local dashboard was checked against the running services; a full browser rehearsal with a real authorized reviewer and demo recording remains outstanding. |
 | 33 | Submission evidence and honest claims | PARTIAL | Existing submission verifier passes with `--allow-dirty`; historical media does not show a completed live memory workflow, and no new recording was made. |
 
 ## Live Exasol verification (2026-10-31)
@@ -74,6 +74,13 @@ concurrency test.
 - Docker Desktop server was available (Docker 29.9.2); Exasol Personal ran in its own local VM, with no Exasol Docker container.
 - No live LLM, external participant study, or new independent holdout run was
   performed. No new result or accuracy claim is made.
+
+## Local browser workflow verification (2026-10-31)
+
+- Exasol Personal reported `database_ready`; FastAPI started from the existing `.env` and its health card reported the FastAPI service, Exasol connection, incident endpoint, and cascade analytics operational.
+- The dashboard loaded 13 incident rows from the configured Exasol demo schema, displayed three time-correlated downstream failures, and opened `daily_sales_import` run 1 from the “Investigate incidents” action.
+- The selected investigation showed five source-referenced observed facts, two candidate explanations, and an explicit unconfirmed root-cause state. The UI states that the sample logs are synthetic demo data. No reviewer decision or database mutation was made in this browser check.
+- This verifies local navigation and presentation only. It is not the authorized-reviewer rehearsal, a human study, or evidence that synthetic demo telemetry is real incident data. The preview servers were left running for inspection; no database schema or records were changed.
 
 ## Judging criteria evidence
 

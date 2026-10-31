@@ -19,7 +19,9 @@ OpsIntel AI helps data engineers investigate failed or incomplete runs when logs
 - Provides a separate public-issue explorer and scorecard. Project-assigned labels are identified as such.
 - Includes a Verified Incident Memory workflow: an investigator submits a hypothesis, a different authorized reviewer checks evidence, and Exasol stores approved records and audit history. Retrieved records remain candidates.
 
-![OpsIntel dashboard screenshot](docs/images/dashboard-overview.png)
+![OpsIntel command center dashboard with synthetic demo telemetry and incident investigation controls](docs/images/dashboard-overview.png)
+
+*Screenshot captured from the running local dashboard on October 31, 2026. Pipeline metrics and incident history shown here are synthetic demo telemetry; public incident examples are separate and identified in Public Data.*
 
 ## Why Exasol
 
