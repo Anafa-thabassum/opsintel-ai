@@ -144,6 +144,12 @@ Frozen evaluation files and historical reports remain unchanged. Dataset hashes,
 - **Deployment:** [Deployment guide](docs/deployment.md)
 - **License:** MIT.
 
+## 🎥 Project Demo
+
+Watch the OpsIntel AI demonstration:
+
+[▶ Watch the Demo on YouTube](https://www.youtube.com/watch?v=M8kA0oR6YQ4)
+
 ## Known limitations
 
 - Demo pipeline records are synthetic; public issue excerpts are short and have project-assigned labels unless explicitly stated otherwise.
